@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Portfolio, Position, Transaction } from '../types';
-import { portfolioService } from '../services/portfolio';
+import { portfolioService } from '../services';
 import React from 'react';
 
 interface PortfolioState {
@@ -19,6 +19,17 @@ interface PortfolioState {
   refreshCurrentPortfolio: () => Promise<void>;
 }
 
+/**
+ * Aceita tanto { data: [...] } quanto um array puro e nunca devolve undefined.
+ * Evita tela branca (".reduce of undefined") quando a API responde algo inesperado.
+ */
+function toArray<T>(response: unknown, what: string): T[] {
+  if (Array.isArray(response)) return response as T[];
+  const data = (response as { data?: unknown } | null)?.data;
+  if (Array.isArray(data)) return data as T[];
+  throw new Error(`Resposta inválida ao carregar ${what}.`);
+}
+
 export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   portfolios: [],
   currentPortfolio: null,
@@ -31,7 +42,7 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await portfolioService.list();
-      set({ portfolios: response.data, isLoading: false });
+      set({ portfolios: toArray<Portfolio>(response, 'carteiras'), isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
     }
@@ -65,7 +76,7 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   fetchPositions: async (portfolioId: string) => {
     try {
       const positions = await portfolioService.getPositions(portfolioId);
-      set({ positions });
+      set({ positions: toArray<Position>(positions, 'posições') });
     } catch (error: any) {
       set({ error: error.message });
     }
@@ -74,7 +85,7 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   fetchTransactions: async (portfolioId: string) => {
     try {
       const response = await portfolioService.getByPortfolio(portfolioId);
-      set({ transactions: response.data });
+      set({ transactions: toArray<Transaction>(response, 'transações') });
     } catch (error: any) {
       set({ error: error.message });
     }

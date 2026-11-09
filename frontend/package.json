@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "check:domain": "esbuild scripts/check-positions.ts --bundle --platform=node --outfile=node_modules/.cache/check-positions.cjs --log-level=warning && node node_modules/.cache/check-positions.cjs"
   },
   "dependencies": {
     "react": "^18.3.1",
