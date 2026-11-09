@@ -1,0 +1,24 @@
+# Dependências
+node_modules/
+
+# Builds e arquivos gerados
+dist/
+frontend/dist/
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+
+# Variáveis de ambiente (nunca versionar segredos)
+.env
+.env.*
+!.env.example
+
+# Go
+backend/bin/
+*.exe
+
+# Editor / sistema
+.DS_Store
+Thumbs.db
+*.log
+.vercel
