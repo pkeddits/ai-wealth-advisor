@@ -1,5 +1,11 @@
 # AI Wealth Advisor
 
+> **Estado atual (novembro/2026):** o frontend está publicado em **modo demonstração**
+> (dados fictícios no navegador). O backend Go descrito abaixo **não compila** e está
+> sendo substituído. As listas de funcionalidades marcadas abaixo descrevem o
+> planejamento original, não o que está funcionando. Ver `docs/ARCHITECTURE.md`
+> e `docs/DEPLOYMENT.md`.
+
 Sistema completo de gestão de investimentos com inteligência artificial, construído com Go, React, TypeScript, PostgreSQL e OpenAI.
 
 ## 🏗️ Arquitetura
