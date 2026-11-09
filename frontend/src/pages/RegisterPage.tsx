@@ -47,7 +47,7 @@ export function RegisterPage() {
   const onSubmit = async (data: RegisterForm) => {
     setError('');
     try {
-      await registerUser(data.email, data.password, data.name, data.riskProfile);
+      await registerUser({ email: data.email, password: data.password, name: data.name, riskProfile: data.riskProfile });
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Erro ao criar conta. Tente novamente.');

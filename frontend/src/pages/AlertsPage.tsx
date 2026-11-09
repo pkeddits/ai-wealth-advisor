@@ -154,12 +154,12 @@ export function AlertsPage() {
     }
   };
 
-  const handleToggle = async (alert: Alert) => {
+  const handleToggle = async (target: Alert) => {
     try {
-      await alertService.update(alert.id, { enabled: !alert.enabled });
+      await alertService.update(target.id, { enabled: !target.enabled });
       loadAlerts();
     } catch (error: any) {
-      alert(error.message);
+      window.alert(error.message);
     }
   };
 
