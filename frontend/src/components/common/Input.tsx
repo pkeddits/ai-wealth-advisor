@@ -1,35 +1,45 @@
-import { forwardRef, InputHTMLAttributes, TextareaHTMLAttributes } from 'react';
+import { forwardRef, InputHTMLAttributes, TextareaHTMLAttributes, ReactNode } from 'react';
 import clsx from 'clsx';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   helperText?: string;
+  /** Ícone exibido dentro do campo, à esquerda */
+  icon?: ReactNode;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, helperText, className, id, ...props }, ref) => {
+  ({ label, error, helperText, className, id, icon, ...props }, ref) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
     
     return (
-      <div className="w-full">
+      <div className={clsx('w-full', className)}>
         {label && (
           <label htmlFor={inputId} className="block text-sm font-medium text-dark-700 mb-1">
             {label}
           </label>
         )}
-        <input
-          ref={ref}
-          id={inputId}
-          className={clsx(
-            'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow',
-            error ? 'border-red-500' : 'border-dark-300',
-            props.disabled && 'bg-dark-100 cursor-not-allowed'
+        <div className="relative">
+          {icon && (
+            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-dark-400" aria-hidden="true">
+              {icon}
+            </span>
           )}
-          aria-invalid={error ? 'true' : 'false'}
-          aria-describedby={error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
-          {...props}
-        />
+          <input
+            ref={ref}
+            id={inputId}
+            className={clsx(
+              'w-full py-2 pr-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow',
+              icon ? 'pl-9' : 'pl-3',
+              error ? 'border-red-500' : 'border-dark-300',
+              props.disabled && 'bg-dark-100 cursor-not-allowed'
+            )}
+            aria-invalid={error ? 'true' : 'false'}
+            aria-describedby={error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
+            {...props}
+          />
+        </div>
         {error && (
           <p id={`${inputId}-error`} className="mt-1 text-sm text-red-600" role="alert">
             {error}

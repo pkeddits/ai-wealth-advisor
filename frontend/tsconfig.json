@@ -5,6 +5,7 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
     "moduleResolution": "node10",
     "allowImportingTsExtensions": false,
     "resolveJsonModule": true,
