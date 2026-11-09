@@ -6,3 +6,5 @@ export { Modal } from './Modal';
 export { Badge } from './Badge';
 export { Select } from './Select';
 export { Table } from './Table';
+export { DemoBanner } from './DemoBanner';
+export { ComingSoon } from './ComingSoon';

@@ -12,6 +12,16 @@ import { SimulationsPage } from './pages/SimulationsPage';
 import { AlertsPage } from './pages/AlertsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
+import { ComingSoon } from './components/common/ComingSoon';
+import { isDemoMode } from './config/appMode';
+
+/**
+ * No modo demonstração, módulos que dependem de backend ainda inexistente
+ * exibem "Em desenvolvimento" em vez de botões que não funcionam.
+ * As páginas originais continuam no projeto e voltam com VITE_DEMO_MODE=false.
+ */
+const inDemo = (page: React.ReactNode, title: string, description: string) =>
+  isDemoMode ? <ComingSoon title={title} description={description} /> : page;
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
@@ -54,18 +64,21 @@ function App() {
     <Routes>
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-        <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+        <Route
+          path="/register"
+          element={isDemoMode ? <Navigate to="/login" replace /> : <PublicRoute><RegisterPage /></PublicRoute>}
+        />
       </Route>
       
       <Route element={<MainLayout />}>
         <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         <Route path="/portfolios" element={<ProtectedRoute><PortfoliosPage /></ProtectedRoute>} />
         <Route path="/portfolios/:id" element={<ProtectedRoute><PortfolioDetailPage /></ProtectedRoute>} />
-        <Route path="/ai-analysis" element={<ProtectedRoute><AIAnalysisPage /></ProtectedRoute>} />
-        <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
-        <Route path="/simulations" element={<ProtectedRoute><SimulationsPage /></ProtectedRoute>} />
-        <Route path="/alerts" element={<ProtectedRoute><AlertsPage /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+        <Route path="/ai-analysis" element={<ProtectedRoute>{inDemo(<AIAnalysisPage />, 'Análise com IA', 'Explicações geradas por IA sobre a composição e os riscos da carteira, a partir de métricas calculadas pelo sistema.')}</ProtectedRoute>} />
+        <Route path="/analytics" element={<ProtectedRoute>{inDemo(<AnalyticsPage />, 'Analytics', 'Métricas de risco e retorno da carteira, como volatilidade, drawdown e índice de Sharpe.')}</ProtectedRoute>} />
+        <Route path="/simulations" element={<ProtectedRoute>{inDemo(<SimulationsPage />, 'Simulações', 'Projeções de Monte Carlo e testes de estresse para cenários de mercado.')}</ProtectedRoute>} />
+        <Route path="/alerts" element={<ProtectedRoute>{inDemo(<AlertsPage />, 'Alertas', 'Avisos quando um ativo ou a carteira atingir um valor definido por você.')}</ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute>{inDemo(<SettingsPage />, 'Configurações', 'Edição de perfil, senha e preferências da conta.')}</ProtectedRoute>} />
       </Route>
       
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

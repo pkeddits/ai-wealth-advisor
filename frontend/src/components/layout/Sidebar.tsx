@@ -15,15 +15,17 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import clsx from 'clsx';
+import { isDemoMode } from '../../config/appMode';
 
+// availableInDemo: false => no modo demonstração a página mostra "Em desenvolvimento"
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Carteiras', href: '/portfolios', icon: Wallet },
-  { name: 'Análise IA', href: '/ai-analysis', icon: Bot },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Simulações', href: '/simulations', icon: TrendingUp },
-  { name: 'Alertas', href: '/alerts', icon: AlertTriangle },
-  { name: 'Configurações', href: '/settings', icon: Settings },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, availableInDemo: true },
+  { name: 'Carteiras', href: '/portfolios', icon: Wallet, availableInDemo: true },
+  { name: 'Análise IA', href: '/ai-analysis', icon: Bot, availableInDemo: false },
+  { name: 'Analytics', href: '/analytics', icon: BarChart3, availableInDemo: false },
+  { name: 'Simulações', href: '/simulations', icon: TrendingUp, availableInDemo: false },
+  { name: 'Alertas', href: '/alerts', icon: AlertTriangle, availableInDemo: false },
+  { name: 'Configurações', href: '/settings', icon: Settings, availableInDemo: false },
 ];
 
 export function Sidebar() {
@@ -79,6 +81,11 @@ export function Sidebar() {
                   >
                     <item.icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
                     {!isCollapsed && <span>{item.name}</span>}
+                    {!isCollapsed && isDemoMode && !item.availableInDemo && (
+                      <span className="ml-auto rounded-full bg-dark-100 px-2 py-0.5 text-[11px] font-medium text-dark-500">
+                        Em breve
+                      </span>
+                    )}
                   </NavLink>
                 </li>
               );

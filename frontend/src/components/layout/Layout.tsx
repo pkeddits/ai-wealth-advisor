@@ -1,13 +1,15 @@
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
-import clsx from 'clsx';
+import { DemoBanner } from '../common/DemoBanner';
+import { isDemoMode } from '../../config/appMode';
 
 export function MainLayout() {
   return (
     <div className="min-h-screen bg-dark-50">
       <Sidebar />
       <div className="lg:ml-64">
+        {isDemoMode && <DemoBanner />}
         <Header />
         <main className="p-6 lg:p-8">
           <Outlet />
