@@ -1,27 +1,47 @@
 import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Wallet, TrendingUp, Bot, AlertTriangle, ArrowRight, Plus, BarChart3, RefreshCw } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Wallet, TrendingUp, Bot, AlertTriangle, Plus, BarChart3, RefreshCw, Layers } from 'lucide-react';
 import { usePortfolioStore } from '../store/portfolioStore';
 import { useAuthStore } from '../store/authStore';
-import { portfolioService, aiService } from '../services';
-import { Card, CardBody, Button, Badge, LoadingSpinner } from '../components/common';
+import { aiService } from '../services';
+import { loadDemoSample } from '../services/demo';
+import { isDemoMode } from '../config/appMode';
+import { riskProfileLabel } from '../utils/labels';
+import { Card, CardBody, Button, LoadingSpinner } from '../components/common';
 import clsx from 'clsx';
 
 export function DashboardPage() {
   const { user } = useAuthStore();
-  const { portfolios, currentPortfolio, fetchPortfolios, selectPortfolio, isLoading, refreshCurrentPortfolio } = usePortfolioStore();
+  const navigate = useNavigate();
+  const { portfolios, currentPortfolio, fetchPortfolios, selectPortfolio, error } = usePortfolioStore();
   const [aiInsights, setAiInsights] = useState<any>(null);
   const [isLoadingInsights, setIsLoadingInsights] = useState(false);
+  const [isLoadingSample, setIsLoadingSample] = useState(false);
 
   useEffect(() => {
     fetchPortfolios();
   }, [fetchPortfolios]);
 
+  // Usa sempre a versão mais recente da lista (com posições e totais atualizados).
+  const selectedPortfolio = portfolios.find((p) => p.id === currentPortfolio?.id) ?? portfolios[0] ?? null;
+
   useEffect(() => {
-    if (currentPortfolio) {
-      loadAIInsights(currentPortfolio.id);
+    // No modo demonstração não há IA: não fazemos requisição nem exibimos conteúdo simulado.
+    if (selectedPortfolio && !isDemoMode) {
+      loadAIInsights(selectedPortfolio.id);
     }
-  }, [currentPortfolio]);
+  }, [selectedPortfolio?.id]);
+
+  const handleLoadSample = async () => {
+    setIsLoadingSample(true);
+    try {
+      const id = await loadDemoSample();
+      await fetchPortfolios();
+      navigate(`/portfolios/${id}`);
+    } finally {
+      setIsLoadingSample(false);
+    }
+  };
 
   const loadAIInsights = async (portfolioId: string) => {
     setIsLoadingInsights(true);
@@ -38,6 +58,7 @@ export function DashboardPage() {
   const totalValue = portfolios.reduce((sum, p) => sum + (p.totalValue || 0), 0);
   const totalReturn = portfolios.reduce((sum, p) => sum + (p.totalReturn || 0), 0);
   const totalReturnPct = totalValue > 0 ? (totalReturn / (totalValue - totalReturn)) * 100 : 0;
+  const distinctAssets = new Set(portfolios.flatMap((p) => (p.positions ?? []).map((pos) => pos.assetId))).size;
 
   return (
     <div className="space-y-6">
@@ -47,10 +68,16 @@ export function DashboardPage() {
           <h1 className="text-2xl font-bold text-dark-900">Olá, {user?.name?.split(' ')[0] || 'Investidor'}!</h1>
           <p className="text-dark-600 mt-1">Acompanhe o desempenho dos seus investimentos</p>
         </div>
-        <Button onClick={() => refreshCurrentPortfolio()} variant="secondary" icon={<RefreshCw className="w-4 h-4" />}>
+        <Button onClick={() => fetchPortfolios()} variant="secondary" icon={<RefreshCw className="w-4 h-4" />}>
           Atualizar
         </Button>
       </div>
+
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm" role="alert">
+          Não foi possível carregar as carteiras: {error}
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -107,11 +134,11 @@ export function DashboardPage() {
           <CardBody className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-dark-500">Alertas Ativos</p>
-                <p className="text-2xl font-bold text-dark-900 mt-1">3</p>
+                <p className="text-sm text-dark-500">Ativos em carteira</p>
+                <p className="text-2xl font-bold text-dark-900 mt-1">{distinctAssets}</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6 text-yellow-600" />
+                <Layers className="w-6 h-6 text-yellow-600" />
               </div>
             </div>
           </CardBody>
@@ -128,7 +155,7 @@ export function DashboardPage() {
                 <CardBody className="p-5">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold text-dark-900">Minhas Carteiras</h2>
-                    <Link to="/portfolios/new">
+                    <Link to="/portfolios?nova=1">
                       <Button size="sm" icon={<Plus className="w-4 h-4" />}>
                         Nova Carteira
                       </Button>
@@ -141,7 +168,7 @@ export function DashboardPage() {
                         onClick={() => selectPortfolio(portfolio)}
                         className={clsx(
                           'p-4 rounded-lg border cursor-pointer transition-colors',
-                          currentPortfolio?.id === portfolio.id
+                          selectedPortfolio?.id === portfolio.id
                             ? 'border-primary-300 bg-primary-50'
                             : 'border-dark-200 hover:bg-dark-50'
                         )}
@@ -153,7 +180,7 @@ export function DashboardPage() {
                             </div>
                             <div>
                               <p className="font-medium text-dark-900">{portfolio.name}</p>
-                              <p className="text-sm text-dark-500 capitalize">{portfolio.riskProfile}</p>
+                              <p className="text-sm text-dark-500">{riskProfileLabel(portfolio.riskProfile)}</p>
                             </div>
                           </div>
                           <div className="text-right">
@@ -171,13 +198,21 @@ export function DashboardPage() {
                 </CardBody>
               </Card>
 
-              {currentPortfolio && (
+              {selectedPortfolio && (
                 <>
                   <Card>
                     <CardBody className="p-5">
-                      <h2 className="text-lg font-semibold text-dark-900 mb-4">Principais Posições</h2>
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h2 className="text-lg font-semibold text-dark-900">Principais posições</h2>
+                          <p className="text-sm text-dark-500">{selectedPortfolio.name}</p>
+                        </div>
+                        <Link to={`/portfolios/${selectedPortfolio.id}`} className="text-sm text-primary-600 hover:underline">
+                          Abrir carteira
+                        </Link>
+                      </div>
                       <div className="space-y-3">
-                        {currentPortfolio.positions?.slice(0, 5).map((position: any) => (
+                        {selectedPortfolio.positions?.slice(0, 5).map((position: any) => (
                           <div key={position.assetId} className="flex items-center justify-between p-3 bg-dark-50 rounded-lg">
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center">
@@ -198,11 +233,11 @@ export function DashboardPage() {
                             </div>
                           </div>
                         ))}
-                        {(!currentPortfolio.positions || currentPortfolio.positions.length === 0) && (
+                        {(!selectedPortfolio.positions || selectedPortfolio.positions.length === 0) && (
                           <div className="text-center py-8 text-dark-500">
                             <p>Nenhuma posição nesta carteira</p>
-                            <Link to={`/portfolios/${currentPortfolio.id}`} className="text-primary-600 hover:underline mt-2 inline-block">
-                              Adicionar ativos
+                            <Link to={`/portfolios/${selectedPortfolio.id}`} className="text-primary-600 hover:underline mt-2 inline-block">
+                              Registrar uma compra
                             </Link>
                           </div>
                         )}
@@ -219,12 +254,19 @@ export function DashboardPage() {
                   <Wallet className="w-8 h-8 text-primary-600" />
                 </div>
                 <h2 className="text-xl font-semibold text-dark-900 mb-2">Nenhuma carteira criada</h2>
-                <p className="text-dark-600 mb-6">Crie sua primeira carteira para começar a investir com IA</p>
-                <Link to="/portfolios/new">
-                  <Button size="lg" icon={<Plus className="w-4 h-4" />}>
-                    Criar Carteira
-                  </Button>
-                </Link>
+                <p className="text-dark-600 mb-6">Crie sua primeira carteira e registre suas compras para acompanhar o patrimônio.</p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Link to="/portfolios?nova=1">
+                    <Button size="lg" icon={<Plus className="w-4 h-4" />}>
+                      Criar carteira
+                    </Button>
+                  </Link>
+                  {isDemoMode && (
+                    <Button size="lg" variant="secondary" onClick={handleLoadSample} loading={isLoadingSample}>
+                      Carregar carteira de exemplo
+                    </Button>
+                  )}
+                </div>
               </CardBody>
             </Card>
           )}
@@ -240,7 +282,11 @@ export function DashboardPage() {
                   Insights da IA
                 </h2>
               </div>
-              {isLoadingInsights ? (
+              {isDemoMode ? (
+                <div className="text-center py-4 text-dark-500">
+                  <p>A análise com IA está em desenvolvimento e não faz parte desta demonstração.</p>
+                </div>
+              ) : isLoadingInsights ? (
                 <LoadingSpinner />
               ) : aiInsights ? (
                 <div className="space-y-3">
@@ -265,11 +311,19 @@ export function DashboardPage() {
             <CardBody className="p-5">
               <h2 className="text-lg font-semibold text-dark-900 mb-4">Ações Rápidas</h2>
               <div className="space-y-2">
-                <Link to="/portfolios/new" className="block">
+                <Link to="/portfolios?nova=1" className="block">
                   <Button variant="secondary" className="w-full justify-start gap-3" icon={<Plus className="w-4 h-4" />}>
                     Nova Carteira
                   </Button>
                 </Link>
+                {selectedPortfolio && (
+                  <Link to={`/portfolios/${selectedPortfolio.id}`} className="block">
+                    <Button variant="secondary" className="w-full justify-start gap-3" icon={<Wallet className="w-4 h-4" />}>
+                      Registrar transação
+                    </Button>
+                  </Link>
+                )}
+                {!isDemoMode && (<>
                 <Link to="/ai-analysis" className="block">
                   <Button variant="secondary" className="w-full justify-start gap-3" icon={<Bot className="w-4 h-4" />}>
                     Análise com IA
@@ -285,6 +339,7 @@ export function DashboardPage() {
                     Simular Cenários
                   </Button>
                 </Link>
+                </>)}
               </div>
             </CardBody>
           </Card>

@@ -1,21 +1,33 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Plus, Search, Filter, Wallet } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Plus, Search, ChevronRight, Wallet } from 'lucide-react';
 import { usePortfolioStore } from '../store/portfolioStore';
-import { portfolioService } from '../services';
 import { Card, CardBody, Button, Input, Badge, LoadingSpinner, Modal } from '../components/common';
+import { riskProfileLabel } from '../utils/labels';
 import clsx from 'clsx';
 
+type RiskProfile = 'conservador' | 'moderado' | 'arrojado';
+const emptyForm = { name: '', description: '', riskProfile: 'moderado' as RiskProfile };
+
 export function PortfoliosPage() {
-  const { portfolios, fetchPortfolios, createPortfolio, isLoading } = usePortfolioStore();
+  const { portfolios, fetchPortfolios, createPortfolio, isLoading, error } = usePortfolioStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [formData, setFormData] = useState({ name: '', description: '', riskProfile: 'moderado' });
+  const [formData, setFormData] = useState(emptyForm);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     fetchPortfolios();
   }, [fetchPortfolios]);
+
+  // /portfolios?nova=1 abre o formulário de criação (usado pelos atalhos do dashboard)
+  useEffect(() => {
+    if (searchParams.get('nova') === '1') {
+      setIsModalOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +41,7 @@ export function PortfoliosPage() {
     try {
       await createPortfolio(formData);
       setIsModalOpen(false);
-      setFormData({ name: '', description: '', riskProfile: 'moderado' });
+      setFormData(emptyForm);
     } catch (error: any) {
       setFormErrors({ submit: error.message });
     }
@@ -50,6 +62,12 @@ export function PortfoliosPage() {
           Nova Carteira
         </Button>
       </div>
+
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm" role="alert">
+          Não foi possível carregar as carteiras: {error}
+        </div>
+      )}
 
       <Card>
         <CardBody className="p-0">
@@ -101,7 +119,7 @@ export function PortfoliosPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
-                        <Badge variant="blue">{portfolio.riskProfile}</Badge>
+                        <Badge variant="blue">{riskProfileLabel(portfolio.riskProfile)}</Badge>
                         <div className="text-right hidden sm:block">
                           <p className="font-semibold text-dark-900">
                             R$ {(portfolio.totalValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -110,7 +128,7 @@ export function PortfoliosPage() {
                             {(portfolio.totalReturnPct || 0) >= 0 ? '+' : ''}{(portfolio.totalReturnPct || 0).toFixed(2)}%
                           </p>
                         </div>
-                        <Filter className="w-5 h-5 text-dark-400" />
+                        <ChevronRight className="w-5 h-5 text-dark-400" aria-hidden="true" />
                       </div>
                     </div>
                   </Link>
@@ -141,7 +159,7 @@ export function PortfoliosPage() {
             <label className="block text-sm font-medium text-dark-700 mb-1">Perfil de risco</label>
             <select
               value={formData.riskProfile}
-              onChange={(e) => setFormData({...formData, riskProfile: e.target.value})}
+              onChange={(e) => setFormData({...formData, riskProfile: e.target.value as RiskProfile})}
               className="w-full px-3 py-2 border border-dark-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="conservador">Conservador</option>

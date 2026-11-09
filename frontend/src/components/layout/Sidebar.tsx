@@ -13,7 +13,8 @@ import {
   TrendingUp,
   RefreshCw,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useUIStore } from '../../store/uiStore';
 import clsx from 'clsx';
 import { isDemoMode } from '../../config/appMode';
 
@@ -32,12 +33,24 @@ export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
   const { user, logout } = useAuthStore();
+  const { isMobileNavOpen, closeMobileNav } = useUIStore();
+
+  // No celular o menu fecha ao trocar de página
+  useEffect(() => {
+    closeMobileNav();
+  }, [location.pathname, closeMobileNav]);
 
   return (
+    <>
+    {isMobileNavOpen && (
+      <div className="fixed inset-0 z-30 bg-dark-900/40 lg:hidden" onClick={closeMobileNav} aria-hidden="true" />
+    )}
     <aside
       className={clsx(
         'fixed left-0 top-0 z-40 h-screen bg-white border-r border-dark-200 transition-all duration-300',
-        isCollapsed ? 'w-20' : 'w-64'
+        isCollapsed ? 'w-20' : 'w-64',
+        // Celular: escondido por padrão; desktop (lg): sempre visível
+        isMobileNavOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       )}
     >
       <div className="flex h-full flex-col">
@@ -139,7 +152,7 @@ export function Sidebar() {
           {/* Collapse Toggle */}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-8 bg-dark-100 border border-dark-200 rounded-r-lg flex items-center justify-center hover:bg-dark-200 transition-colors"
+            className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-8 bg-dark-100 border border-dark-200 rounded-r-lg hidden lg:flex items-center justify-center hover:bg-dark-200 transition-colors"
             aria-label={isCollapsed ? 'Expandir menu' : 'Colapsar menu'}
             aria-expanded={!isCollapsed}
           >
@@ -148,5 +161,6 @@ export function Sidebar() {
         </div>
       </div>
     </aside>
+    </>
   );
 }

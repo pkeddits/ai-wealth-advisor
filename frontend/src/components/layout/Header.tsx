@@ -1,11 +1,13 @@
 import { useAuthStore } from '../../store/authStore';
-import { LogOut, User, ChevronDown } from 'lucide-react';
+import { LogOut, User, ChevronDown, Menu } from 'lucide-react';
+import { useUIStore } from '../../store/uiStore';
 import { useState, useRef, useEffect } from 'react';
 import clsx from 'clsx';
 
 export function Header() {
   const { user } = useAuthStore();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const openMobileNav = useUIStore((s) => s.openMobileNav);
   const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -22,6 +24,14 @@ export function Header() {
     <header className="sticky top-0 z-30 h-16 bg-white/80 backdrop-blur-sm border-b border-dark-200">
       <div className="flex h-full items-center justify-between px-6">
         <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={openMobileNav}
+            className="lg:hidden p-2 -ml-2 rounded-lg text-dark-600 hover:bg-dark-100"
+            aria-label="Abrir menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
           <h1 className="text-xl font-semibold text-dark-900 hidden sm:block">
             AI Wealth Advisor
           </h1>
