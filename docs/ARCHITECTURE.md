@@ -1,42 +1,51 @@
-# Arquitetura atual do frontend
+# Arquitetura do frontend
 
-## Estado do projeto (novembro/2026)
+## Modos de execução
 
-- **Funciona (modo demonstração):** entrada demo, carteiras, compras e vendas,
-  posições por custo médio, dashboard, gráfico de alocação, persistência no navegador.
-- **Em desenvolvimento:** autenticação real, banco de dados, IA, analytics,
-  simulações, alertas, configurações.
-- **Backend Go (`backend/`):** não compila. Mantido no repositório como referência
-  (modelos, fórmulas e prompts). Ver diagnóstico na conversa de auditoria.
+`VITE_APP_MODE` define a origem dos dados (`src/config/appMode.ts`):
 
-## Modo demonstração × API
+| Modo | Autenticação | Carteiras e transações | Uso |
+|---|---|---|---|
+| `demo` (padrão) | local, sem conta | `localStorage`, preços fictícios | apresentação sem servidor |
+| `supabase` | Supabase Auth | ainda não migradas: "Em desenvolvimento" | versão real em construção |
+| `api` | JWT do backend Go | backend Go | referência; o backend não compila |
 
-`src/config/appMode.ts` define `isDemoMode` (padrão `true`; `VITE_DEMO_MODE=false` desativa).
+O modo é constante de build: o Vite remove do bundle o código dos outros modos
+(o build demo não inclui o `supabase-js`).
+
+## Camadas
 
 ```
-páginas / stores
-      │  importam SEMPRE de 'src/services'
-      ▼
-src/services/index.ts  ──► isDemoMode ? services/demo/* : services/*.ts (Axios)
-                                │
-                                ▼
-                     src/domain/positions.ts  (cálculos puros, sem I/O)
+páginas e stores
+   │
+   ├─ useAuthStore ──► services/session ──► demo | supabase | api
+   │
+   └─ services/index.ts ──► services/demo/* | services/*.ts (API Go) | unavailableService
+                                   │
+                                   └─► domain/positions.ts (cálculos puros)
 ```
 
-Regras para quem for alterar (pessoas ou IAs):
+- Páginas importam services sempre de `src/services`, nunca de uma implementação.
+- Um service novo (ex.: carteiras no Supabase) deve ter o mesmo formato do service da API,
+  verificado com `typeof`, como em `services/demo/portfolio.ts`.
+- No modo `supabase`, módulos não migrados usam `unavailableService`, que falha com mensagem
+  explícita; nunca recorrem a dados demo ou à API Go.
+- Cálculos financeiros ficam em `src/domain` como funções puras (`npm run check:domain`).
+  A IA, quando integrada, só interpretará resultados já calculados.
 
-1. **Páginas não importam** `services/auth.ts`, `services/demo/...` etc. diretamente:
-   use `from '../services'`. (Exceções atuais: `loadDemoSample` e `demoPriceOf`,
-   usados só quando `isDemoMode`.)
-2. Um service novo (ex.: Supabase) deve ter **o mesmo formato** do service da API,
-   verificado com `typeof` como em `services/demo/portfolio.ts`.
-3. Cálculos financeiros ficam em `src/domain/` como funções puras com verificação
-   em `scripts/` (`npm run check:domain`). A IA só **interpreta** resultados já calculados.
-4. Recurso que não existe no modo demo lança `DemoUnavailableError`; a interface
-   mostra "Em desenvolvimento" em vez de botões que não funcionam.
+## Banco de dados
 
-## Dados do modo demonstração
+Migrations em `supabase/migrations`, teste de isolamento em `supabase/tests`. Ver `docs/SUPABASE.md`.
+Posições não são gravadas: são recalculadas a partir das transações por `domain/positions.ts`.
 
-- Chave `aiwa.demo.v1` no `localStorage` (carteiras e transações).
-- Ativos e preços em `services/demo/catalog.ts`: **preços fictícios fixos**.
-- Posições não são gravadas; são recalculadas a partir das transações.
+## Design system
+
+- Tokens em `src/styles/theme.css` (cores em canais RGB, raios, sombras, curvas de animação).
+  As escalas `dark`, `primary`, `green`, `red`, `yellow`, `blue` e a cor `white` (superfície dos
+  painéis) do Tailwind leem essas variáveis; para mudar a identidade, altere só esse arquivo.
+- No tema escuro, a escala `dark` vai do fundo (`dark-50`) ao texto de maior contraste (`dark-900`).
+- Classes compartilhadas em `src/index.css`: `panel`, `panel-raised`, `chip-live`,
+  `chip-building`, `chip-planned`, `text-display`, `bg-grid`.
+- Fontes hospedadas no projeto: Unbounded (títulos) e Inter (interface, algarismos tabulares).
+- Componentes de marca em `components/brand`; gráficos reutilizáveis em `components/charts`.
+- `prefers-reduced-motion` desativa animações globalmente.

@@ -8,7 +8,7 @@
 | Framework Preset | Vite (também definido em `frontend/vercel.json`) |
 | Build Command | `npm run build` |
 | Output Directory | `dist` |
-| Variável de ambiente | `VITE_DEMO_MODE` = `true` (opcional: já é o padrão) |
+| Variáveis de ambiente | Nenhuma para o modo demonstração (padrão). Para autenticação real, ver abaixo. |
 
 `frontend/vercel.json` redireciona qualquer rota para `index.html`. Sem isso,
 recarregar uma página interna (ex.: `/portfolios/123`) retorna 404 na Vercel.
@@ -16,6 +16,19 @@ recarregar uma página interna (ex.: `/portfolios/123`) retorna 404 na Vercel.
 > Variáveis `VITE_*` são embutidas no JavaScript no momento do build.
 > Depois de alterá-las na Vercel, é preciso fazer um novo deploy.
 > Nunca coloque segredos (chaves de IA, senhas) em variáveis `VITE_*`.
+
+## Modo com autenticação real (Supabase)
+
+Em **Settings → Environment Variables**, defina para Production (e Preview, se usar):
+
+| Variável | Valor |
+|---|---|
+| `VITE_APP_MODE` | `supabase` |
+| `VITE_SUPABASE_URL` | URL do projeto Supabase |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | chave publicável (`sb_publishable_...`) |
+
+Depois, faça um novo deploy. No Supabase, inclua a URL da Vercel em Site URL e Redirect URLs
+(ver `docs/SUPABASE.md`, seção 3).
 
 ## Testar localmente antes de publicar
 
