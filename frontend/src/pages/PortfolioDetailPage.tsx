@@ -9,9 +9,9 @@ import { formatCurrency } from '../utils/format';
 import { assetClassLabel, riskProfileLabel, transactionTypeLabel } from '../utils/labels';
 import { isDemoMode } from '../config/appMode';
 import { demoPriceOf } from '../services/demo';
+import { SERIES_COLORS } from '../components/charts';
 import clsx from 'clsx';
 
-const CHART_COLORS = ['#0284c7', '#16a34a', '#d97706', '#7c3aed', '#db2777', '#0d9488'];
 const today = () => new Date().toISOString().split('T')[0];
 
 interface Position {
@@ -311,10 +311,14 @@ export function PortfolioDetailPage() {
                       <RePieChart>
                         <Pie data={allocationByClass} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90} paddingAngle={2}>
                           {allocationByClass.map((_, i) => (
-                            <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                            <Cell key={i} fill={SERIES_COLORS[i % SERIES_COLORS.length]} stroke="rgb(var(--surface))" />
                           ))}
                         </Pie>
-                        <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                        <Tooltip
+                          formatter={(v: number) => formatCurrency(v)}
+                          contentStyle={{ background: 'rgb(var(--surface-raised))', border: '1px solid rgb(var(--dark-200))', borderRadius: 12, color: 'rgb(var(--dark-900))' }}
+                          itemStyle={{ color: 'rgb(var(--dark-800))' }}
+                        />
                         <Legend />
                       </RePieChart>
                     </ResponsiveContainer>

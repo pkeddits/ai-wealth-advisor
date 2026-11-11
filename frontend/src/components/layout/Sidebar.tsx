@@ -16,17 +16,20 @@ import {
 import { useEffect, useState } from 'react';
 import { useUIStore } from '../../store/uiStore';
 import clsx from 'clsx';
-import { isDemoMode } from '../../config/appMode';
+import { appMode, type AppMode } from '../../config/appMode';
+import { Logo, LogoMark } from '../brand';
 
-// availableInDemo: false => no modo demonstração a página mostra "Em desenvolvimento"
+const ALL_MODES: AppMode[] = ['demo', 'supabase', 'api'];
+
+// Modos em que a página tem implementação; nos demais ela mostra "Em desenvolvimento".
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, availableInDemo: true },
-  { name: 'Carteiras', href: '/portfolios', icon: Wallet, availableInDemo: true },
-  { name: 'Análise IA', href: '/ai-analysis', icon: Bot, availableInDemo: false },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3, availableInDemo: false },
-  { name: 'Simulações', href: '/simulations', icon: TrendingUp, availableInDemo: false },
-  { name: 'Alertas', href: '/alerts', icon: AlertTriangle, availableInDemo: false },
-  { name: 'Configurações', href: '/settings', icon: Settings, availableInDemo: false },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, availableIn: ALL_MODES },
+  { name: 'Carteiras', href: '/portfolios', icon: Wallet, availableIn: ['demo', 'api'] as AppMode[] },
+  { name: 'Análise IA', href: '/ai-analysis', icon: Bot, availableIn: ['api'] as AppMode[] },
+  { name: 'Analytics', href: '/analytics', icon: BarChart3, availableIn: ['api'] as AppMode[] },
+  { name: 'Simulações', href: '/simulations', icon: TrendingUp, availableIn: ['api'] as AppMode[] },
+  { name: 'Alertas', href: '/alerts', icon: AlertTriangle, availableIn: ['api'] as AppMode[] },
+  { name: 'Configurações', href: '/settings', icon: Settings, availableIn: ['api'] as AppMode[] },
 ];
 
 export function Sidebar() {
@@ -43,34 +46,20 @@ export function Sidebar() {
   return (
     <>
     {isMobileNavOpen && (
-      <div className="fixed inset-0 z-30 bg-dark-900/40 lg:hidden" onClick={closeMobileNav} aria-hidden="true" />
+      <div className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden" onClick={closeMobileNav} aria-hidden="true" />
     )}
     <aside
       className={clsx(
-        'fixed left-0 top-0 z-40 h-screen bg-white border-r border-dark-200 transition-all duration-300',
+        'fixed left-0 top-0 z-40 h-screen border-r border-dark-200/70 bg-white transition-all duration-300',
         isCollapsed ? 'w-20' : 'w-64',
-        // Celular: escondido por padrão; desktop (lg): sempre visível
         isMobileNavOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       )}
     >
       <div className="flex h-full flex-col">
-        {/* Logo */}
-        <div className={clsx('flex h-16 items-center px-4 border-b border-dark-200', isCollapsed && 'justify-center')}>
-          {!isCollapsed && (
-            <NavLink to="/dashboard" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-bold text-xl text-dark-900">AI Wealth Advisor</span>
-            </NavLink>
-          )}
-          {isCollapsed && (
-            <NavLink to="/dashboard" className="flex items-center justify-center">
-              <div className="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-white" />
-              </div>
-            </NavLink>
-          )}
+        <div className={clsx('flex h-16 items-center border-b border-dark-200/70 px-4', isCollapsed && 'justify-center')}>
+          <NavLink to="/dashboard" aria-label="Ir para o painel">
+            {isCollapsed ? <LogoMark className="h-8 w-8" /> : <Logo size="sm" />}
+          </NavLink>
         </div>
 
         {/* Navigation */}
@@ -85,7 +74,7 @@ export function Sidebar() {
                     className={clsx(
                       'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                       isActive
-                        ? 'bg-primary-50 text-primary-700'
+                        ? 'bg-primary-500/10 text-primary-700 shadow-[inset_2px_0_0_rgb(var(--primary-500))]'
                         : 'text-dark-600 hover:bg-dark-100 hover:text-dark-900',
                       isCollapsed && 'justify-center'
                     )}
@@ -94,7 +83,7 @@ export function Sidebar() {
                   >
                     <item.icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
                     {!isCollapsed && <span>{item.name}</span>}
-                    {!isCollapsed && isDemoMode && !item.availableInDemo && (
+                    {!isCollapsed && !item.availableIn.includes(appMode) && (
                       <span className="ml-auto rounded-full bg-dark-100 px-2 py-0.5 text-[11px] font-medium text-dark-500">
                         Em breve
                       </span>

@@ -16,7 +16,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <div className="w-full">
         {label && (
-          <label htmlFor={selectId} className="block text-sm font-medium text-dark-700 mb-1">
+          <label htmlFor={selectId} className="block text-sm font-medium text-dark-700 mb-1.5">
             {label}
           </label>
         )}
@@ -24,9 +24,9 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           ref={ref}
           id={selectId}
           className={clsx(
-            'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow bg-white',
-            error ? 'border-red-500' : 'border-dark-300',
-            props.disabled && 'bg-dark-100 cursor-not-allowed'
+            'w-full h-11 px-3 rounded-control border bg-dark-50/70 text-dark-900 transition-[border-color,box-shadow] duration-200 focus:outline-none focus:border-primary-500/70 focus:shadow-focus [&>option]:bg-surface-raised',
+            error ? 'border-red-500/70' : 'border-dark-200',
+            props.disabled && 'opacity-60 cursor-not-allowed'
           )}
           aria-invalid={error ? 'true' : 'false'}
           aria-describedby={error ? `${selectId}-error` : helperText ? `${selectId}-helper` : undefined}

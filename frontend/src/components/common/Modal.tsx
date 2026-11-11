@@ -32,7 +32,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
           className={clsx(
-            'w-full bg-white rounded-xl shadow-xl overflow-hidden',
+            'w-full panel-raised overflow-hidden animate-slide-up',
             sizeClasses[size]
           )}
           role="dialog"

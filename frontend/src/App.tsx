@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import type { ReactNode } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { MainLayout, AuthLayout } from './components/layout';
 import { LoginPage } from './pages/LoginPage';
@@ -13,18 +14,24 @@ import { AlertsPage } from './pages/AlertsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { ComingSoon } from './components/common/ComingSoon';
-import { isDemoMode } from './config/appMode';
+import { LandingPage } from './pages/LandingPage';
+import { AccountHomePage } from './pages/AccountHomePage';
+import { appMode, isDemoMode, isSupabaseMode } from './config/appMode';
 
 /**
- * No modo demonstração, módulos que dependem de backend ainda inexistente
- * exibem "Em desenvolvimento" em vez de botões que não funcionam.
- * As páginas originais continuam no projeto e voltam com VITE_DEMO_MODE=false.
+ * Módulos indisponíveis no modo atual exibem "Em desenvolvimento". No modo Supabase,
+ * carteiras ainda não foram migradas para o banco; nos demais módulos só a API Go
+ * (modo "api") tem implementação.
  */
-const inDemo = (page: React.ReactNode, title: string, description: string) =>
-  isDemoMode ? <ComingSoon title={title} description={description} /> : page;
+const portfolioModule = (page: ReactNode, title: string, description: string) =>
+  isSupabaseMode ? <ComingSoon title={title} description={description} /> : page;
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+const apiOnlyModule = (page: ReactNode, title: string, description: string) =>
+  appMode === 'api' ? page : <ComingSoon title={title} description={description} />;
+
+function ProtectedRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
+  const location = useLocation();
   
   if (isLoading) {
     return (
@@ -35,13 +42,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
   
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" replace state={{ from: `${location.pathname}${location.search}` }} />;
   }
   
   return <>{children}</>;
 }
 
-function PublicRoute({ children }: { children: React.ReactNode }) {
+function PublicRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
   
   if (isLoading) {
@@ -71,18 +78,18 @@ function App() {
       </Route>
       
       <Route element={<MainLayout />}>
-        <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-        <Route path="/portfolios" element={<ProtectedRoute><PortfoliosPage /></ProtectedRoute>} />
-        <Route path="/portfolios/:id" element={<ProtectedRoute><PortfolioDetailPage /></ProtectedRoute>} />
-        <Route path="/ai-analysis" element={<ProtectedRoute>{inDemo(<AIAnalysisPage />, 'Análise com IA', 'Explicações geradas por IA sobre a composição e os riscos da carteira, a partir de métricas calculadas pelo sistema.')}</ProtectedRoute>} />
-        <Route path="/analytics" element={<ProtectedRoute>{inDemo(<AnalyticsPage />, 'Analytics', 'Métricas de risco e retorno da carteira, como volatilidade, drawdown e índice de Sharpe.')}</ProtectedRoute>} />
-        <Route path="/simulations" element={<ProtectedRoute>{inDemo(<SimulationsPage />, 'Simulações', 'Projeções de Monte Carlo e testes de estresse para cenários de mercado.')}</ProtectedRoute>} />
-        <Route path="/alerts" element={<ProtectedRoute>{inDemo(<AlertsPage />, 'Alertas', 'Avisos quando um ativo ou a carteira atingir um valor definido por você.')}</ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute>{inDemo(<SettingsPage />, 'Configurações', 'Edição de perfil, senha e preferências da conta.')}</ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute>{isSupabaseMode ? <AccountHomePage /> : <DashboardPage />}</ProtectedRoute>} />
+        <Route path="/portfolios" element={<ProtectedRoute>{portfolioModule(<PortfoliosPage />, 'Carteiras', 'Carteiras, posições e operações registradas na sua conta.')}</ProtectedRoute>} />
+        <Route path="/portfolios/:id" element={<ProtectedRoute>{portfolioModule(<PortfolioDetailPage />, 'Carteira', 'Posições, transações e distribuição da carteira.')}</ProtectedRoute>} />
+        <Route path="/ai-analysis" element={<ProtectedRoute>{apiOnlyModule(<AIAnalysisPage />, 'Análise com IA', 'Explicações geradas por IA sobre a composição e os riscos da carteira, a partir de métricas calculadas pelo sistema.')}</ProtectedRoute>} />
+        <Route path="/analytics" element={<ProtectedRoute>{apiOnlyModule(<AnalyticsPage />, 'Analytics', 'Métricas de risco e retorno da carteira, como volatilidade, drawdown e índice de Sharpe.')}</ProtectedRoute>} />
+        <Route path="/simulations" element={<ProtectedRoute>{apiOnlyModule(<SimulationsPage />, 'Simulações', 'Projeções de Monte Carlo e testes de estresse para cenários de mercado.')}</ProtectedRoute>} />
+        <Route path="/alerts" element={<ProtectedRoute>{apiOnlyModule(<AlertsPage />, 'Alertas', 'Avisos quando um ativo ou a carteira atingir um valor definido por você.')}</ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute>{apiOnlyModule(<SettingsPage />, 'Configurações', 'Edição de perfil, senha e preferências da conta.')}</ProtectedRoute>} />
       </Route>
       
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<LandingPage />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

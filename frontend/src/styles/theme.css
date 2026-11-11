@@ -1,0 +1,95 @@
+/*
+ * Tokens de design. As escalas são canais RGB para permitir opacidade no Tailwind
+ * (ex.: bg-dark-50/80). Para mudar a identidade, altere apenas este arquivo.
+ *
+ * Tema escuro: a escala "dark" vai do fundo (50) ao texto de maior contraste (900);
+ * "surface" é a cor dos painéis (mapeada para a classe "white").
+ */
+:root {
+  color-scheme: dark;
+
+  --surface: 12 27 37;
+  --surface-raised: 17 36 49;
+
+  --dark-50: 7 18 26;
+  --dark-100: 16 33 45;
+  --dark-200: 31 51 65;
+  --dark-300: 48 72 88;
+  --dark-400: 96 121 137;
+  --dark-500: 134 156 170;
+  --dark-600: 166 186 198;
+  --dark-700: 200 214 222;
+  --dark-800: 225 234 239;
+  --dark-900: 242 247 249;
+
+  --primary-50: 10 41 38;
+  --primary-100: 13 58 52;
+  --primary-200: 19 92 77;
+  --primary-300: 39 150 121;
+  --primary-400: 64 214 168;
+  --primary-500: 82 240 190;
+  --primary-600: 82 240 190;
+  --primary-700: 138 247 212;
+  --primary-800: 182 250 229;
+  --primary-900: 215 253 241;
+
+  --accent-400: 120 210 255;
+  --accent-500: 91 200 255;
+  --accent-600: 56 170 235;
+
+  --green-50: 9 38 29;
+  --green-100: 12 54 40;
+  --green-200: 20 84 60;
+  --green-300: 34 140 98;
+  --green-400: 52 200 140;
+  --green-500: 60 214 150;
+  --green-600: 84 226 166;
+  --green-700: 120 234 188;
+  --green-800: 166 242 212;
+  --green-900: 206 248 230;
+
+  --red-50: 46 16 21;
+  --red-100: 64 20 27;
+  --red-200: 102 32 41;
+  --red-300: 160 52 60;
+  --red-400: 235 92 92;
+  --red-500: 255 107 104;
+  --red-600: 255 122 118;
+  --red-700: 255 152 147;
+  --red-800: 255 188 184;
+  --red-900: 255 222 220;
+
+  --yellow-50: 42 33 10;
+  --yellow-100: 58 45 12;
+  --yellow-200: 94 73 20;
+  --yellow-300: 160 124 30;
+  --yellow-400: 232 186 48;
+  --yellow-500: 250 204 70;
+  --yellow-600: 252 212 96;
+  --yellow-700: 253 224 140;
+  --yellow-800: 254 236 180;
+  --yellow-900: 255 246 214;
+
+  --blue-50: 10 30 48;
+  --blue-100: 14 44 70;
+  --blue-200: 22 70 108;
+  --blue-300: 40 120 170;
+  --blue-400: 72 176 232;
+  --blue-500: 91 200 255;
+  --blue-600: 120 210 255;
+  --blue-700: 156 222 255;
+  --blue-800: 192 234 255;
+  --blue-900: 224 245 255;
+
+  --radius-panel: 1.5rem;
+  --radius-control: 0.75rem;
+
+  --shadow-panel: 0 1px 0 0 rgb(255 255 255 / 0.04) inset, 0 24px 48px -24px rgb(0 0 0 / 0.6);
+  --shadow-glow: 0 0 0 1px rgb(var(--primary-500) / 0.35), 0 12px 40px -12px rgb(var(--primary-500) / 0.45);
+  --shadow-focus: 0 0 0 3px rgb(var(--primary-500) / 0.35);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 160ms;
+  --duration-base: 260ms;
+  --duration-slow: 900ms;
+}

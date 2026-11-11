@@ -1,175 +1,138 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { ArrowRight, FlaskConical } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
-import { Button, Input, Card, CardBody, LoadingSpinner } from '../components/common';
-import { isDemoMode } from '../config/appMode';
+import { Button, Input } from '../components/common';
+import { FormAlert, PasswordInput } from '../components/auth';
+import { isDemoMode, isSupabaseMode } from '../config/appMode';
+import { supabaseConfigError } from '../lib/supabase';
+import { errorMessage } from '../lib/errorMessage';
 
 const loginSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
+  email: z.string().trim().email('Informe um e-mail válido'),
+  password: z.string().min(1, 'Informe a senha'),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
 
-export function LoginPage() {
+function useRedirectTarget() {
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from;
+  return from && from.startsWith('/') && !from.startsWith('//') ? from : '/dashboard';
+}
+
+function DemoEntry() {
   const navigate = useNavigate();
-  const { login, isLoading } = useAuthStore();
-  const [showPassword, setShowPassword] = useState(false);
+  const login = useAuthStore((s) => s.login);
+  const target = useRedirectTarget();
   const [error, setError] = useState('');
+  const [entering, setEntering] = useState(false);
+
+  const enter = async () => {
+    setError('');
+    setEntering(true);
+    try {
+      await login('', '');
+      navigate(target, { replace: true });
+    } catch (err) {
+      setError(errorMessage(err, 'Não foi possível iniciar a demonstração. Recarregue a página.'));
+      setEntering(false);
+    }
+  };
+
+  return (
+    <div>
+      <span className="chip-live">
+        <FlaskConical className="h-3.5 w-3.5" aria-hidden="true" />
+        Modo demonstração
+      </span>
+      <h1 className="text-display mt-5 text-3xl">Explore o painel</h1>
+      <p className="mt-3 text-dark-600">
+        Crie carteiras, registre compras e vendas e acompanhe o dashboard. Os dados são fictícios e ficam salvos
+        apenas neste navegador.
+      </p>
+      {error && <div className="mt-6"><FormAlert>{error}</FormAlert></div>}
+      <Button className="mt-8 w-full" size="lg" onClick={enter} loading={entering}>
+        Entrar na demonstração
+        <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+      </Button>
+      <p className="mt-5 text-center text-sm text-dark-500">Nenhuma conta ou senha é necessária.</p>
+    </div>
+  );
+}
+
+function CredentialsForm() {
+  const navigate = useNavigate();
+  const login = useAuthStore((s) => s.login);
+  const initError = useAuthStore((s) => s.initError);
+  const target = useRedirectTarget();
+  const [error, setError] = useState('');
+  const configError = isSupabaseMode ? supabaseConfigError : null;
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
-  } = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
-  });
-
-  const [isEnteringDemo, setIsEnteringDemo] = useState(false);
-
-  const enterDemo = async () => {
-    setError('');
-    setIsEnteringDemo(true);
-    try {
-      // No modo demonstração o login é local e não usa credenciais.
-      await login('demonstracao@aiwealth.local', 'demonstracao');
-      navigate('/dashboard');
-    } catch {
-      setError('Não foi possível iniciar a demonstração. Recarregue a página e tente novamente.');
-      setIsEnteringDemo(false);
-    }
-  };
+    formState: { errors, isSubmitting },
+  } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) });
 
   const onSubmit = async (data: LoginForm) => {
     setError('');
     try {
       await login(data.email, data.password);
-      navigate('/dashboard');
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao fazer login. Verifique suas credenciais.');
+      navigate(target, { replace: true });
+    } catch (err) {
+      setError(errorMessage(err, 'Não foi possível entrar. Tente novamente.'));
     }
   };
 
-  if (isDemoMode) {
-    return (
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-6">
-            <div className="w-12 h-12 rounded-xl bg-primary-600 flex items-center justify-center">
-              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
-            </div>
-            <span className="text-2xl font-bold text-dark-900">AI Wealth Advisor</span>
-          </div>
-          <h1 className="text-2xl font-bold text-dark-900">Versão de demonstração</h1>
-          <p className="text-dark-600 mt-2">Organize carteiras e acompanhe seus investimentos</p>
-        </div>
-
-        <Card>
-          <CardBody>
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm" role="alert">
-                {error}
-              </div>
-            )}
-            <p className="text-dark-700">
-              Crie carteiras, registre compras e vendas e veja o dashboard atualizar. Os dados são fictícios e ficam
-              salvos apenas neste navegador.
-            </p>
-            <Button className="w-full mt-6" size="lg" onClick={enterDemo} loading={isEnteringDemo}>
-              Entrar no modo demonstração
-            </Button>
-            <p className="mt-4 text-sm text-dark-500 text-center">
-              O acesso com conta própria será liberado quando o servidor estiver integrado.
-            </p>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="w-full max-w-md">
-      <div className="text-center mb-8">
-        <Link to="/" className="inline-flex items-center gap-2 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-primary-600 flex items-center justify-center">
-            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
-          </div>
-          <span className="text-2xl font-bold text-dark-900">AI Wealth Advisor</span>
-        </Link>
-        <h1 className="text-2xl font-bold text-dark-900">Bem-vindo de volta</h1>
-        <p className="text-dark-600 mt-2">Faça login para acessar sua conta</p>
+    <div>
+      <h1 className="text-display text-3xl">Entrar</h1>
+      <p className="mt-3 text-dark-600">Acesse sua conta para acompanhar seu patrimônio.</p>
+
+      <div className="mt-6 space-y-3">
+        {configError && <FormAlert>{configError}</FormAlert>}
+        {!configError && initError && <FormAlert>{initError}</FormAlert>}
+        {error && <FormAlert>{error}</FormAlert>}
       </div>
 
-      <Card>
-        <CardBody>
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm" role="alert">
-              {error}
-            </div>
-          )}
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5" noValidate>
+        <Input
+          {...register('email')}
+          id="email"
+          type="email"
+          label="E-mail"
+          autoComplete="email"
+          placeholder="voce@exemplo.com"
+          error={errors.email?.message}
+          disabled={Boolean(configError)}
+        />
+        <PasswordInput
+          {...register('password')}
+          id="password"
+          label="Senha"
+          autoComplete="current-password"
+          error={errors.password?.message}
+          disabled={Boolean(configError)}
+        />
+        <Button type="submit" size="lg" className="w-full" loading={isSubmitting} disabled={Boolean(configError)}>
+          Entrar
+        </Button>
+      </form>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            <Input
-              label="Email"
-              type="email"
-              placeholder="seu@email.com"
-              error={errors.email?.message}
-              {...register('email')}
-              autoComplete="email"
-            />
-
-            <div className="relative">
-              <Input
-                label="Senha"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                error={errors.password?.message}
-                {...register('password')}
-                autoComplete="current-password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-[38px] text-dark-400 hover:text-dark-600"
-                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-              >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" className="w-4 h-4 rounded border-dark-300 text-primary-600 focus:ring-primary-500" />
-                <span className="text-sm text-dark-600">Lembrar-me</span>
-              </label>
-              <Link to="/forgot-password" className="text-sm text-primary-600 hover:text-primary-700">
-                Esqueceu a senha?
-              </Link>
-            </div>
-
-            <Button type="submit" className="w-full" size="lg" loading={isLoading}>
-              {isLoading ? <LoadingSpinner size="sm" /> : 'Entrar'}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-dark-600">
-              Não tem conta?{' '}
-              <Link to="/register" className="text-primary-600 hover:text-primary-700 font-medium">
-                Cadastre-se
-              </Link>
-            </p>
-          </div>
-        </CardBody>
-      </Card>
+      <p className="mt-8 text-center text-sm text-dark-600">
+        Ainda não tem conta?{' '}
+        <Link to="/register" className="font-medium text-primary-600 hover:text-primary-700">
+          Criar conta
+        </Link>
+      </p>
     </div>
   );
+}
+
+export function LoginPage() {
+  return isDemoMode ? <DemoEntry /> : <CredentialsForm />;
 }

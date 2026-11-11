@@ -8,7 +8,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
     return (
       <div
         ref={ref}
-        className={clsx('bg-white rounded-xl shadow-sm border border-dark-200 overflow-hidden', className)}
+        className={clsx('panel overflow-hidden', className)}
         {...props}
       >
         {children}
@@ -56,7 +56,7 @@ export const CardFooter = forwardRef<HTMLDivElement, CardProps>(
     return (
       <div
         ref={ref}
-        className={clsx('px-6 py-4 border-t border-dark-200 bg-dark-50', className)}
+        className={clsx('px-6 py-4 border-t border-dark-200 bg-dark-50/40', className)}
         {...props}
       >
         {children}

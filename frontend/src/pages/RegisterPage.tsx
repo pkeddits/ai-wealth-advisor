@@ -3,176 +3,150 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { MailCheck } from 'lucide-react';
+import clsx from 'clsx';
 import { useAuthStore } from '../store/authStore';
-import { Button, Input, Select, Card, CardBody, LoadingSpinner } from '../components/common';
+import { Button, Input } from '../components/common';
+import { FormAlert, PasswordInput } from '../components/auth';
+import { isSupabaseMode } from '../config/appMode';
+import { supabaseConfigError } from '../lib/supabase';
+import { errorMessage } from '../lib/errorMessage';
 
-const registerSchema = z.object({
-  name: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres'),
-  email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
-  confirmPassword: z.string(),
-  riskProfile: z.enum(['conservador', 'moderado', 'arrojado']),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Senhas não coincidem',
-  path: ['confirmPassword'],
-});
+const registerSchema = z
+  .object({
+    name: z.string().trim().min(2, 'Informe pelo menos 2 caracteres').max(120, 'Use no máximo 120 caracteres'),
+    email: z.string().trim().email('Informe um e-mail válido'),
+    password: z
+      .string()
+      .min(8, 'Use pelo menos 8 caracteres')
+      .regex(/[A-Za-z]/, 'Inclua pelo menos uma letra')
+      .regex(/\d/, 'Inclua pelo menos um número'),
+    confirmPassword: z.string(),
+    riskProfile: z.enum(['conservador', 'moderado', 'arrojado']),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'As senhas não coincidem',
+    path: ['confirmPassword'],
+  });
 
 type RegisterForm = z.infer<typeof registerSchema>;
 
-const riskProfiles = [
-  { value: 'conservador', label: 'Conservador - Baixo risco, renda fixa' },
-  { value: 'moderado', label: 'Moderado - Equilibrado risco/retorno' },
-  { value: 'arrojado', label: 'Arrojado - Alto risco, maior potencial' },
+const RISK_PROFILES: { value: RegisterForm['riskProfile']; label: string; description: string }[] = [
+  { value: 'conservador', label: 'Conservador', description: 'Prioriza segurança e estabilidade' },
+  { value: 'moderado', label: 'Moderado', description: 'Equilibra risco e retorno' },
+  { value: 'arrojado', label: 'Arrojado', description: 'Aceita oscilações por mais retorno' },
 ];
 
 export function RegisterPage() {
   const navigate = useNavigate();
-  const { register: registerUser, isLoading } = useAuthStore();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const registerUser = useAuthStore((s) => s.register);
   const [error, setError] = useState('');
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const configError = isSupabaseMode ? supabaseConfigError : null;
 
   const {
     register,
     handleSubmit,
     watch,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
+    defaultValues: { riskProfile: 'moderado' },
   });
-
-  const password = watch('password');
+  const selectedProfile = watch('riskProfile');
 
   const onSubmit = async (data: RegisterForm) => {
     setError('');
     try {
-      await registerUser({ email: data.email, password: data.password, name: data.name, riskProfile: data.riskProfile });
-      navigate('/dashboard');
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao criar conta. Tente novamente.');
+      const result = await registerUser({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        riskProfile: data.riskProfile,
+      });
+      if (result.requiresEmailConfirmation) setPendingEmail(data.email);
+      else navigate('/dashboard', { replace: true });
+    } catch (err) {
+      setError(errorMessage(err, 'Não foi possível criar a conta. Tente novamente.'));
     }
   };
 
-  return (
-    <div className="w-full max-w-md">
-      <div className="text-center mb-8">
-        <Link to="/" className="inline-flex items-center gap-2 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-primary-600 flex items-center justify-center">
-            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
-          </div>
-          <span className="text-2xl font-bold text-dark-900">AI Wealth Advisor</span>
+  if (pendingEmail) {
+    return (
+      <div className="text-center">
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-primary-500/40 bg-primary-500/10 text-primary-500">
+          <MailCheck className="h-6 w-6" aria-hidden="true" />
+        </span>
+        <h1 className="text-display mt-6 text-2xl">Confirme seu e-mail</h1>
+        <p className="mt-3 text-dark-600">
+          Enviamos um link de confirmação para <strong className="font-medium text-dark-900">{pendingEmail}</strong>.
+          Depois de confirmar, entre com seu e-mail e senha.
+        </p>
+        <Link to="/login" className="mt-8 inline-flex h-11 items-center justify-center rounded-control border border-dark-200 bg-dark-100 px-5 font-medium text-dark-900 hover:bg-dark-200">
+          Ir para o login
         </Link>
-        <h1 className="text-2xl font-bold text-dark-900">Crie sua conta</h1>
-        <p className="text-dark-600 mt-2">Comece a investir com inteligência artificial</p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h1 className="text-display text-3xl">Criar conta</h1>
+      <p className="mt-3 text-dark-600">Seus dados ficam vinculados somente à sua conta.</p>
+
+      <div className="mt-6 space-y-3">
+        {configError && <FormAlert>{configError}</FormAlert>}
+        {error && <FormAlert>{error}</FormAlert>}
       </div>
 
-      <Card>
-        <CardBody>
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm" role="alert">
-              {error}
-            </div>
-          )}
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5" noValidate>
+        <Input {...register('name')} id="name" label="Nome" autoComplete="name" error={errors.name?.message} disabled={Boolean(configError)} />
+        <Input
+          {...register('email')}
+          id="email"
+          type="email"
+          label="E-mail"
+          autoComplete="email"
+          placeholder="voce@exemplo.com"
+          error={errors.email?.message}
+          disabled={Boolean(configError)}
+        />
+        <div className="grid gap-5 sm:grid-cols-2">
+          <PasswordInput {...register('password')} id="password" label="Senha" autoComplete="new-password" error={errors.password?.message} disabled={Boolean(configError)} />
+          <PasswordInput {...register('confirmPassword')} id="confirmPassword" label="Confirmar senha" autoComplete="new-password" error={errors.confirmPassword?.message} disabled={Boolean(configError)} />
+        </div>
+        <p className="-mt-2 text-xs text-dark-500">Mínimo de 8 caracteres, com letras e números.</p>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            <Input
-              label="Nome completo"
-              type="text"
-              placeholder="João Silva"
-              error={errors.name?.message}
-              {...register('name')}
-              autoComplete="name"
-            />
-
-            <Input
-              label="Email"
-              type="email"
-              placeholder="seu@email.com"
-              error={errors.email?.message}
-              {...register('email')}
-              autoComplete="email"
-            />
-
-            <div className="relative">
-              <Input
-                label="Senha"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                error={errors.password?.message}
-                {...register('password')}
-                autoComplete="new-password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-[38px] text-dark-400 hover:text-dark-600"
-                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+        <fieldset>
+          <legend className="mb-2 text-sm font-medium text-dark-700">Perfil de investidor</legend>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {RISK_PROFILES.map((profile) => (
+              <label
+                key={profile.value}
+                className={clsx(
+                  'cursor-pointer rounded-control border px-3 py-2.5 transition-colors has-[:focus-visible]:shadow-focus',
+                  selectedProfile === profile.value ? 'border-primary-500/60 bg-primary-500/10' : 'border-dark-200 bg-dark-50/60 hover:border-dark-300',
+                )}
               >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
-
-            <div className="relative">
-              <Input
-                label="Confirmar senha"
-                type={showConfirmPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                error={errors.confirmPassword?.message}
-                {...register('confirmPassword')}
-                autoComplete="new-password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-[38px] text-dark-400 hover:text-dark-600"
-                aria-label={showConfirmPassword ? 'Ocultar senha' : 'Mostrar senha'}
-              >
-                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-dark-700 mb-1">Perfil de risco</label>
-              <Select
-                label=""
-                placeholder="Selecione seu perfil"
-                options={riskProfiles}
-                error={errors.riskProfile?.message}
-                {...register('riskProfile')}
-              />
-            </div>
-
-            <div className="flex items-start gap-2">
-              <input
-                type="checkbox"
-                id="terms"
-                required
-                className="mt-1 w-4 h-4 rounded border-dark-300 text-primary-600 focus:ring-primary-500"
-              />
-              <label htmlFor="terms" className="text-sm text-dark-600">
-                Aceito os <Link to="/terms" className="text-primary-600 hover:underline">Termos de Uso</Link> e a{' '}
-                <Link to="/privacy" className="text-primary-600 hover:underline">Política de Privacidade</Link>
+                <input type="radio" value={profile.value} {...register('riskProfile')} className="sr-only" disabled={Boolean(configError)} />
+                <span className="block text-sm font-medium text-dark-900">{profile.label}</span>
+                <span className="mt-0.5 block text-xs leading-snug text-dark-500">{profile.description}</span>
               </label>
-            </div>
-
-            <Button type="submit" className="w-full" size="lg" loading={isLoading}>
-              {isLoading ? <LoadingSpinner size="sm" /> : 'Criar conta'}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-dark-600">
-              Já tem conta?{' '}
-              <Link to="/login" className="text-primary-600 hover:text-primary-700 font-medium">
-                Faça login
-              </Link>
-            </p>
+            ))}
           </div>
-        </CardBody>
-      </Card>
+        </fieldset>
+
+        <Button type="submit" size="lg" className="w-full" loading={isSubmitting} disabled={Boolean(configError)}>
+          Criar conta
+        </Button>
+      </form>
+
+      <p className="mt-8 text-center text-sm text-dark-600">
+        Já tem conta?{' '}
+        <Link to="/login" className="font-medium text-primary-600 hover:text-primary-700">
+          Entrar
+        </Link>
+      </p>
     </div>
   );
 }

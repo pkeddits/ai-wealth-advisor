@@ -1,3 +1,7 @@
+@import '@fontsource-variable/inter/wght.css';
+@import '@fontsource-variable/unbounded/wght.css';
+@import './styles/theme.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,60 +9,97 @@
 @layer base {
   html {
     @apply scroll-smooth;
+    -webkit-tap-highlight-color: transparent;
   }
-  
+
   body {
-    @apply bg-dark-50 text-dark-900 antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+    @apply bg-dark-50 text-dark-700 antialiased;
+    font-family: theme('fontFamily.sans');
+    font-variant-numeric: tabular-nums;
+    min-height: 100dvh;
   }
-  
-  /* Custom scrollbar */
+
+  h1, h2, h3 {
+    @apply text-dark-900;
+    text-wrap: balance;
+  }
+
+  ::selection {
+    background: rgb(var(--primary-500) / 0.3);
+    color: rgb(var(--dark-900));
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--primary-500));
+    outline-offset: 2px;
+  }
+
+  input[type='date']::-webkit-calendar-picker-indicator {
+    filter: invert(0.8);
+  }
+
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
   }
-  
+
   ::-webkit-scrollbar-track {
-    @apply bg-dark-100;
+    background: rgb(var(--dark-50));
   }
-  
+
   ::-webkit-scrollbar-thumb {
-    @apply bg-dark-300 rounded-full;
-  }
-  
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-dark-400;
+    @apply rounded-full;
+    background: rgb(var(--dark-200));
+    border: 2px solid rgb(var(--dark-50));
   }
 }
 
 @layer components {
-  .btn-primary {
-    @apply inline-flex items-center justify-center px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+  /* Painel principal: superfície com realce superior e sombra profunda. */
+  .panel {
+    @apply rounded-panel border border-dark-200/80 bg-white shadow-panel;
   }
-  
-  .btn-secondary {
-    @apply inline-flex items-center justify-center px-4 py-2 bg-dark-100 text-dark-900 font-medium rounded-lg hover:bg-dark-200 focus:outline-none focus:ring-2 focus:ring-dark-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+
+  .panel-raised {
+    @apply rounded-panel border border-dark-200 bg-surface-raised shadow-panel;
   }
-  
-  .btn-danger {
-    @apply inline-flex items-center justify-center px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium;
   }
-  
-  .card {
-    @apply bg-white rounded-xl shadow-sm border border-dark-200 overflow-hidden;
+
+  .chip-live {
+    @apply chip border-primary-500/30 bg-primary-500/10 text-primary-700;
   }
-  
-  .input {
-    @apply w-full px-3 py-2 border border-dark-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow;
+
+  .chip-building {
+    @apply chip border-accent-500/30 bg-accent-500/10 text-accent-400;
   }
-  
-  .label {
-    @apply block text-sm font-medium text-dark-700 mb-1;
+
+  .chip-planned {
+    @apply chip border-dark-300 bg-dark-100 text-dark-600;
+  }
+
+  .text-display {
+    @apply font-display font-semibold tracking-tight text-dark-900;
+  }
+
+  /* Textura de grade usada em fundos de seções de destaque. */
+  .bg-grid {
+    background-image:
+      linear-gradient(rgb(var(--dark-200) / 0.35) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--dark-200) / 0.35) 1px, transparent 1px);
+    background-size: 56px 56px;
   }
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
   }
 }

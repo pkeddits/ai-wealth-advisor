@@ -34,7 +34,7 @@ export function Table<T>({
           <thead>
             <tr className="border-b border-dark-200">
               {columns.map((col) => (
-                <th key={col.key} className="px-4 py-3 text-left text-xs font-medium text-dark-500 uppercase tracking-wider">
+                <th key={col.key} className="px-4 py-3 text-left text-xs font-medium text-dark-500">
                   {col.header}
                 </th>
               ))}
@@ -73,7 +73,7 @@ export function Table<T>({
               <th
                 key={col.key}
                 className={clsx(
-                  'px-4 py-3 text-left text-xs font-medium text-dark-500 uppercase tracking-wider',
+                  'px-4 py-3 text-left text-xs font-medium text-dark-500',
                   col.className
                 )}
               >
