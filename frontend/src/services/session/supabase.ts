@@ -1,6 +1,6 @@
 import type { AuthError as SupabaseAuthError, User as SupabaseUser } from '@supabase/supabase-js';
 import type { User } from '../../types';
-import { getSupabase } from '../../lib/supabase';
+import { getSupabase, supabaseConfigError } from '../../lib/supabase';
 import { AuthError, type RiskProfile, type SessionGateway } from './types';
 
 const MESSAGES: Record<string, string> = {
@@ -89,6 +89,7 @@ export const supabaseSession: SessionGateway = {
   },
 
   subscribe(listener) {
+    if (supabaseConfigError) return () => undefined;
     const { data } = getSupabase().auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') listener(null);
       // Adiado para fora do callback: chamadas ao Supabase dentro dele podem travar o cliente.

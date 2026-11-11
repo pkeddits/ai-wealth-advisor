@@ -86,7 +86,7 @@ export function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-dark-500">Valor Total</p>
-                <p className="text-2xl font-bold text-dark-900 mt-1">
+                <p className="mt-1 whitespace-nowrap text-xl font-bold text-dark-900 xl:text-2xl">
                   R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
               </div>
@@ -102,7 +102,7 @@ export function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-dark-500">Retorno Total</p>
-                <p className={clsx('text-2xl font-bold mt-1', totalReturn >= 0 ? 'text-green-600' : 'text-red-600')}>
+                <p className={clsx('mt-1 whitespace-nowrap text-xl font-bold xl:text-2xl', totalReturn >= 0 ? 'text-green-600' : 'text-red-600')}>
                   {totalReturn >= 0 ? '+' : ''}R$ {Math.abs(totalReturn).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
               </div>

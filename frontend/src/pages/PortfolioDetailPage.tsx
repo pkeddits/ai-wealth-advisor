@@ -164,13 +164,13 @@ export function PortfolioDetailPage() {
         <Card>
           <CardBody className="p-5">
             <p className="text-sm text-dark-500">Valor Total</p>
-            <p className="text-3xl font-bold text-dark-900 mt-1">{formatCurrency(totalValue)}</p>
+            <p className="mt-1 whitespace-nowrap text-2xl font-bold text-dark-900 sm:text-3xl">{formatCurrency(totalValue)}</p>
           </CardBody>
         </Card>
         <Card>
           <CardBody className="p-5">
             <p className="text-sm text-dark-500">Ganho/Perda Não Realizado</p>
-            <p className={clsx('text-3xl font-bold mt-1', totalGain >= 0 ? 'text-green-600' : 'text-red-600')}>
+            <p className={clsx('mt-1 whitespace-nowrap text-2xl font-bold sm:text-3xl', totalGain >= 0 ? 'text-green-600' : 'text-red-600')}>
               {totalGain >= 0 ? '+' : ''}{formatCurrency(totalGain)}
             </p>
             <p className={clsx('text-sm', totalGainPct >= 0 ? 'text-green-600' : 'text-red-600')}>

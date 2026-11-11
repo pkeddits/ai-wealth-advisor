@@ -24,7 +24,7 @@ export function HeroPreview() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm text-dark-500">Patrimônio total</p>
-            <p className="mt-1 font-display text-3xl font-semibold tracking-tight text-dark-900 sm:text-4xl">R$ 48.215,40</p>
+            <p className="mt-1 whitespace-nowrap font-display text-[1.6rem] font-semibold tracking-tight text-dark-900 sm:text-4xl">R$ 48.215,40</p>
             <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-medium text-green-600">
               <TrendingUp className="h-4 w-4" aria-hidden="true" />
               +R$ 2.384,10 em 30 dias
