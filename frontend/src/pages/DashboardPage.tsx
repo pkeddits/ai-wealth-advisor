@@ -38,11 +38,15 @@ function EmptyState({ onLoadSample, loadingSample }: { onLoadSample: () => void;
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
     >
       <Horizon className="absolute inset-x-0 top-[55%] -z-10 h-[620px]" intensity="soft" />
-      <h2 className="text-display mx-auto max-w-xl text-3xl sm:text-4xl">Nenhuma carteira criada</h2>
-      <p className="mx-auto mt-4 max-w-md text-dark-600">Crie sua primeira carteira e registre suas compras para acompanhar o patrimônio.</p>
+      <h2 className="text-display mx-auto max-w-xl text-3xl sm:text-4xl">{isDemoMode ? 'Nenhuma carteira criada' : 'Boas-vindas ao seu painel'}</h2>
+      <p className="mx-auto mt-4 max-w-md text-dark-600">
+        {isDemoMode
+          ? 'Crie sua primeira carteira e registre suas compras para acompanhar o patrimônio.'
+          : 'Comece criando uma carteira. Depois, registre suas compras e vendas: posições, preço médio e capital aplicado são calculados a partir delas.'}
+      </p>
       <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
         <Link to="/portfolios?nova=1">
-          <Button size="lg" icon={<Plus className="h-4 w-4" />}>Criar carteira</Button>
+          <Button size="lg" icon={<Plus className="h-4 w-4" />}>{isDemoMode ? 'Criar carteira' : 'Criar primeira carteira'}</Button>
         </Link>
         {isDemoMode && (
           <Button size="lg" variant="secondary" onClick={onLoadSample} loading={loadingSample}>
@@ -131,13 +135,13 @@ export function DashboardPage() {
             </div>
             <div className="flex flex-col gap-4 xl:col-span-4">
               <StatsStrip portfolios={portfolios.length} assets={holdings.length} operations={transactionCount} />
-              <AllocationPanel holdings={holdings} />
+              <AllocationPanel holdings={holdings} marketAvailable={totals.marketAvailable} />
             </div>
           </div>
 
           <div className="grid items-start gap-4 lg:grid-cols-2 xl:grid-cols-12">
             <PortfoliosPanel portfolios={portfolios} />
-            <HoldingsPanel holdings={holdings} totalValue={totals.totalValue} />
+            <HoldingsPanel holdings={holdings} />
             <div className="lg:col-span-2 xl:col-span-3">
               <InsightsPanel insights={insights} />
             </div>

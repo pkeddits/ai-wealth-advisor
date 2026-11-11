@@ -105,9 +105,11 @@ export function PortfoliosPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filteredPortfolios.map((portfolio, index) => {
-            const pct = portfolio.totalReturnPct || 0;
+            const pct = portfolio.totalReturnPct;
             const positions = portfolio.positions ?? [];
-            const total = positions.reduce((sum, p) => sum + (p.currentValue || 0), 0);
+            const marketAvailable = portfolio.totalValue !== null;
+            const weight = (p: (typeof positions)[number]) => (marketAvailable ? p.currentValue ?? 0 : p.investedValue);
+            const total = positions.reduce((sum, p) => sum + weight(p), 0);
             return (
               <motion.div
                 key={portfolio.id}
@@ -130,16 +132,20 @@ export function PortfoliosPage() {
                   <p className="mt-0.5 truncate text-sm text-dark-500">{portfolio.description || 'Sem descrição'}</p>
                   <div className="mt-6 flex items-end justify-between gap-3">
                     <p className="whitespace-nowrap text-2xl font-semibold tracking-tight text-dark-900">
-                      {fmt.money(portfolio.totalValue || 0)}
+                      {fmt.money(portfolio.totalValue ?? portfolio.totalInvested)}
                     </p>
-                    <span className={clsx('rounded-full px-2 py-0.5 text-sm font-medium', pct >= 0 ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600')}>
-                      {fmt.returnDisplay === 'absolute' ? fmt.signedMoney((portfolio.totalValue || 0) - (portfolio.totalInvested || 0)) : fmt.percent(pct)}
-                    </span>
+                    {pct === null || portfolio.totalReturn === null ? (
+                      <span className="rounded-full bg-dark-100 px-2 py-0.5 text-xs text-dark-500">custo investido</span>
+                    ) : (
+                      <span className={clsx('rounded-full px-2 py-0.5 text-sm font-medium', pct >= 0 ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600')}>
+                        {fmt.returnDisplay === 'absolute' ? fmt.signedMoney(portfolio.totalReturn) : fmt.percent(pct)}
+                      </span>
+                    )}
                   </div>
                   <div className="mt-4 flex h-1.5 gap-0.5 overflow-hidden rounded-full bg-dark-100" aria-hidden="true">
                     {total > 0 &&
                       positions.map((p, i) => (
-                        <span key={p.assetId} className="h-full" style={{ width: `${((p.currentValue || 0) / total) * 100}%`, background: SERIES_COLORS[i % SERIES_COLORS.length] }} />
+                        <span key={p.assetId} className="h-full" style={{ width: `${(weight(p) / total) * 100}%`, background: SERIES_COLORS[i % SERIES_COLORS.length] }} />
                       ))}
                   </div>
                   <p className="mt-3 flex items-center justify-between text-xs text-dark-500">

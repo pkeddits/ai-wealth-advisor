@@ -59,16 +59,16 @@ export function StatsStrip({ portfolios, assets, operations }: { portfolios: num
   );
 }
 
-export function AllocationPanel({ holdings }: { holdings: AggregatedHolding[] }) {
+export function AllocationPanel({ holdings, marketAvailable }: { holdings: AggregatedHolding[]; marketAvailable: boolean }) {
   const fmt = useDisplayFormat();
   const byClass = new Map<string, number>();
-  for (const h of holdings) byClass.set(h.assetClass, (byClass.get(h.assetClass) ?? 0) + h.currentValue);
+  for (const h of holdings) byClass.set(h.assetClass, (byClass.get(h.assetClass) ?? 0) + (marketAvailable ? h.currentValue ?? 0 : h.investedValue));
   const slices = [...byClass.entries()]
     .sort((a, b) => b[1] - a[1])
     .map(([cls, value], i) => ({ key: cls, label: assetClassLabel(cls), value, color: SERIES_COLORS[i % SERIES_COLORS.length] }));
 
   return (
-    <PanelCard title="Distribuição por classe" delay={0.1}>
+    <PanelCard title={marketAvailable ? 'Distribuição por classe' : 'Distribuição pelo custo investido'} delay={0.1}>
       {slices.length ? (
         <AllocationDonut slices={slices} formatValue={fmt.money} size={176} stacked />
       ) : (
@@ -78,9 +78,11 @@ export function AllocationPanel({ holdings }: { holdings: AggregatedHolding[] })
   );
 }
 
+const shownValue = (p: Portfolio) => p.totalValue ?? p.totalInvested ?? 0;
+
 export function PortfoliosPanel({ portfolios }: { portfolios: Portfolio[] }) {
   const fmt = useDisplayFormat();
-  const max = Math.max(...portfolios.map((p) => p.totalValue || 0), 1);
+  const max = Math.max(...portfolios.map(shownValue), 1);
   return (
     <PanelCard
       title="Carteiras"
@@ -90,7 +92,7 @@ export function PortfoliosPanel({ portfolios }: { portfolios: Portfolio[] }) {
     >
       <ul className="-mx-2 space-y-1">
         {portfolios.slice(0, 5).map((p) => {
-          const pct = p.totalReturnPct || 0;
+          const pct = p.totalReturnPct;
           return (
             <li key={p.id}>
               <Link to={`/portfolios/${p.id}`} className="group flex items-center gap-3 rounded-2xl px-2 py-2.5 transition-colors hover:bg-dark-100/70">
@@ -103,15 +105,19 @@ export function PortfoliosPanel({ portfolios }: { portfolios: Portfolio[] }) {
                     <motion.span
                       className="block h-full rounded-full bg-brand"
                       initial={{ width: 0 }}
-                      animate={{ width: `${((p.totalValue || 0) / max) * 100}%` }}
+                      animate={{ width: `${(shownValue(p) / max) * 100}%` }}
                       transition={{ duration: 0.9, delay: 0.3, ease: EASE }}
                     />
                   </span>
                   <span className="mt-1 block text-xs text-dark-500">{riskProfileLabel(p.riskProfile)}</span>
                 </span>
                 <span className="text-right">
-                  <span className="block whitespace-nowrap text-sm font-medium text-dark-900">{fmt.money(p.totalValue || 0)}</span>
-                  <span className={clsx('block text-xs', pct >= 0 ? 'text-green-600' : 'text-red-600')}>{fmt.returnDisplay === 'absolute' ? fmt.signedMoney((p.totalValue || 0) - (p.totalInvested || 0)) : fmt.percent(pct)}</span>
+                  <span className="block whitespace-nowrap text-sm font-medium text-dark-900">{fmt.money(shownValue(p))}</span>
+                  {pct === null || p.totalReturn === null ? (
+                    <span className="block text-xs text-dark-500">custo investido</span>
+                  ) : (
+                    <span className={clsx('block text-xs', pct >= 0 ? 'text-green-600' : 'text-red-600')}>{fmt.returnDisplay === 'absolute' ? fmt.signedMoney(p.totalReturn) : fmt.percent(pct)}</span>
+                  )}
                 </span>
                 <ChevronRight className="h-4 w-4 text-dark-400 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
               </Link>
@@ -123,15 +129,18 @@ export function PortfoliosPanel({ portfolios }: { portfolios: Portfolio[] }) {
   );
 }
 
-export function HoldingsPanel({ holdings, totalValue }: { holdings: AggregatedHolding[]; totalValue: number }) {
+export function HoldingsPanel({ holdings }: { holdings: AggregatedHolding[] }) {
   const fmt = useDisplayFormat();
   return (
     <PanelCard title="Principais posições" delay={0.25} className="xl:col-span-4">
       {holdings.length ? (
         <ul className="space-y-3.5">
           {holdings.slice(0, 5).map((h, i) => {
-            const share = totalValue > 0 ? (h.currentValue / totalValue) * 100 : 0;
-            const gain = h.investedValue > 0 ? ((h.currentValue - h.investedValue) / h.investedValue) * 100 : 0;
+            const market = holdings.every((x) => x.currentValue !== null);
+            const base = holdings.reduce((sum, x) => sum + (market ? x.currentValue ?? 0 : x.investedValue), 0);
+            const value = market ? h.currentValue ?? 0 : h.investedValue;
+            const share = base > 0 ? (value / base) * 100 : 0;
+            const gain = h.currentValue !== null && h.investedValue > 0 ? ((h.currentValue - h.investedValue) / h.investedValue) * 100 : null;
             return (
               <li key={h.assetId}>
                 <div className="flex items-center gap-3">
@@ -143,8 +152,12 @@ export function HoldingsPanel({ holdings, totalValue }: { holdings: AggregatedHo
                     <span className="block truncate text-xs text-dark-500">{h.name}</span>
                   </span>
                   <span className="text-right">
-                    <span className="block whitespace-nowrap text-sm text-dark-900">{fmt.money(h.currentValue)}</span>
-                    <span className={clsx('block text-xs', gain >= 0 ? 'text-green-600' : 'text-red-600')}>{gain >= 0 ? '+' : ''}{gain.toFixed(2)}%</span>
+                    <span className="block whitespace-nowrap text-sm text-dark-900">{fmt.money(value)}</span>
+                    {gain === null ? (
+                      <span className="block text-xs text-dark-500">custo</span>
+                    ) : (
+                      <span className={clsx('block text-xs', gain >= 0 ? 'text-green-600' : 'text-red-600')}>{gain >= 0 ? '+' : ''}{gain.toFixed(2)}%</span>
+                    )}
                   </span>
                 </div>
                 <div className="mt-2 flex items-center gap-2">

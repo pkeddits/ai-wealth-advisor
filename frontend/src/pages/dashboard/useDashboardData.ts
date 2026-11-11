@@ -16,7 +16,8 @@ export interface AggregatedHolding {
   symbol: string;
   name: string;
   assetClass: string;
-  currentValue: number;
+  /** null quando algum ativo não tem cotação. */
+  currentValue: number | null;
   investedValue: number;
 }
 
@@ -47,10 +48,12 @@ export function useDashboardData() {
   }, [portfolioIds, portfolios]);
 
   const totals = useMemo(() => {
-    const totalValue = portfolios.reduce((s, p) => s + (p.totalValue || 0), 0);
     const totalInvested = portfolios.reduce((s, p) => s + (p.totalInvested || 0), 0);
+    const marketAvailable = portfolios.every((p) => p.totalValue !== null);
+    if (!marketAvailable) return { totalValue: null, totalInvested, totalReturn: null, totalReturnPct: null, marketAvailable };
+    const totalValue = portfolios.reduce((s, p) => s + (p.totalValue as number), 0);
     const totalReturn = totalValue - totalInvested;
-    return { totalValue, totalInvested, totalReturn, totalReturnPct: totalInvested > 0 ? (totalReturn / totalInvested) * 100 : 0 };
+    return { totalValue, totalInvested, totalReturn, totalReturnPct: totalInvested > 0 ? (totalReturn / totalInvested) * 100 : 0, marketAvailable };
   }, [portfolios]);
 
   const holdings = useMemo<AggregatedHolding[]>(() => {
@@ -62,15 +65,15 @@ export function useDashboardData() {
           symbol: pos.asset?.symbol ?? pos.assetId,
           name: pos.asset?.name ?? '',
           assetClass: pos.asset?.class ?? 'outros',
-          currentValue: 0,
+          currentValue: pos.currentValue === null ? null : 0,
           investedValue: 0,
         };
-        current.currentValue += pos.currentValue || 0;
+        current.currentValue = current.currentValue === null || pos.currentValue === null ? null : current.currentValue + pos.currentValue;
         current.investedValue += pos.investedValue || 0;
         map.set(pos.assetId, current);
       }
     }
-    return [...map.values()].sort((a, b) => b.currentValue - a.currentValue);
+    return [...map.values()].sort((a, b) => (b.currentValue ?? b.investedValue) - (a.currentValue ?? a.investedValue));
   }, [portfolios]);
 
   const timeline = useMemo<TimelinePoint[]>(() => {

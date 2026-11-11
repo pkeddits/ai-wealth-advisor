@@ -15,18 +15,10 @@ import { SettingsPage } from './pages/SettingsPage';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { ComingSoon } from './components/common/ComingSoon';
 import { LandingPage } from './pages/LandingPage';
-import { AccountHomePage } from './pages/AccountHomePage';
-import { appMode, isDemoMode, isSupabaseMode } from './config/appMode';
+import { appMode, isDemoMode } from './config/appMode';
 import { usePreferences } from './store/preferencesStore';
 
-/**
- * Módulos indisponíveis no modo atual exibem "Em desenvolvimento". No modo Supabase,
- * carteiras ainda não foram migradas para o banco; nos demais módulos só a API Go
- * (modo "api") tem implementação.
- */
-const portfolioModule = (page: ReactNode, title: string, description: string) =>
-  isSupabaseMode ? <ComingSoon title={title} description={description} /> : page;
-
+/** IA, analytics, simulações e alertas só têm implementação na API Go (modo "api"). */
 const apiOnlyModule = (page: ReactNode, title: string, description: string) =>
   appMode === 'api' ? page : <ComingSoon title={title} description={description} />;
 
@@ -79,9 +71,9 @@ function App() {
       </Route>
       
       <Route element={<MainLayout />}>
-        <Route path="/dashboard" element={<ProtectedRoute>{isSupabaseMode ? <AccountHomePage /> : <DashboardPage />}</ProtectedRoute>} />
-        <Route path="/portfolios" element={<ProtectedRoute>{portfolioModule(<PortfoliosPage />, 'Carteiras', 'Carteiras, posições e operações registradas na sua conta.')}</ProtectedRoute>} />
-        <Route path="/portfolios/:id" element={<ProtectedRoute>{portfolioModule(<PortfolioDetailPage />, 'Carteira', 'Posições, transações e distribuição da carteira.')}</ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+        <Route path="/portfolios" element={<ProtectedRoute><PortfoliosPage /></ProtectedRoute>} />
+        <Route path="/portfolios/:id" element={<ProtectedRoute><PortfolioDetailPage /></ProtectedRoute>} />
         <Route path="/ai-analysis" element={<ProtectedRoute>{apiOnlyModule(<AIAnalysisPage />, 'Análise com IA', 'Explicações geradas por IA sobre a composição e os riscos da carteira, a partir de métricas calculadas pelo sistema.')}</ProtectedRoute>} />
         <Route path="/analytics" element={<ProtectedRoute>{apiOnlyModule(<AnalyticsPage />, 'Analytics', 'Métricas de risco e retorno da carteira, como volatilidade, drawdown e índice de Sharpe.')}</ProtectedRoute>} />
         <Route path="/simulations" element={<ProtectedRoute>{apiOnlyModule(<SimulationsPage />, 'Simulações', 'Projeções de Monte Carlo e testes de estresse para cenários de mercado.')}</ProtectedRoute>} />

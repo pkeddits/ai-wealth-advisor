@@ -14,7 +14,7 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
     title: 'Visão geral',
     items: [
       { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, availableIn: ['demo', 'supabase', 'api'] },
-      { name: 'Carteiras', href: '/portfolios', icon: Wallet, availableIn: ['demo', 'api'] },
+      { name: 'Carteiras', href: '/portfolios', icon: Wallet, availableIn: ['demo', 'supabase', 'api'] },
     ],
   },
   {

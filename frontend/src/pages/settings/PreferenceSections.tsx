@@ -1,7 +1,5 @@
-import { Bell, Bot, Database, Landmark, Palette, Plug, Wallet } from 'lucide-react';
+import { Bell, CreditCard, Landmark, LineChart, Palette, Plug, Wallet } from 'lucide-react';
 import { usePreferences } from '../../store/preferencesStore';
-import { appMode } from '../../config/appMode';
-import { supabaseConfigError } from '../../lib/supabase';
 import { useDisplayFormat } from '../../lib/displayFormat';
 import { Button, Select } from '../../components/common';
 import { Segmented, SettingRow, SettingsSection, Switch } from '../../components/settings';
@@ -80,28 +78,20 @@ export function NotificationsSection() {
   );
 }
 
-const DB_STATUS = {
-  demo: { label: 'Não usado na demonstração', className: 'chip-planned', text: 'Os dados ficam no navegador.' },
-  supabase: supabaseConfigError
-    ? { label: 'Configuração ausente', className: 'chip border-red-500/30 bg-red-500/10 text-red-700', text: supabaseConfigError }
-    : { label: 'Conectado', className: 'chip-live', text: 'Autenticação e perfil no Supabase.' },
-  api: { label: 'Backend Go', className: 'chip-building', text: 'Modo de referência do backend original.' },
-}[appMode];
-
 export function IntegrationsSection() {
   const items = [
-    { icon: Database, title: 'Banco de dados e autenticação', text: DB_STATUS.text, status: <span className={DB_STATUS.className}>{DB_STATUS.label}</span> },
-    { icon: Landmark, title: 'Open Finance (Pluggy)', text: 'Conexão com contas, cartões e investimentos autorizada por você.', status: <span className="chip-planned">Planejado</span> },
-    { icon: Bot, title: 'Inteligência artificial (Groq ou Grok)', text: 'Explicações sobre indicadores calculados pelo sistema.', status: <span className="chip-planned">Planejado</span> },
+    { icon: Landmark, title: 'Contas bancárias', text: 'Saldos, Pix e extratos importados com a sua autorização pelo Open Finance.' },
+    { icon: CreditCard, title: 'Cartões de crédito', text: 'Faturas e gastos por categoria, sem precisar digitar cada compra.' },
+    { icon: LineChart, title: 'Investimentos em corretoras', text: 'Posições de outras instituições reunidas no seu patrimônio.' },
   ];
   return (
-    <SettingsSection id="integracoes" title="Integrações" description="Serviços externos e o estado de cada conexão." icon={<Plug className="h-5 w-5" />}>
+    <SettingsSection id="integracoes" title="Integrações" description="Conexões com as suas instituições financeiras, sempre autorizadas por você." icon={<Plug className="h-5 w-5" />}>
       <div className="grid gap-3 pt-1 md:grid-cols-3">
-        {items.map(({ icon: Icon, title, text, status }) => (
+        {items.map(({ icon: Icon, title, text }) => (
           <div key={title} className="flex flex-col rounded-2xl border border-dark-200/70 bg-dark-50/40 p-4">
             <div className="flex items-center justify-between gap-2">
               <Icon className="h-5 w-5 text-primary-700" aria-hidden="true" />
-              {status}
+              <span className="chip-planned">Planejado</span>
             </div>
             <p className="mt-4 text-sm font-medium text-dark-900">{title}</p>
             <p className="mt-1 text-sm text-dark-500">{text}</p>

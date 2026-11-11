@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Plus, TrendingUp, DollarSign, PieChart } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Pencil, Plus, TrendingUp, DollarSign, PieChart, Trash2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { usePortfolioStore } from '../store/portfolioStore';
-import { portfolioService, assetService } from '../services';
+import { portfolioService, assetService, transactionService } from '../services';
 import { Card, CardBody, Button, Input, Select, Modal, Badge, LoadingSpinner, Table } from '../components/common';
 import { formatCurrency } from '../utils/format';
 import { assetClassLabel, riskProfileLabel, transactionTypeLabel } from '../utils/labels';
@@ -12,24 +12,27 @@ import { demoPriceOf } from '../services/demo';
 import { AllocationDonut, SERIES_COLORS } from '../components/charts';
 import { MoneyFigure } from '../components/motion';
 import clsx from 'clsx';
+import type { Position, Transaction } from '../types';
+import { useDisplayFormat } from '../lib/displayFormat';
+import { errorMessage } from '../lib/errorMessage';
 
-const today = () => new Date().toISOString().split('T')[0];
+const today = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
-interface Position {
-  id: string;
-  asset?: { symbol: string; name: string; class: string };
-  quantity: number;
-  averagePrice: number;
-  currentPrice: number;
-  currentValue: number;
-  unrealizedGain: number;
-  unrealizedGainPct: number;
-  allocation: number;
-}
+const pending = <span className="text-xs text-dark-500">Cotação pendente</span>;
 
 export function PortfolioDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { currentPortfolio, positions, transactions, selectPortfolio, addTransaction } = usePortfolioStore();
+  const navigate = useNavigate();
+  const fmt = useDisplayFormat();
+  const { currentPortfolio, positions, transactions, selectPortfolio, addTransaction, fetchPortfolios } = usePortfolioStore();
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ name: '', description: '', riskProfile: 'moderado' as 'conservador' | 'moderado' | 'arrojado' });
+  const [actionError, setActionError] = useState('');
+  const [busy, setBusy] = useState(false);
   const [activeTab, setActiveTab] = useState<'positions' | 'transactions' | 'performance'>('positions');
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const emptyForm = { assetId: '', type: 'compra', quantity: '', price: '', fees: '0', date: today() };
@@ -107,15 +110,68 @@ export function PortfolioDetailPage() {
     }
   };
 
-  const totalValue = positions.reduce((sum, p) => sum + p.currentValue, 0);
-  const totalGain = positions.reduce((sum, p) => sum + p.unrealizedGain, 0);
-  const totalGainPct = totalValue > 0 ? (totalGain / (totalValue - totalGain)) * 100 : 0;
+  const marketAvailable = positions.every((p) => p.currentValue !== null);
+  const totalInvested = positions.reduce((sum, p) => sum + p.investedValue, 0);
+  const totalValue = marketAvailable ? positions.reduce((sum, p) => sum + (p.currentValue ?? 0), 0) : null;
+  const totalGain = totalValue === null ? null : totalValue - totalInvested;
+  const totalGainPct = totalGain === null || totalInvested <= 0 ? null : (totalGain / totalInvested) * 100;
+
+  const refresh = async () => {
+    if (id) await selectPortfolio(await portfolioService.get(id));
+  };
+
+  const openEdit = () => {
+    if (!portfolio) return;
+    setEditForm({ name: portfolio.name, description: portfolio.description ?? '', riskProfile: portfolio.riskProfile });
+    setActionError('');
+    setEditOpen(true);
+  };
+
+  const saveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id) return;
+    setBusy(true);
+    setActionError('');
+    try {
+      await portfolioService.update(id, editForm);
+      await refresh();
+      setEditOpen(false);
+    } catch (err) {
+      setActionError(errorMessage(err, 'Não foi possível salvar a carteira.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!id) return;
+    setBusy(true);
+    setActionError('');
+    try {
+      await portfolioService.delete(id);
+      await fetchPortfolios();
+      navigate('/portfolios', { replace: true });
+    } catch (err) {
+      setActionError(errorMessage(err, 'Não foi possível excluir a carteira.'));
+      setBusy(false);
+    }
+  };
+
+  const removeTransaction = async (tx: Transaction) => {
+    if (!window.confirm(`Excluir a ${tx.type === 'compra' ? 'compra' : 'venda'} de ${tx.asset?.symbol ?? 'ativo'} em ${fmt.date(tx.date)}?`)) return;
+    try {
+      await transactionService.delete(tx.id);
+      await refresh();
+    } catch (err) {
+      window.alert(errorMessage(err, 'Não foi possível excluir a operação.'));
+    }
+  };
 
   const allocationByClass = Object.values(
     positions.reduce<Record<string, { name: string; value: number }>>((acc, p) => {
       const cls = p.asset?.class ?? 'outros';
       acc[cls] = acc[cls] ?? { name: assetClassLabel(cls), value: 0 };
-      acc[cls].value += p.currentValue;
+      acc[cls].value += marketAvailable ? p.currentValue ?? 0 : p.investedValue;
       return acc;
     }, {})
   );
@@ -156,9 +212,13 @@ export function PortfolioDetailPage() {
           </div>
           {portfolio.description && <p className="mt-1 text-dark-600">{portfolio.description}</p>}
         </div>
-        <Button onClick={openTransactionModal} icon={<Plus className="h-4 w-4" />}>
-          Nova Transação
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={openEdit} icon={<Pencil className="h-4 w-4" />}>Editar</Button>
+          <Button variant="ghost" onClick={() => { setActionError(''); setDeleteOpen(true); }} icon={<Trash2 className="h-4 w-4" />} aria-label="Excluir carteira">Excluir</Button>
+          <Button onClick={openTransactionModal} icon={<Plus className="h-4 w-4" />}>
+            Nova Transação
+          </Button>
+        </div>
       </div>
 
       <motion.section
@@ -171,15 +231,18 @@ export function PortfolioDetailPage() {
         <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-primary-500/20 blur-[90px]" aria-hidden="true" />
         <div className="relative grid gap-8 md:grid-cols-[1.4fr_1fr] md:items-end">
           <div>
-            <p className="text-sm text-dark-500">Valor Total</p>
-            <MoneyFigure value={totalValue} className="mt-2 block whitespace-nowrap text-[2.2rem] font-semibold leading-none tracking-[-0.03em] text-dark-900 sm:text-[3rem]" />
-            <p className={clsx('mt-4 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-medium', totalGain >= 0 ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600')}>
-              {totalGain >= 0 ? '+' : ''}{formatCurrency(totalGain)}
-              <span className="opacity-80">({totalGainPct >= 0 ? '+' : ''}{totalGainPct.toFixed(2)}%)</span>
-            </p>
+            <p className="text-sm text-dark-500">{marketAvailable ? 'Valor Total' : 'Capital aplicado'}</p>
+            <MoneyFigure value={totalValue ?? totalInvested} rounded={fmt.rounded} className="mt-2 block whitespace-nowrap text-[2.2rem] font-semibold leading-none tracking-[-0.03em] text-dark-900 sm:text-[3rem]" />
+            {totalGain === null || totalGainPct === null ? (
+              <p className="mt-4"><span className="chip-building">Cotações ainda não integradas</span></p>
+            ) : (
+              <p className={clsx('mt-4 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-medium', totalGain >= 0 ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600')}>
+                {fmt.result(totalGain, totalGainPct)}
+              </p>
+            )}
           </div>
           <dl className="grid grid-cols-3 gap-4 text-sm md:text-right">
-            <div><dt className="text-dark-500">Aplicado</dt><dd className="mt-1 whitespace-nowrap font-medium text-dark-900">{formatCurrency(totalValue - totalGain)}</dd></div>
+            <div><dt className="text-dark-500">Aplicado</dt><dd className="mt-1 whitespace-nowrap font-medium text-dark-900">{fmt.money(totalInvested)}</dd></div>
             <div><dt className="text-dark-500">Posições</dt><dd className="mt-1 font-medium text-dark-900">{positions.length}</dd></div>
             <div><dt className="text-dark-500">Operações</dt><dd className="mt-1 font-medium text-dark-900">{transactions.length}</dd></div>
           </dl>
@@ -240,16 +303,17 @@ export function PortfolioDetailPage() {
                   )},
                   { key: 'quantity', header: 'Quantidade', render: (row: Position) => row.quantity.toLocaleString('pt-BR') },
                   { key: 'averagePrice', header: 'Preço Médio', render: (row: Position) => formatCurrency(row.averagePrice) },
-                  { key: 'currentPrice', header: 'Preço Atual', render: (row: Position) => formatCurrency(row.currentPrice) },
-                  { key: 'currentValue', header: 'Valor Atual', render: (row: Position) => formatCurrency(row.currentValue) },
-                  { key: 'unrealizedGain', header: 'Ganho/Perda', render: (row: Position) => (
+                  { key: 'investedValue', header: 'Custo', render: (row: Position) => fmt.money(row.investedValue) },
+                  { key: 'currentPrice', header: 'Preço Atual', render: (row: Position) => (row.currentPrice === null ? pending : fmt.money(row.currentPrice)) },
+                  { key: 'currentValue', header: 'Valor Atual', render: (row: Position) => (row.currentValue === null ? pending : fmt.money(row.currentValue)) },
+                  { key: 'unrealizedGain', header: 'Ganho/Perda', render: (row: Position) => row.unrealizedGain === null ? pending : (
                     <span className={clsx('font-medium', row.unrealizedGain >= 0 ? 'text-green-600' : 'text-red-600')}>
-                      {row.unrealizedGain >= 0 ? '+' : ''}{formatCurrency(row.unrealizedGain)}
+                      {fmt.signedMoney(row.unrealizedGain)}
                     </span>
                   )},
-                  { key: 'unrealizedGainPct', header: '%', render: (row: Position) => (
+                  { key: 'unrealizedGainPct', header: '%', render: (row: Position) => row.unrealizedGainPct === null ? pending : (
                     <span className={clsx('font-medium', row.unrealizedGainPct >= 0 ? 'text-green-600' : 'text-red-600')}>
-                      {row.unrealizedGainPct >= 0 ? '+' : ''}{row.unrealizedGainPct.toFixed(2)}%
+                      {fmt.percent(row.unrealizedGainPct)}
                     </span>
                   )},
                   { key: 'allocation', header: 'Alocação', render: (row: Position) => `${row.allocation.toFixed(1)}%` },
@@ -274,7 +338,7 @@ export function PortfolioDetailPage() {
             ) : (
               <Table
                 columns={[
-                  { key: 'date', header: 'Data', render: (row: any) => new Date(row.date).toLocaleDateString('pt-BR') },
+                  { key: 'date', header: 'Data', render: (row: any) => fmt.date(row.date) },
                   { key: 'asset.symbol', header: 'Ativo', render: (row: any) => row.asset?.symbol },
                   { key: 'type', header: 'Tipo', render: (row: any) => (
                     <Badge variant={row.type === 'compra' ? 'green' : 'red'}>{transactionTypeLabel(row.type)}</Badge>
@@ -282,7 +346,17 @@ export function PortfolioDetailPage() {
                   { key: 'quantity', header: 'Quantidade', render: (row: any) => row.quantity.toLocaleString('pt-BR') },
                   { key: 'price', header: 'Preço', render: (row: any) => formatCurrency(row.price) },
                   { key: 'fees', header: 'Taxas', render: (row: any) => formatCurrency(row.fees) },
-                  { key: 'total', header: 'Total', render: (row: any) => formatCurrency(row.total ?? row.quantity * row.price + row.fees) },
+                  { key: 'total', header: 'Total', render: (row: any) => fmt.money(row.total ?? row.quantity * row.price + row.fees) },
+                  { key: 'actions', header: '', render: (row: any) => (
+                    <button
+                      type="button"
+                      onClick={() => removeTransaction(row)}
+                      className="rounded-lg p-1.5 text-dark-500 transition-colors hover:bg-red-500/10 hover:text-red-600"
+                      aria-label={`Excluir operação de ${row.asset?.symbol ?? 'ativo'} em ${fmt.date(row.date)}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  ) },
                 ]}
                 data={transactions}
                 keyExtractor={(row: any) => row.id}
@@ -392,6 +466,35 @@ export function PortfolioDetailPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+      <Modal isOpen={editOpen} onClose={() => setEditOpen(false)} title="Editar carteira">
+        <form onSubmit={saveEdit} className="space-y-4">
+          <Input id="edit-name" label="Nome" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} required maxLength={100} />
+          <Input id="edit-description" label="Descrição" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} maxLength={500} />
+          <Select
+            id="edit-risk"
+            label="Perfil de risco"
+            value={editForm.riskProfile}
+            onChange={(e) => setEditForm({ ...editForm, riskProfile: e.target.value as typeof editForm.riskProfile })}
+            options={[{ value: 'conservador', label: 'Conservador' }, { value: 'moderado', label: 'Moderado' }, { value: 'arrojado', label: 'Arrojado' }]}
+          />
+          {actionError && <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700" role="alert">{actionError}</div>}
+          <div className="flex gap-3 pt-2">
+            <Button type="button" variant="secondary" className="flex-1" onClick={() => setEditOpen(false)}>Cancelar</Button>
+            <Button type="submit" className="flex-1" loading={busy}>Salvar alterações</Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal isOpen={deleteOpen} onClose={() => setDeleteOpen(false)} title="Excluir carteira" size="sm">
+        <p className="text-dark-700">
+          A carteira <strong className="text-dark-900">{portfolio.name}</strong> e suas {transactions.length} operações serão excluídas definitivamente.
+        </p>
+        {actionError && <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700" role="alert">{actionError}</div>}
+        <div className="mt-6 flex gap-3">
+          <Button type="button" variant="secondary" className="flex-1" onClick={() => setDeleteOpen(false)}>Cancelar</Button>
+          <Button type="button" variant="danger" className="flex-1" loading={busy} onClick={confirmDelete}>Excluir definitivamente</Button>
+        </div>
       </Modal>
     </div>
   );
