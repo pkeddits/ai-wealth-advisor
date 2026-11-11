@@ -121,10 +121,11 @@ export interface Portfolio {
   name: string;
   description?: string;
   riskProfile: 'conservador' | 'moderado' | 'arrojado';
-  totalValue: number;
+  /** Valor de mercado; null quando alguma posição não tem cotação disponível. */
+  totalValue: number | null;
   totalInvested: number;
-  totalReturn: number;
-  totalReturnPct: number;
+  totalReturn: number | null;
+  totalReturnPct: number | null;
   createdAt: string;
   updatedAt: string;
   positions?: Position[];
@@ -143,11 +144,13 @@ export interface Position {
   asset?: Asset;
   quantity: number;
   averagePrice: number;
-  currentPrice: number;
-  currentValue: number;
+  /** null quando não há cotação de mercado para o ativo. */
+  currentPrice: number | null;
+  currentValue: number | null;
   investedValue: number;
-  unrealizedGain: number;
-  unrealizedGainPct: number;
+  unrealizedGain: number | null;
+  unrealizedGainPct: number | null;
+  /** Participação na carteira, pelo valor de mercado ou, sem cotação, pelo custo. */
   allocation: number;
   updatedAt: string;
 }

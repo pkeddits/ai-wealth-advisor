@@ -40,7 +40,8 @@ export function buildPortfolio(state: DemoState, id: string): Portfolio {
   const record = state.portfolios.find((p) => p.id === id);
   if (!record) throw new Error('Carteira não encontrada.');
   const positions = positionsOf(state, id);
-  const totals = summarize(positions.map((p) => ({ ...p })));
+  // No modo demonstração todos os ativos têm preço fictício, então os campos de mercado estão sempre preenchidos.
+  const totals = summarize(positions.map((p) => ({ ...p, currentPrice: p.currentPrice!, currentValue: p.currentValue!, unrealizedGain: p.unrealizedGain!, unrealizedGainPct: p.unrealizedGainPct! })));
   return { ...record, userId: 'demo-user', ...totals, positions };
 }
 
