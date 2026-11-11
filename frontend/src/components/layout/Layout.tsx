@@ -2,6 +2,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import clsx from 'clsx';
 import { useUIStore } from '../../store/uiStore';
+import { useProfileSync } from '../../hooks/useProfileSync';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { DemoBanner } from '../common/DemoBanner';
@@ -11,10 +12,11 @@ import { isDemoMode } from '../../config/appMode';
 export function MainLayout() {
   const location = useLocation();
   const collapsed = useUIStore((s) => s.isSidebarCollapsed);
+  useProfileSync();
 
   return (
     <div className="relative min-h-screen">
-      <div className="pointer-events-none fixed inset-0 -z-10" aria-hidden="true">
+      <div className="fx-decor pointer-events-none fixed inset-0 -z-10" aria-hidden="true">
         <div className="absolute -top-48 left-1/3 h-[520px] w-[720px] rounded-full bg-primary-500/[0.08] blur-[120px]" />
         <div className="absolute bottom-[-20%] right-[-10%] h-[520px] w-[620px] rounded-full bg-blue-500/[0.06] blur-[120px]" />
       </div>

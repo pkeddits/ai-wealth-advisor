@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
@@ -9,16 +9,15 @@ import { appMode } from '../../config/appMode';
 import { riskProfileLabel } from '../../utils/labels';
 import { Logo, LogoMark } from '../brand';
 import { NAV_SECTIONS } from './navigation';
-
-function initials(name?: string) {
-  const parts = (name || '?').trim().split(/\s+/);
-  return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
-}
+import { Avatar } from '../common/Avatar';
+import { useSignOut } from '../../hooks/useSignOut';
 
 function NavContent({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
   const location = useLocation();
-  const { user, logout } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
+  const signOut = useSignOut();
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+  const [hovered, setHovered] = useState<string | null>(null);
 
   return (
     <div className="flex h-full flex-col">
@@ -38,7 +37,7 @@ function NavContent({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?
         )}
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 pb-4 pt-2" aria-label="Navegação principal">
+      <nav className="flex-1 overflow-y-auto px-3 pb-4 pt-2" aria-label="Navegação principal" onMouseLeave={() => setHovered(null)}>
         {NAV_SECTIONS.map((section) => (
           <div key={section.title} className="mt-4 first:mt-1">
             {!collapsed && <p className="px-3 pb-2 text-[11px] font-medium text-dark-500">{section.title}</p>}
@@ -48,7 +47,7 @@ function NavContent({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?
                 const active = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
                 const available = item.availableIn.includes(appMode);
                 return (
-                  <li key={item.href}>
+                  <li key={item.href} onMouseEnter={() => setHovered(item.href)}>
                     <NavLink
                       to={item.href}
                       onClick={onNavigate}
@@ -69,9 +68,22 @@ function NavContent({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?
                           <span className="absolute -left-3 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-primary-500 shadow-[0_0_12px_rgb(var(--violet))]" />
                         </motion.span>
                       )}
-                      {!active && <span className="absolute inset-0 rounded-xl bg-dark-100/0 transition-colors group-hover:bg-dark-100/70" aria-hidden="true" />}
+                      {!active && hovered === item.href && (
+                        <motion.span
+                          layoutId={collapsed ? 'nav-hover-collapsed' : 'nav-hover'}
+                          className="absolute inset-0 rounded-xl bg-dark-100/80"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ type: 'spring', stiffness: 500, damping: 40 }}
+                          aria-hidden="true"
+                        />
+                      )}
                       <item.icon
-                        className={clsx('relative h-[18px] w-[18px] shrink-0 transition-colors', active ? 'text-primary-700' : 'text-dark-500 group-hover:text-dark-700')}
+                        className={clsx(
+                          'relative h-[18px] w-[18px] shrink-0 transition-[color,transform] duration-300 group-hover:scale-110 group-active:scale-95',
+                          active ? 'text-primary-700 drop-shadow-[0_0_8px_rgb(var(--violet)/0.7)]' : 'text-dark-500 group-hover:text-dark-700',
+                        )}
                         aria-hidden="true"
                       />
                       {!collapsed && <span className="relative">{item.name}</span>}
@@ -99,9 +111,9 @@ function NavContent({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?
           </button>
         )}
         <div className={clsx('flex items-center gap-3 rounded-2xl border border-dark-200/70 bg-dark-100/50 p-2.5', collapsed && 'flex-col')}>
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand text-sm font-semibold text-dark-900">
-            {initials(user?.name)}
-          </span>
+          <NavLink to="/settings" onClick={onNavigate} aria-label="Abrir configurações" className="rounded-xl transition-transform hover:scale-105">
+            <Avatar name={user?.name} />
+          </NavLink>
           {!collapsed && (
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-dark-900">{user?.name}</p>
@@ -110,7 +122,7 @@ function NavContent({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?
           )}
           <button
             type="button"
-            onClick={() => logout()}
+            onClick={signOut}
             className="rounded-lg p-2 text-dark-500 transition-colors hover:bg-red-500/10 hover:text-red-600"
             aria-label="Sair"
             title="Sair"

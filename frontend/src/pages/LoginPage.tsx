@@ -10,6 +10,7 @@ import { FormAlert, PasswordInput } from '../components/auth';
 import { isDemoMode, isSupabaseMode } from '../config/appMode';
 import { supabaseConfigError } from '../lib/supabase';
 import { errorMessage } from '../lib/errorMessage';
+import { usePreferences } from '../store/preferencesStore';
 
 const loginSchema = z.object({
   email: z.string().trim().email('Informe um e-mail válido'),
@@ -21,7 +22,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 function useRedirectTarget() {
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
-  return from && from.startsWith('/') && !from.startsWith('//') ? from : '/dashboard';
+  return from && from.startsWith('/') && !from.startsWith('//') ? from : usePreferences.getState().homePage;
 }
 
 function DemoEntry() {

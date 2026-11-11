@@ -60,7 +60,7 @@ export function SiteHeader() {
           )}
           <Link
             to={primary.to}
-            className="rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-dark-900 shadow-[0_10px_24px_-10px_rgb(var(--violet)/0.8)] transition-[box-shadow,transform] duration-300 hover:-translate-y-px hover:shadow-glow"
+            className="rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-on-brand shadow-[0_10px_24px_-10px_rgb(var(--violet)/0.8)] transition-[box-shadow,transform] duration-300 hover:-translate-y-px hover:shadow-glow"
           >
             {primary.label}
           </Link>
@@ -96,7 +96,7 @@ export function SiteHeader() {
               ))}
             </nav>
             <div className="mt-3 flex flex-col gap-2">
-              <Link to={primary.to} className="rounded-xl bg-brand py-3 text-center font-semibold text-dark-900">
+              <Link to={primary.to} className="rounded-xl bg-brand py-3 text-center font-semibold text-on-brand">
                 {primary.label}
               </Link>
               {secondary && (

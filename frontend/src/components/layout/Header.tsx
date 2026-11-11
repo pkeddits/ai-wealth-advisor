@@ -4,14 +4,16 @@ import { AnimatePresence, motion } from 'motion/react';
 import { CalendarDays, ChevronDown, LogOut, Menu, User } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
-import { isApiMode } from '../../config/appMode';
 import { pageTitle } from './navigation';
+import { Avatar } from '../common/Avatar';
+import { useSignOut } from '../../hooks/useSignOut';
 
 const todayRaw = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
 const today = todayRaw.charAt(0).toUpperCase() + todayRaw.slice(1);
 
 export function Header() {
-  const { user, logout } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
+  const signOut = useSignOut();
   const openMobileNav = useUIStore((s) => s.openMobileNav);
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -62,9 +64,7 @@ export function Header() {
               aria-expanded={open}
               aria-haspopup="menu"
             >
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-dark-100 text-primary-700">
-                <User className="h-4 w-4" />
-              </span>
+              <Avatar name={user?.name} size="sm" />
               <span className="hidden max-w-[140px] truncate text-sm font-medium text-dark-800 md:block">{user?.name}</span>
               <ChevronDown className={`h-4 w-4 text-dark-500 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
             </button>
@@ -73,7 +73,7 @@ export function Header() {
               {open && (
                 <motion.div
                   role="menu"
-                  className="panel-raised absolute right-0 mt-2 w-60 origin-top-right overflow-hidden !rounded-2xl p-1.5"
+                  className="panel-glass absolute right-0 mt-2 w-60 origin-top-right overflow-hidden p-1.5"
                   initial={{ opacity: 0, y: -6, scale: 0.96 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -4, scale: 0.98 }}
@@ -83,17 +83,15 @@ export function Header() {
                     <p className="truncate text-sm font-medium text-dark-900">{user?.name}</p>
                     <p className="truncate text-xs text-dark-500">{user?.email}</p>
                   </div>
-                  {isApiMode && (
-                    <NavLink to="/settings" role="menuitem" onClick={() => setOpen(false)} className="mt-1 flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-dark-700 hover:bg-dark-100">
-                      <User className="h-4 w-4" /> Perfil
-                    </NavLink>
-                  )}
+                  <NavLink to="/settings" role="menuitem" onClick={() => setOpen(false)} className="mt-1 flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-dark-700 hover:bg-dark-100">
+                    <User className="h-4 w-4" /> Configurações
+                  </NavLink>
                   <button
                     type="button"
                     role="menuitem"
                     onClick={() => {
                       setOpen(false);
-                      logout();
+                      signOut();
                     }}
                     className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-red-600 hover:bg-red-500/10"
                   >

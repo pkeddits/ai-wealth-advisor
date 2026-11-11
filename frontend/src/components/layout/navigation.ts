@@ -29,7 +29,7 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
     title: 'Conta',
     items: [
       { name: 'Alertas', href: '/alerts', icon: AlertTriangle, availableIn: ['api'] },
-      { name: 'Configurações', href: '/settings', icon: Settings, availableIn: ['api'] },
+      { name: 'Configurações', href: '/settings', icon: Settings, availableIn: ['demo', 'supabase', 'api'] },
     ],
   },
 ];

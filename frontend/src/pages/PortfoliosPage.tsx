@@ -5,6 +5,8 @@ import { usePortfolioStore } from '../store/portfolioStore';
 import { motion } from 'motion/react';
 import { Button, Input, Badge, Modal } from '../components/common';
 import { SERIES_COLORS } from '../components/charts';
+import { spotlightHandler } from '../hooks/useSpotlight';
+import { useDisplayFormat } from '../lib/displayFormat';
 import { riskProfileLabel } from '../utils/labels';
 import clsx from 'clsx';
 
@@ -18,6 +20,7 @@ export function PortfoliosPage() {
   const [formData, setFormData] = useState(emptyForm);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [searchParams, setSearchParams] = useSearchParams();
+  const fmt = useDisplayFormat();
 
   useEffect(() => {
     fetchPortfolios();
@@ -114,7 +117,8 @@ export function PortfoliosPage() {
               >
                 <Link
                   to={`/portfolios/${portfolio.id}`}
-                  className="panel group flex h-full flex-col p-6 transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-1 hover:border-primary-500/40 hover:shadow-[0_30px_60px_-30px_rgb(var(--violet)/0.45)]"
+                  onPointerMove={spotlightHandler}
+                  className="panel spotlight group flex h-full flex-col p-6 transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-1 hover:border-primary-500/40 hover:shadow-[0_30px_60px_-30px_rgb(var(--violet)/0.45)]"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-dark-200 bg-dark-100 text-primary-700 transition-colors group-hover:border-primary-500/40">
@@ -126,10 +130,10 @@ export function PortfoliosPage() {
                   <p className="mt-0.5 truncate text-sm text-dark-500">{portfolio.description || 'Sem descrição'}</p>
                   <div className="mt-6 flex items-end justify-between gap-3">
                     <p className="whitespace-nowrap text-2xl font-semibold tracking-tight text-dark-900">
-                      R$ {(portfolio.totalValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      {fmt.money(portfolio.totalValue || 0)}
                     </p>
                     <span className={clsx('rounded-full px-2 py-0.5 text-sm font-medium', pct >= 0 ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600')}>
-                      {pct >= 0 ? '+' : ''}{pct.toFixed(2)}%
+                      {fmt.returnDisplay === 'absolute' ? fmt.signedMoney((portfolio.totalValue || 0) - (portfolio.totalInvested || 0)) : fmt.percent(pct)}
                     </span>
                   </div>
                   <div className="mt-4 flex h-1.5 gap-0.5 overflow-hidden rounded-full bg-dark-100" aria-hidden="true">

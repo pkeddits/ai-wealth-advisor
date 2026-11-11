@@ -145,6 +145,78 @@
   .link-underline:hover {
     background-size: 100% 1px;
   }
+
+  /* Vidro controlado: transparência com desfoque e filete interno de luz. */
+  .panel-glass {
+    @apply relative rounded-2xl border shadow-float backdrop-blur-md;
+    border-color: rgb(255 255 255 / 0.08);
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.01) 60%),
+      rgb(var(--surface-raised) / 0.72);
+  }
+
+  [data-theme='light'] .panel-glass {
+    border-color: rgb(var(--dark-200));
+    background: rgb(var(--surface) / 0.85);
+  }
+
+  /* Brilho que acompanha o cursor; as coordenadas vêm de useSpotlight. */
+  .spotlight {
+    isolation: isolate;
+  }
+
+  .spotlight::after {
+    content: '';
+    @apply pointer-events-none absolute inset-0 rounded-[inherit] opacity-0 transition-opacity duration-500;
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgb(var(--violet) / 0.11), transparent 45%);
+    z-index: -1;
+  }
+
+  .spotlight:hover::after {
+    @apply opacity-100;
+  }
+
+  .text-shine {
+    background: linear-gradient(105deg, rgb(var(--dark-900)) 0%, rgb(var(--dark-900)) 42%, rgb(var(--primary-800)) 50%, rgb(var(--dark-900)) 58%, rgb(var(--dark-900)) 100%);
+    background-size: 260% 100%;
+    background-position: 100% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shine 2.4s var(--ease-in-out) 1.35s 1 both;
+  }
+
+  @keyframes shine {
+    from { background-position: 100% 0; }
+    to { background-position: 0% 0; }
+  }
+}
+
+html[data-density='compact'] {
+  font-size: 93.75%;
+}
+
+[data-effects='off'] .fx-decor,
+[data-effects='off'] .spotlight::after {
+  display: none;
+}
+
+[data-effects='off'] *,
+[data-effects='off'] *::before {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+[data-effects='off'] .panel-glass {
+  background: rgb(var(--surface-raised));
+}
+
+[data-motion='off'] *,
+[data-motion='off'] *::before,
+[data-motion='off'] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

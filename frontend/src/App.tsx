@@ -17,6 +17,7 @@ import { ComingSoon } from './components/common/ComingSoon';
 import { LandingPage } from './pages/LandingPage';
 import { AccountHomePage } from './pages/AccountHomePage';
 import { appMode, isDemoMode, isSupabaseMode } from './config/appMode';
+import { usePreferences } from './store/preferencesStore';
 
 /**
  * Módulos indisponíveis no modo atual exibem "Em desenvolvimento". No modo Supabase,
@@ -60,7 +61,7 @@ function PublicRoute({ children }: { children: ReactNode }) {
   }
   
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={usePreferences.getState().homePage} replace />;
   }
   
   return <>{children}</>;
@@ -85,7 +86,7 @@ function App() {
         <Route path="/analytics" element={<ProtectedRoute>{apiOnlyModule(<AnalyticsPage />, 'Analytics', 'Métricas de risco e retorno da carteira, como volatilidade, drawdown e índice de Sharpe.')}</ProtectedRoute>} />
         <Route path="/simulations" element={<ProtectedRoute>{apiOnlyModule(<SimulationsPage />, 'Simulações', 'Projeções de Monte Carlo e testes de estresse para cenários de mercado.')}</ProtectedRoute>} />
         <Route path="/alerts" element={<ProtectedRoute>{apiOnlyModule(<AlertsPage />, 'Alertas', 'Avisos quando um ativo ou a carteira atingir um valor definido por você.')}</ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute>{apiOnlyModule(<SettingsPage />, 'Configurações', 'Edição de perfil, senha e preferências da conta.')}</ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
       </Route>
       
       <Route path="/" element={<LandingPage />} />

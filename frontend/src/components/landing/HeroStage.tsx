@@ -39,7 +39,8 @@ export function HeroStage({ pointerX, pointerY, tilt, rich }: HeroStageProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1.3, delay: 0.85, ease: [0.16, 1, 0.3, 1] }}
       >
-        <div className="panel-raised overflow-hidden !rounded-[28px] p-2 shadow-[0_60px_120px_-40px_rgb(var(--indigo)/0.55)]">
+        <div className="fx-decor pointer-events-none absolute inset-x-[8%] -bottom-10 h-32 rounded-[50%] bg-primary-500/25 blur-3xl" aria-hidden="true" />
+        <div className="panel-raised relative overflow-hidden !rounded-[28px] p-2 shadow-[0_40px_80px_-40px_rgb(var(--indigo)/0.6)]">
           <div className="flex items-center justify-between px-4 py-2.5">
             <div className="flex gap-1.5" aria-hidden="true">
               <span className="h-2.5 w-2.5 rounded-full bg-dark-300" />
@@ -110,7 +111,7 @@ export function HeroStage({ pointerX, pointerY, tilt, rich }: HeroStageProps) {
       </motion.div>
 
       <FloatCard className="hidden xl:left-[-120px] xl:top-[6%] xl:block" pointerX={pointerX} pointerY={pointerY} depth={22} delay={1.55} floatPeriod={7} rich={rich}>
-        <div className="panel-raised w-56 !rounded-2xl p-4">
+        <div className="panel-glass w-56 p-4">
           <p className="text-xs text-dark-500">Resultado acumulado</p>
           <p className="mt-1 text-xl font-semibold text-green-600">+R$ 2.384,10</p>
           <div className="mt-3 flex h-8 items-end gap-1" aria-hidden="true">
@@ -128,7 +129,7 @@ export function HeroStage({ pointerX, pointerY, tilt, rich }: HeroStageProps) {
       </FloatCard>
 
       <FloatCard className="hidden xl:bottom-[-4%] xl:left-[-90px] xl:block" pointerX={pointerX} pointerY={pointerY} depth={34} delay={1.75} floatPeriod={8.5} rich={rich}>
-        <div className="panel-raised flex w-[270px] items-center gap-3 !rounded-2xl p-3.5">
+        <div className="panel-glass flex w-[270px] items-center gap-3 p-3.5">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-green-500/15 text-green-600">
             <Check className="h-4 w-4" aria-hidden="true" />
           </span>
@@ -140,7 +141,7 @@ export function HeroStage({ pointerX, pointerY, tilt, rich }: HeroStageProps) {
       </FloatCard>
 
       <FloatCard className="hidden xl:right-[-124px] xl:top-[-4%] xl:block" pointerX={pointerX} pointerY={pointerY} depth={28} delay={1.95} floatPeriod={9} rich={rich}>
-        <div className="w-64 rounded-2xl border border-accent-500/30 bg-surface-raised/90 p-4 shadow-float backdrop-blur">
+        <div className="panel-glass w-64 !border-accent-500/30 p-4">
           <p className="flex items-center gap-1.5 text-xs font-medium text-accent-400">
             <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> Explicação com IA
             <span className="ml-auto rounded-full border border-dark-300 px-1.5 py-px text-[10px] text-dark-500">Planejado</span>
@@ -150,7 +151,7 @@ export function HeroStage({ pointerX, pointerY, tilt, rich }: HeroStageProps) {
       </FloatCard>
 
       <FloatCard className="hidden xl:bottom-[2%] xl:right-[-104px] xl:block" pointerX={pointerX} pointerY={pointerY} depth={40} delay={2.15} floatPeriod={7.8} rich={rich}>
-        <div className="panel-raised w-56 !rounded-2xl p-4">
+        <div className="panel-glass w-56 p-4">
           <div className="flex items-center justify-between">
             <p className="flex items-center gap-1.5 text-xs text-dark-500">
               <ShoppingBag className="h-3.5 w-3.5" aria-hidden="true" /> Gastos do mês

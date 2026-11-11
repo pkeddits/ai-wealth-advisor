@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useReducedMotion } from 'motion/react';
+import { usePreferences } from '../../store/preferencesStore';
 
 const QUERY = '(min-width: 1024px) and (pointer: fine)';
 
-/** Efeitos contínuos (flutuação, parallax) só rodam em desktop sem preferência por movimento reduzido. */
+/**
+ * Efeitos contínuos (flutuação, parallax) só rodam em desktop, sem preferência do sistema
+ * por movimento reduzido, com animações em intensidade total e efeitos premium ligados.
+ */
 export function useRichMotion(): boolean {
   const reduced = useReducedMotion();
+  const { motion, effects } = usePreferences();
   const [desktop, setDesktop] = useState(() => typeof window !== 'undefined' && window.matchMedia(QUERY).matches);
 
   useEffect(() => {
@@ -15,5 +20,5 @@ export function useRichMotion(): boolean {
     return () => media.removeEventListener('change', update);
   }, []);
 
-  return desktop && !reduced;
+  return desktop && !reduced && motion === 'full' && effects;
 }

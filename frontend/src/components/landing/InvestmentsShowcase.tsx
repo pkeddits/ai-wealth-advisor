@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import { Ban, Check } from 'lucide-react';
-import { Reveal } from '../motion';
+import { Reveal, ScrollParallax } from '../motion';
 import { SERIES_COLORS } from '../charts';
 import { SectionHeading } from './SectionHeading';
 
@@ -42,7 +42,7 @@ export function InvestmentsShowcase() {
           </ul>
         </div>
 
-        <Reveal variant="right" duration={0.9} className="relative">
+        <ScrollParallax distance={36}><Reveal variant="right" duration={0.9} className="relative">
           <div className="absolute -inset-10 -z-10 rounded-[40px] bg-primary-500/10 blur-3xl" aria-hidden="true" />
           <div className="panel-raised overflow-hidden p-6" role="img" aria-label="Ilustração de uma carteira com três posições">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -107,7 +107,7 @@ export function InvestmentsShowcase() {
           </div>
 
           <motion.div
-            className="panel-raised absolute -bottom-14 right-4 flex max-w-[300px] items-center gap-3 !rounded-2xl border-red-500/25 p-3.5 sm:-right-6"
+            className="panel-glass absolute -bottom-14 right-4 flex max-w-[300px] items-center gap-3 !border-red-500/25 p-3.5 sm:-right-6"
             initial={{ opacity: 0, y: 24, scale: 0.95 }}
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: true }}
@@ -118,7 +118,7 @@ export function InvestmentsShowcase() {
             </span>
             <p className="text-sm leading-snug text-dark-700">Venda de 500 MXRF11 recusada: 300 disponíveis.</p>
           </motion.div>
-        </Reveal>
+        </Reveal></ScrollParallax>
       </div>
     </section>
   );

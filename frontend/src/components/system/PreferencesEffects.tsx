@@ -1,0 +1,32 @@
+import { useEffect, useState, type ReactNode } from 'react';
+import { MotionConfig } from 'motion/react';
+import { usePreferences } from '../../store/preferencesStore';
+
+function useSystemDark() {
+  const [dark, setDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const update = () => setDark(media.matches);
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+  return dark;
+}
+
+/** Aplica as preferências de aparência ao documento e à configuração global de animação. */
+export function PreferencesEffects({ children }: { children: ReactNode }) {
+  const { theme, motion, density, effects } = usePreferences();
+  const systemDark = useSystemDark();
+  const resolvedTheme = theme === 'system' ? (systemDark ? 'dark' : 'light') : theme;
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.theme = resolvedTheme;
+    root.dataset.motion = motion;
+    root.dataset.density = density;
+    root.dataset.effects = effects ? 'on' : 'off';
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', resolvedTheme === 'light' ? '#f6f7fb' : '#07080e');
+  }, [resolvedTheme, motion, density, effects]);
+
+  return <MotionConfig reducedMotion={motion === 'off' ? 'always' : 'user'}>{children}</MotionConfig>;
+}

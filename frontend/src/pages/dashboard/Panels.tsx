@@ -6,16 +6,18 @@ import clsx from 'clsx';
 import type { Portfolio, Transaction } from '../../types';
 import { AllocationDonut, SERIES_COLORS } from '../../components/charts';
 import { AnimatedNumber } from '../../components/motion';
-import { formatCurrency } from '../../utils/format';
+import { useDisplayFormat } from '../../lib/displayFormat';
 import { assetClassLabel, riskProfileLabel } from '../../utils/labels';
 import type { AggregatedHolding } from './useDashboardData';
+import { spotlightHandler } from '../../hooks/useSpotlight';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 export function PanelCard({ title, action, children, className, delay = 0 }: { title: string; action?: ReactNode; children: ReactNode; className?: string; delay?: number }) {
   return (
     <motion.section
-      className={clsx('panel flex flex-col p-5 sm:p-6', className)}
+      className={clsx('panel spotlight flex flex-col p-5 transition-colors duration-300 hover:border-dark-300 sm:p-6', className)}
+      onPointerMove={spotlightHandler}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay, ease: EASE }}
@@ -39,7 +41,8 @@ export function StatsStrip({ portfolios, assets, operations }: { portfolios: num
   ];
   return (
     <motion.section
-      className="panel grid grid-cols-3 divide-x divide-dark-200/70"
+      className="panel spotlight grid grid-cols-3 divide-x divide-dark-200/70"
+      onPointerMove={spotlightHandler}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.15, ease: EASE }}
@@ -57,6 +60,7 @@ export function StatsStrip({ portfolios, assets, operations }: { portfolios: num
 }
 
 export function AllocationPanel({ holdings }: { holdings: AggregatedHolding[] }) {
+  const fmt = useDisplayFormat();
   const byClass = new Map<string, number>();
   for (const h of holdings) byClass.set(h.assetClass, (byClass.get(h.assetClass) ?? 0) + h.currentValue);
   const slices = [...byClass.entries()]
@@ -66,7 +70,7 @@ export function AllocationPanel({ holdings }: { holdings: AggregatedHolding[] })
   return (
     <PanelCard title="Distribuição por classe" delay={0.1}>
       {slices.length ? (
-        <AllocationDonut slices={slices} formatValue={formatCurrency} size={176} stacked />
+        <AllocationDonut slices={slices} formatValue={fmt.money} size={176} stacked />
       ) : (
         <p className="py-10 text-center text-sm text-dark-500">Sem posições abertas.</p>
       )}
@@ -75,6 +79,7 @@ export function AllocationPanel({ holdings }: { holdings: AggregatedHolding[] })
 }
 
 export function PortfoliosPanel({ portfolios }: { portfolios: Portfolio[] }) {
+  const fmt = useDisplayFormat();
   const max = Math.max(...portfolios.map((p) => p.totalValue || 0), 1);
   return (
     <PanelCard
@@ -105,8 +110,8 @@ export function PortfoliosPanel({ portfolios }: { portfolios: Portfolio[] }) {
                   <span className="mt-1 block text-xs text-dark-500">{riskProfileLabel(p.riskProfile)}</span>
                 </span>
                 <span className="text-right">
-                  <span className="block whitespace-nowrap text-sm font-medium text-dark-900">{formatCurrency(p.totalValue || 0)}</span>
-                  <span className={clsx('block text-xs', pct >= 0 ? 'text-green-600' : 'text-red-600')}>{pct >= 0 ? '+' : ''}{pct.toFixed(2)}%</span>
+                  <span className="block whitespace-nowrap text-sm font-medium text-dark-900">{fmt.money(p.totalValue || 0)}</span>
+                  <span className={clsx('block text-xs', pct >= 0 ? 'text-green-600' : 'text-red-600')}>{fmt.returnDisplay === 'absolute' ? fmt.signedMoney((p.totalValue || 0) - (p.totalInvested || 0)) : fmt.percent(pct)}</span>
                 </span>
                 <ChevronRight className="h-4 w-4 text-dark-400 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
               </Link>
@@ -119,6 +124,7 @@ export function PortfoliosPanel({ portfolios }: { portfolios: Portfolio[] }) {
 }
 
 export function HoldingsPanel({ holdings, totalValue }: { holdings: AggregatedHolding[]; totalValue: number }) {
+  const fmt = useDisplayFormat();
   return (
     <PanelCard title="Principais posições" delay={0.25} className="xl:col-span-4">
       {holdings.length ? (
@@ -137,7 +143,7 @@ export function HoldingsPanel({ holdings, totalValue }: { holdings: AggregatedHo
                     <span className="block truncate text-xs text-dark-500">{h.name}</span>
                   </span>
                   <span className="text-right">
-                    <span className="block whitespace-nowrap text-sm text-dark-900">{formatCurrency(h.currentValue)}</span>
+                    <span className="block whitespace-nowrap text-sm text-dark-900">{fmt.money(h.currentValue)}</span>
                     <span className={clsx('block text-xs', gain >= 0 ? 'text-green-600' : 'text-red-600')}>{gain >= 0 ? '+' : ''}{gain.toFixed(2)}%</span>
                   </span>
                 </div>
@@ -165,6 +171,7 @@ export function HoldingsPanel({ holdings, totalValue }: { holdings: AggregatedHo
 }
 
 export function ActivityPanel({ transactions, loading }: { transactions: Transaction[]; loading: boolean }) {
+  const fmt = useDisplayFormat();
   return (
     <PanelCard title="Atividade recente" delay={0.3}>
       {loading && !transactions.length ? (
@@ -184,10 +191,10 @@ export function ActivityPanel({ transactions, loading }: { transactions: Transac
                     {buy ? 'Compra' : 'Venda'} de {t.asset?.symbol ?? 'ativo'}
                   </span>
                   <span className="block text-xs text-dark-500">
-                    {Number(t.quantity).toLocaleString('pt-BR')} un. em {new Date(`${t.date.slice(0, 10)}T12:00:00`).toLocaleDateString('pt-BR')}
+                    {Number(t.quantity).toLocaleString('pt-BR')} un. em {fmt.date(t.date)}
                   </span>
                 </span>
-                <span className="whitespace-nowrap text-sm font-medium text-dark-800">{formatCurrency(Number(t.total ?? t.quantity * t.price))}</span>
+                <span className="whitespace-nowrap text-sm font-medium text-dark-800">{fmt.money(Number(t.total ?? t.quantity * t.price))}</span>
               </li>
             );
           })}

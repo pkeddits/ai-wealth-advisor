@@ -38,7 +38,7 @@ export function ComingSoon({ title, description, message = DEFAULT_MESSAGE, acti
         <p className="mx-auto mt-2 max-w-md text-dark-600">{message}</p>
         <Link
           to={action.to}
-          className="mt-7 inline-flex h-11 items-center justify-center rounded-control bg-brand px-5 font-semibold text-dark-900 transition-shadow hover:shadow-glow"
+          className="mt-7 inline-flex h-11 items-center justify-center rounded-control bg-brand px-5 font-semibold text-on-brand transition-shadow hover:shadow-glow"
         >
           {action.label}
         </Link>

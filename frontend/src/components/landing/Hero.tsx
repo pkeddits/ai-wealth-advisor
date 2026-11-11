@@ -1,12 +1,13 @@
 import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react';
-import { ArrowRight, Calculator, KeyRound, ShieldCheck } from 'lucide-react';
+import { ArrowRight, BadgeCheck as Validated, Calculator, KeyRound, PieChart, RefreshCw, ShieldCheck } from 'lucide-react';
 import { Horizon } from '../brand';
 import { usePointerParallax } from '../motion';
 import { useAuthStore } from '../../store/authStore';
 import { getEntryActions } from './entryActions';
 import { HeroStage } from './HeroStage';
+import { FloatCard } from './FloatCard';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -16,11 +17,11 @@ const PRINCIPLES = [
   { icon: KeyRound, text: 'Nenhuma senha bancária armazenada' },
 ];
 
-function MaskLine({ children, delay }: { children: string; delay: number }) {
+function MaskLine({ children, delay, shineDelay }: { children: string; delay: number; shineDelay: number }) {
   const reduced = useReducedMotion();
   return (
     <span className="block overflow-hidden pb-[0.08em]">
-      <motion.span className="text-brand block" initial={reduced ? false : { y: '105%' }} animate={{ y: 0 }} transition={{ duration: 1, delay, ease: EASE }}>
+      <motion.span className="text-shine block" style={{ animationDelay: `${shineDelay}s` }} initial={reduced ? false : { y: '105%' }} animate={{ y: 0 }} transition={{ duration: 1, delay, ease: EASE }}>
         {children}
       </motion.span>
     </span>
@@ -38,17 +39,35 @@ export function Hero() {
   const glowX = useTransform(x, (v) => v * 40);
 
   return (
-    <section ref={ref} className="relative isolate overflow-hidden pb-24 pt-32 sm:pt-40">
-      <div className="absolute inset-0 -z-20 bg-grid opacity-30 [mask-image:radial-gradient(ellipse_60%_45%_at_50%_15%,black,transparent)]" aria-hidden="true" />
+    <section ref={ref} className="relative isolate overflow-hidden pb-48 pt-32 sm:pt-40">
+      <div className="fx-decor absolute inset-0 -z-20 bg-grid opacity-30 [mask-image:radial-gradient(ellipse_60%_45%_at_50%_15%,black,transparent)]" aria-hidden="true" />
       <motion.div
-        className="absolute left-1/2 top-[-8%] -z-20 h-[520px] w-[900px] -translate-x-1/2 rounded-full opacity-70"
+        className="fx-decor absolute left-1/2 top-[-8%] -z-20 h-[520px] w-[900px] -translate-x-1/2 rounded-full opacity-70"
         style={{ x: glowX, background: 'radial-gradient(closest-side, rgb(var(--indigo) / 0.42), rgb(var(--violet) / 0.14) 55%, transparent)' }}
         aria-hidden="true"
       />
-      <Horizon className="absolute inset-x-0 top-[44%] -z-10 h-[1100px] sm:top-[40%]" offsetY={horizonY} />
+      <Horizon className="fx-decor absolute inset-x-0 top-[44%] -z-10 h-[1100px] sm:top-[40%]" offsetY={horizonY} />
       <div className="absolute inset-x-0 bottom-0 -z-10 h-56 bg-gradient-to-b from-transparent to-dark-50" aria-hidden="true" />
 
-      <div className="mx-auto max-w-7xl px-5 text-center sm:px-8">
+      <div className="relative mx-auto max-w-7xl px-5 text-center sm:px-8">
+        <FloatCard className="left-6 top-[30%] hidden xl:block" pointerX={x} pointerY={y} depth={18} delay={1.2} floatPeriod={8} rich={enabled}>
+          <span className="panel-glass flex items-center gap-2.5 !rounded-full py-2 pl-2 pr-4 text-sm text-dark-700">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-500/15 text-primary-700"><RefreshCw className="h-3.5 w-3.5" /></span>
+            Preço médio atualizado
+          </span>
+        </FloatCard>
+        <FloatCard className="left-2 top-[80%] hidden xl:block" pointerX={x} pointerY={y} depth={30} delay={1.4} floatPeriod={9.5} rich={enabled}>
+          <span className="panel-glass flex items-center gap-2.5 !rounded-full py-2 pl-2 pr-4 text-sm text-dark-700">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-green-500/15 text-green-600"><Validated className="h-3.5 w-3.5" /></span>
+            Venda validada pelo saldo
+          </span>
+        </FloatCard>
+        <FloatCard className="right-8 top-[40%] hidden xl:block" pointerX={x} pointerY={y} depth={24} delay={1.3} floatPeriod={10.5} rich={enabled}>
+          <span className="panel-glass flex items-center gap-2.5 !rounded-full py-2 pl-2 pr-4 text-sm text-dark-700">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-500/15 text-blue-600"><PieChart className="h-3.5 w-3.5" /></span>
+            Distribuição recalculada
+          </span>
+        </FloatCard>
         <motion.span
           className="chip-building"
           initial={{ opacity: 0, y: 12 }}
@@ -60,8 +79,8 @@ export function Hero() {
         </motion.span>
 
         <h1 className="text-display mx-auto mt-7 max-w-5xl text-[clamp(2.7rem,8.2vw,6.6rem)] leading-[0.98]">
-          <MaskLine delay={0.2}>Seu patrimônio</MaskLine>
-          <MaskLine delay={0.34}>em perspectiva.</MaskLine>
+          <MaskLine delay={0.2} shineDelay={1.3}>Seu patrimônio</MaskLine>
+          <MaskLine delay={0.34} shineDelay={1.5}>em perspectiva.</MaskLine>
         </h1>
 
         <motion.p
@@ -82,7 +101,7 @@ export function Hero() {
         >
           <Link
             to={primary.to}
-            className="group relative inline-flex h-14 items-center gap-2.5 overflow-hidden rounded-2xl bg-brand px-8 text-base font-semibold text-dark-900 shadow-[0_18px_40px_-14px_rgb(var(--violet)/0.8)] transition-[box-shadow,transform] duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_50px_-14px_rgb(var(--violet)/0.95)]"
+            className="group relative inline-flex h-14 items-center gap-2.5 overflow-hidden rounded-2xl bg-brand px-8 text-base font-semibold text-on-brand shadow-[0_18px_40px_-14px_rgb(var(--violet)/0.8)] transition-[box-shadow,transform] duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_50px_-14px_rgb(var(--violet)/0.95)]"
           >
             <span className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 -skew-x-12 bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-[320%]" aria-hidden="true" />
             {primary.label}

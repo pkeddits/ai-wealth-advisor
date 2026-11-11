@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { Building2, Landmark, LockKeyhole, Sparkles, Target } from 'lucide-react';
 import clsx from 'clsx';
 import { RevealGroup, RevealItem } from '../motion';
+import { spotlightHandler } from '../../hooks/useSpotlight';
 import { SectionHeading } from './SectionHeading';
 
 type Status = 'live' | 'building' | 'planned';
@@ -23,7 +24,7 @@ function Tile({ status, icon, title, text, children, className }: {
 }) {
   return (
     <RevealItem variant="scale" className={className}>
-      <article className="panel group relative flex h-full flex-col overflow-hidden p-6 transition-[border-color,transform] duration-500 hover:-translate-y-1 hover:border-dark-300 sm:p-7">
+      <article onPointerMove={spotlightHandler} className="panel spotlight group relative flex h-full flex-col overflow-hidden p-6 transition-[border-color,transform] duration-500 hover:-translate-y-1 hover:border-dark-300 sm:p-7">
         <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-primary-500/0 blur-3xl transition-colors duration-700 group-hover:bg-primary-500/15" aria-hidden="true" />
         <div className="flex items-center justify-between gap-3">
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-dark-200 bg-dark-100 text-primary-700">{icon}</span>
@@ -68,7 +69,7 @@ function OpenFinanceFlow() {
           </g>
         ))}
       </svg>
-      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand text-dark-900 shadow-glow">
+      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand text-on-brand shadow-glow">
         <Landmark className="h-6 w-6" />
       </span>
     </div>

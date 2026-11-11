@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import { Home, ShoppingCart, Car, Utensils } from 'lucide-react';
-import { Reveal } from '../motion';
+import { Reveal, ScrollParallax } from '../motion';
 import { EXPENSE_COLOR } from '../charts';
 import { SectionHeading } from './SectionHeading';
 
@@ -23,9 +23,9 @@ const CATEGORIES = [
 export function PersonalFinanceShowcase() {
   return (
     <section id="financas" className="relative scroll-mt-28 overflow-hidden border-y border-dark-200/50 bg-surface/50 py-28">
-      <div className="absolute -left-40 top-1/3 -z-10 h-96 w-96 rounded-full bg-blue-500/10 blur-[100px]" aria-hidden="true" />
+      <div className="fx-decor absolute -left-40 top-1/3 -z-10 h-96 w-96 rounded-full bg-blue-500/10 blur-[100px]" aria-hidden="true" />
       <div className="mx-auto grid max-w-7xl items-center gap-16 px-5 sm:px-8 lg:grid-cols-[1.1fr_0.9fr]">
-        <Reveal variant="left" duration={0.9} className="order-2 lg:order-1">
+        <ScrollParallax distance={28} className="order-2 lg:order-1"><Reveal variant="left" duration={0.9}>
           <div className="grid gap-3 sm:grid-cols-[1.25fr_1fr]" role="img" aria-label="Ilustração de receitas, despesas e categorias de gastos">
             <div className="panel-raised p-6">
               <div className="flex items-center justify-between">
@@ -85,7 +85,7 @@ export function PersonalFinanceShowcase() {
               </ul>
             </div>
           </div>
-        </Reveal>
+        </Reveal></ScrollParallax>
 
         <div className="order-1 lg:order-2">
           <SectionHeading eyebrow="Finanças pessoais" title="Para onde vai o dinheiro que não está investido.">

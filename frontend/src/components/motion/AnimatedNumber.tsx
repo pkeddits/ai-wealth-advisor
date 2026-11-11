@@ -43,7 +43,7 @@ export function AnimatedNumber({ value, format, className, duration = 0.9 }: Ani
 }
 
 /** Valor monetário com centavos em tom secundário. */
-export function MoneyFigure({ value, className, centsClassName = 'text-dark-500' }: { value: number; className?: string; centsClassName?: string }) {
+export function MoneyFigure({ value, className, centsClassName = 'text-dark-500', rounded = false }: { value: number; className?: string; centsClassName?: string; rounded?: boolean }) {
   const ref = useRef<HTMLSpanElement>(null);
   const previous = useRef(0);
   const reduced = useReducedMotion();
@@ -52,8 +52,8 @@ export function MoneyFigure({ value, className, centsClassName = 'text-dark-500'
     const node = ref.current;
     if (!node) return;
     const render = (v: number) => {
-      const [whole, cents] = v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).split(',');
-      node.innerHTML = `R$&nbsp;${whole}<span class="${centsClassName}">,${cents}</span>`;
+      const [whole, cents] = v.toLocaleString('pt-BR', { minimumFractionDigits: rounded ? 0 : 2, maximumFractionDigits: rounded ? 0 : 2 }).split(',');
+      node.innerHTML = cents ? `R$&nbsp;${whole}<span class="${centsClassName}">,${cents}</span>` : `R$&nbsp;${whole}`;
     };
     if (reduced) {
       render(value);
@@ -68,7 +68,7 @@ export function MoneyFigure({ value, className, centsClassName = 'text-dark-500'
     });
     previous.current = value;
     return () => controls.stop();
-  }, [value, reduced, centsClassName]);
+  }, [value, reduced, centsClassName, rounded]);
 
   return <span ref={ref} className={className} aria-label={value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />;
 }
