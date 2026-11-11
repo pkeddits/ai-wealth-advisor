@@ -20,7 +20,7 @@ export function AreaSpark({ values, className, animate = false, tone = 'primary'
     const path = smoothPath(points);
     return { line: path, area: `${path} L${W},${H} L0,${H} Z`, last: points[points.length - 1] };
   }, [values]);
-  const color = tone === 'primary' ? 'var(--primary-500)' : 'var(--accent-500)';
+  const color = tone === 'primary' ? 'var(--violet)' : 'var(--accent-500)';
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className={clsx('overflow-visible', className)} aria-hidden="true">

@@ -1,5 +1,7 @@
 import { SiteHeader } from '../components/landing/SiteHeader';
 import { Hero } from '../components/landing/Hero';
+import { InvestmentsShowcase } from '../components/landing/InvestmentsShowcase';
+import { PersonalFinanceShowcase } from '../components/landing/PersonalFinanceShowcase';
 import { FeatureBento } from '../components/landing/FeatureBento';
 import { HowItWorks } from '../components/landing/HowItWorks';
 import { ClosingCta } from '../components/landing/ClosingCta';
@@ -14,6 +16,8 @@ export function LandingPage() {
       <SiteHeader />
       <main id="conteudo">
         <Hero />
+        <InvestmentsShowcase />
+        <PersonalFinanceShowcase />
         <FeatureBento />
         <HowItWorks />
         <ClosingCta />

@@ -1,4 +1,7 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
+import { motion } from 'motion/react';
+import clsx from 'clsx';
+import { useUIStore } from '../../store/uiStore';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { DemoBanner } from '../common/DemoBanner';
@@ -6,15 +9,28 @@ import { AuthPanel, AuthMobileHeader } from '../auth/AuthPanel';
 import { isDemoMode } from '../../config/appMode';
 
 export function MainLayout() {
+  const location = useLocation();
+  const collapsed = useUIStore((s) => s.isSidebarCollapsed);
+
   return (
-    <div className="min-h-screen bg-dark-50">
+    <div className="relative min-h-screen">
+      <div className="pointer-events-none fixed inset-0 -z-10" aria-hidden="true">
+        <div className="absolute -top-48 left-1/3 h-[520px] w-[720px] rounded-full bg-primary-500/[0.08] blur-[120px]" />
+        <div className="absolute bottom-[-20%] right-[-10%] h-[520px] w-[620px] rounded-full bg-blue-500/[0.06] blur-[120px]" />
+      </div>
       <Sidebar />
-      <div className="lg:ml-64">
+      <div className={clsx('transition-[padding] duration-300 ease-out', collapsed ? 'lg:pl-[96px]' : 'lg:pl-[268px]')}>
         {isDemoMode && <DemoBanner />}
         <Header />
-        <main className="p-6 lg:p-8">
+        <motion.main
+          key={location.pathname}
+          className="px-4 pb-12 pt-6 sm:px-6 lg:px-8"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        >
           <Outlet />
-        </main>
+        </motion.main>
       </div>
     </div>
   );

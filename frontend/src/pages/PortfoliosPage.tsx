@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Plus, Search, ChevronRight, Wallet } from 'lucide-react';
 import { usePortfolioStore } from '../store/portfolioStore';
-import { Card, CardBody, Button, Input, Badge, LoadingSpinner, Modal } from '../components/common';
+import { motion } from 'motion/react';
+import { Button, Input, Badge, Modal } from '../components/common';
+import { SERIES_COLORS } from '../components/charts';
 import { riskProfileLabel } from '../utils/labels';
 import clsx from 'clsx';
 
@@ -53,91 +55,99 @@ export function PortfoliosPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-dark-900">Minhas Carteiras</h1>
-          <p className="text-dark-600 mt-1">Gerencie seus portfólios de investimento</p>
+          <h1 className="text-display text-[2rem] leading-tight sm:text-[2.4rem]">Minhas Carteiras</h1>
+          <p className="mt-1 text-dark-600">Gerencie seus portfólios de investimento</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} icon={<Plus className="w-4 h-4" />}>
+        <Button onClick={() => setIsModalOpen(true)} icon={<Plus className="h-4 w-4" />}>
           Nova Carteira
         </Button>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm" role="alert">
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700" role="alert">
           Não foi possível carregar as carteiras: {error}
         </div>
       )}
 
-      <Card>
-        <CardBody className="p-0">
-          {isLoading ? (
-            <div className="p-12 text-center">
-              <LoadingSpinner size="lg" />
-            </div>
-          ) : filteredPortfolios.length === 0 ? (
-            <div className="p-12 text-center">
-              <div className="w-16 h-16 rounded-full bg-dark-100 flex items-center justify-center mx-auto mb-4">
-                <Wallet className="w-8 h-8 text-dark-400" />
-              </div>
-              <h2 className="text-xl font-semibold text-dark-900 mb-2">
-                {searchQuery ? 'Nenhuma carteira encontrada' : 'Nenhuma carteira criada'}
-              </h2>
-              <p className="text-dark-600 mb-6">
-                {searchQuery ? 'Tente alterar sua busca' : 'Crie sua primeira carteira para começar'}
-              </p>
-              {!searchQuery && (
-                <Button onClick={() => setIsModalOpen(true)} icon={<Plus className="w-4 h-4" />}>
-                  Criar Carteira
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="divide-y divide-dark-200">
-              <div className="p-4 bg-dark-50">
-                <div className="flex items-center gap-4">
-                  <Input
-                    placeholder="Buscar carteiras..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-64"
-                    icon={<Search className="w-4 h-4" />}
-                  />
-                </div>
-              </div>
-              <div className="divide-y divide-dark-200">
-                {filteredPortfolios.map((portfolio) => (
-                  <Link key={portfolio.id} to={`/portfolios/${portfolio.id}`} className="block">
-                    <div className="p-4 hover:bg-dark-50 transition-colors flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center">
-                          <Wallet className="w-6 h-6 text-primary-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-dark-900">{portfolio.name}</p>
-                          <p className="text-sm text-dark-500">{portfolio.description || 'Sem descrição'}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <Badge variant="blue">{riskProfileLabel(portfolio.riskProfile)}</Badge>
-                        <div className="text-right hidden sm:block">
-                          <p className="font-semibold text-dark-900">
-                            R$ {(portfolio.totalValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </p>
-                          <p className={clsx('text-sm', (portfolio.totalReturnPct || 0) >= 0 ? 'text-green-600' : 'text-red-600')}>
-                            {(portfolio.totalReturnPct || 0) >= 0 ? '+' : ''}{(portfolio.totalReturnPct || 0).toFixed(2)}%
-                          </p>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-dark-400" aria-hidden="true" />
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
+      {portfolios.length > 0 && (
+        <Input
+          placeholder="Buscar carteiras..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="max-w-sm"
+          icon={<Search className="h-4 w-4" />}
+          aria-label="Buscar carteiras"
+        />
+      )}
+
+      {isLoading && portfolios.length === 0 ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {[0, 1, 2].map((i) => <div key={i} className="skeleton h-52 !rounded-panel" />)}
+        </div>
+      ) : filteredPortfolios.length === 0 ? (
+        <div className="panel-feature px-6 py-16 text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-primary-500/40 bg-primary-500/10 text-primary-700">
+            <Wallet className="h-7 w-7" />
+          </div>
+          <h2 className="text-display text-2xl">{searchQuery ? 'Nenhuma carteira encontrada' : 'Nenhuma carteira criada'}</h2>
+          <p className="mx-auto mt-2 max-w-sm text-dark-600">{searchQuery ? 'Tente alterar sua busca' : 'Crie sua primeira carteira para começar'}</p>
+          {!searchQuery && (
+            <Button className="mt-7" onClick={() => setIsModalOpen(true)} icon={<Plus className="h-4 w-4" />}>
+              Criar Carteira
+            </Button>
           )}
-        </CardBody>
-      </Card>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {filteredPortfolios.map((portfolio, index) => {
+            const pct = portfolio.totalReturnPct || 0;
+            const positions = portfolio.positions ?? [];
+            const total = positions.reduce((sum, p) => sum + (p.currentValue || 0), 0);
+            return (
+              <motion.div
+                key={portfolio.id}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <Link
+                  to={`/portfolios/${portfolio.id}`}
+                  className="panel group flex h-full flex-col p-6 transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-1 hover:border-primary-500/40 hover:shadow-[0_30px_60px_-30px_rgb(var(--violet)/0.45)]"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-dark-200 bg-dark-100 text-primary-700 transition-colors group-hover:border-primary-500/40">
+                      <Wallet className="h-5 w-5" />
+                    </span>
+                    <Badge variant="blue">{riskProfileLabel(portfolio.riskProfile)}</Badge>
+                  </div>
+                  <p className="mt-5 font-display text-lg font-semibold tracking-tight text-dark-900">{portfolio.name}</p>
+                  <p className="mt-0.5 truncate text-sm text-dark-500">{portfolio.description || 'Sem descrição'}</p>
+                  <div className="mt-6 flex items-end justify-between gap-3">
+                    <p className="whitespace-nowrap text-2xl font-semibold tracking-tight text-dark-900">
+                      R$ {(portfolio.totalValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                    <span className={clsx('rounded-full px-2 py-0.5 text-sm font-medium', pct >= 0 ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600')}>
+                      {pct >= 0 ? '+' : ''}{pct.toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="mt-4 flex h-1.5 gap-0.5 overflow-hidden rounded-full bg-dark-100" aria-hidden="true">
+                    {total > 0 &&
+                      positions.map((p, i) => (
+                        <span key={p.assetId} className="h-full" style={{ width: `${((p.currentValue || 0) / total) * 100}%`, background: SERIES_COLORS[i % SERIES_COLORS.length] }} />
+                      ))}
+                  </div>
+                  <p className="mt-3 flex items-center justify-between text-xs text-dark-500">
+                    {positions.length} {positions.length === 1 ? 'posição' : 'posições'}
+                    <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                  </p>
+                </Link>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Create Portfolio Modal */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Nova Carteira" size="md">

@@ -1,6 +1,7 @@
-import { Fragment, ReactNode } from 'react';
-import { X } from 'lucide-react';
+import { ReactNode, useEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'motion/react';
+import { X } from 'lucide-react';
 import clsx from 'clsx';
 
 interface ModalProps {
@@ -20,57 +21,66 @@ const sizeClasses = {
 };
 
 export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
-  if (!isOpen) return null;
+  const titleId = useId();
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = overflow;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [isOpen, onClose]);
 
   return createPortal(
-    <Fragment>
-      <div
-        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div
-          className={clsx(
-            'w-full panel-raised overflow-hidden animate-slide-up',
-            sizeClasses[size]
-          )}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={title ? 'modal-title' : undefined}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {title && (
-                      <div className="flex items-center justify-between px-6 py-4 border-b border-dark-200">
-                        <h2 id="modal-title" className="text-lg font-semibold text-dark-900">
-                          {title}
-                        </h2>
-                        <button
-                          onClick={onClose}
-                          className="p-1 rounded-lg text-dark-500 hover:bg-dark-100 hover:text-dark-700 transition-colors"
-                          aria-label="Fechar modal"
-                        >
-                          <X className="w-5 h-5" />
-                        </button>
-                      </div>
-                    )}
-                    {!title && onClose && (
-                      <div className="flex justify-end px-6 py-4 border-b border-dark-200">
-                        <button
-                          onClick={onClose}
-                          className="p-1 rounded-lg text-dark-500 hover:bg-dark-100 hover:text-dark-700 transition-colors"
-                          aria-label="Fechar modal"
-                        >
-                          <X className="w-5 h-5" />
-                        </button>
-                      </div>
-                    )}
-          <div className="p-6 max-h-[70vh] overflow-y-auto">
-            {children}
-          </div>
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center p-3 sm:items-center sm:p-4">
+          <motion.div
+            className="absolute inset-0 bg-black/65 backdrop-blur-[3px]"
+            onClick={onClose}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22 }}
+            aria-hidden="true"
+          />
+          <motion.div
+            className={clsx('panel-raised relative w-full overflow-hidden', sizeClasses[size])}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={title ? titleId : undefined}
+            initial={{ opacity: 0, y: 24, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.98 }}
+            transition={{ type: 'spring', stiffness: 380, damping: 32, mass: 0.8 }}
+          >
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary-500/70 to-transparent" aria-hidden="true" />
+            <div className="flex items-center justify-between border-b border-dark-200/70 px-6 py-4">
+              {title ? (
+                <h2 id={titleId} className="font-display text-lg font-semibold tracking-tight">
+                  {title}
+                </h2>
+              ) : (
+                <span />
+              )}
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-lg p-1.5 text-dark-500 transition-colors hover:bg-dark-100 hover:text-dark-800"
+                aria-label="Fechar"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="max-h-[75vh] overflow-y-auto p-6">{children}</div>
+          </motion.div>
         </div>
-      </div>
-    </Fragment>,
-    document.body
+      )}
+    </AnimatePresence>,
+    document.body,
   );
 }

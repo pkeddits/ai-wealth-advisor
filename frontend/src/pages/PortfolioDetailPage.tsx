@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Plus, TrendingUp, DollarSign, PieChart } from 'lucide-react';
-import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { ArrowLeft, Plus, TrendingUp, DollarSign, PieChart } from 'lucide-react';
+import { motion } from 'motion/react';
 import { usePortfolioStore } from '../store/portfolioStore';
 import { portfolioService, assetService } from '../services';
 import { Card, CardBody, Button, Input, Select, Modal, Badge, LoadingSpinner, Table } from '../components/common';
@@ -9,7 +9,8 @@ import { formatCurrency } from '../utils/format';
 import { assetClassLabel, riskProfileLabel, transactionTypeLabel } from '../utils/labels';
 import { isDemoMode } from '../config/appMode';
 import { demoPriceOf } from '../services/demo';
-import { SERIES_COLORS } from '../components/charts';
+import { AllocationDonut, SERIES_COLORS } from '../components/charts';
+import { MoneyFigure } from '../components/motion';
 import clsx from 'clsx';
 
 const today = () => new Date().toISOString().split('T')[0];
@@ -143,74 +144,71 @@ export function PortfolioDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <Link to="/portfolios" className="text-sm text-dark-500 hover:underline mb-2 inline-block">
-            ← Voltar às carteiras
+          <Link to="/portfolios" className="group inline-flex items-center gap-1.5 text-sm text-dark-500 transition-colors hover:text-dark-800">
+            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" aria-hidden="true" />
+            Voltar às carteiras
           </Link>
-          <h1 className="text-2xl font-bold text-dark-900">{portfolio.name}</h1>
-          {portfolio.description && <p className="text-dark-600 mt-1">{portfolio.description}</p>}
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <h1 className="text-display text-[2rem] leading-tight sm:text-[2.4rem]">{portfolio.name}</h1>
+            <span className="chip-building">{riskProfileLabel(portfolio.riskProfile)}</span>
+          </div>
+          {portfolio.description && <p className="mt-1 text-dark-600">{portfolio.description}</p>}
         </div>
-        <div className="flex gap-2">
-          <Button onClick={openTransactionModal} icon={<Plus className="w-4 h-4" />}>
-            Nova Transação
-          </Button>
-        </div>
+        <Button onClick={openTransactionModal} icon={<Plus className="h-4 w-4" />}>
+          Nova Transação
+        </Button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardBody className="p-5">
+      <motion.section
+        className="panel-feature overflow-hidden p-6 sm:p-8"
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        aria-label="Resumo da carteira"
+      >
+        <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-primary-500/20 blur-[90px]" aria-hidden="true" />
+        <div className="relative grid gap-8 md:grid-cols-[1.4fr_1fr] md:items-end">
+          <div>
             <p className="text-sm text-dark-500">Valor Total</p>
-            <p className="mt-1 whitespace-nowrap text-2xl font-bold text-dark-900 sm:text-3xl">{formatCurrency(totalValue)}</p>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody className="p-5">
-            <p className="text-sm text-dark-500">Ganho/Perda Não Realizado</p>
-            <p className={clsx('mt-1 whitespace-nowrap text-2xl font-bold sm:text-3xl', totalGain >= 0 ? 'text-green-600' : 'text-red-600')}>
+            <MoneyFigure value={totalValue} className="mt-2 block whitespace-nowrap text-[2.2rem] font-semibold leading-none tracking-[-0.03em] text-dark-900 sm:text-[3rem]" />
+            <p className={clsx('mt-4 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-medium', totalGain >= 0 ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600')}>
               {totalGain >= 0 ? '+' : ''}{formatCurrency(totalGain)}
+              <span className="opacity-80">({totalGainPct >= 0 ? '+' : ''}{totalGainPct.toFixed(2)}%)</span>
             </p>
-            <p className={clsx('text-sm', totalGainPct >= 0 ? 'text-green-600' : 'text-red-600')}>
-              {totalGainPct >= 0 ? '+' : ''}{totalGainPct.toFixed(2)}%
-            </p>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody className="p-5">
-            <p className="text-sm text-dark-500">Perfil de Risco</p>
-            <Badge variant="blue" className="text-lg px-4 py-2 mt-1 inline-block">
-              {riskProfileLabel(portfolio.riskProfile)}
-            </Badge>
-          </CardBody>
-        </Card>
-      </div>
+          </div>
+          <dl className="grid grid-cols-3 gap-4 text-sm md:text-right">
+            <div><dt className="text-dark-500">Aplicado</dt><dd className="mt-1 whitespace-nowrap font-medium text-dark-900">{formatCurrency(totalValue - totalGain)}</dd></div>
+            <div><dt className="text-dark-500">Posições</dt><dd className="mt-1 font-medium text-dark-900">{positions.length}</dd></div>
+            <div><dt className="text-dark-500">Operações</dt><dd className="mt-1 font-medium text-dark-900">{transactions.length}</dd></div>
+          </dl>
+        </div>
+      </motion.section>
 
-      {/* Tabs */}
-      <div className="border-b border-dark-200">
-        <nav className="flex gap-4" aria-label="Tabs">
-          {[
-            { id: 'positions', label: 'Posições', icon: DollarSign },
-            { id: 'transactions', label: 'Transações', icon: TrendingUp },
-            { id: 'performance', label: 'Alocação', icon: PieChart },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={clsx(
-                'flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors',
-                activeTab === tab.id
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-dark-500 hover:text-dark-700 hover:border-dark-300'
-              )}
-            >
-              <tab.icon className="w-4 h-4" aria-hidden="true" />
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+      <div className="flex gap-1 overflow-x-auto rounded-2xl border border-dark-200/70 bg-dark-100/40 p-1 sm:inline-flex" role="tablist" aria-label="Seções da carteira">
+        {[
+          { id: 'positions', label: 'Posições', icon: DollarSign },
+          { id: 'transactions', label: 'Transações', icon: TrendingUp },
+          { id: 'performance', label: 'Alocação', icon: PieChart },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={clsx(
+              'relative flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-colors',
+              activeTab === tab.id ? 'text-dark-900' : 'text-dark-500 hover:text-dark-800',
+            )}
+          >
+            {activeTab === tab.id && (
+              <motion.span layoutId="portfolio-tab" className="absolute inset-0 rounded-xl border border-primary-500/30 bg-primary-500/15" transition={{ type: 'spring', stiffness: 420, damping: 36 }} />
+            )}
+            <tab.icon className="relative h-4 w-4" aria-hidden="true" />
+            <span className="relative">{tab.label}</span>
+          </button>
+        ))}
       </div>
 
       {/* Tab Content */}
@@ -306,23 +304,11 @@ export function PortfolioDetailPage() {
                     <span className="text-dark-500">Registre uma compra para ver a distribuição da carteira.</span>
                   </div>
                 ) : (
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RePieChart>
-                        <Pie data={allocationByClass} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90} paddingAngle={2}>
-                          {allocationByClass.map((_, i) => (
-                            <Cell key={i} fill={SERIES_COLORS[i % SERIES_COLORS.length]} stroke="rgb(var(--surface))" />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(v: number) => formatCurrency(v)}
-                          contentStyle={{ background: 'rgb(var(--surface-raised))', border: '1px solid rgb(var(--dark-200))', borderRadius: 12, color: 'rgb(var(--dark-900))' }}
-                          itemStyle={{ color: 'rgb(var(--dark-800))' }}
-                        />
-                        <Legend />
-                      </RePieChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <AllocationDonut
+                    slices={allocationByClass.map((a, i) => ({ key: a.name, label: a.name, value: a.value, color: SERIES_COLORS[i % SERIES_COLORS.length] }))}
+                    formatValue={formatCurrency}
+                    size={200}
+                  />
                 )}
               </div>
               <div>

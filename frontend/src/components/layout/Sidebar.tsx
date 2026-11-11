@@ -1,155 +1,171 @@
+import { useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { useAuthStore } from '../../store/authStore';
-import {
-  LayoutDashboard,
-  Wallet,
-  BarChart3,
-  Bot,
-  AlertTriangle,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  TrendingUp,
-  RefreshCw,
-} from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useUIStore } from '../../store/uiStore';
+import { AnimatePresence, motion } from 'motion/react';
+import { LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import clsx from 'clsx';
-import { appMode, type AppMode } from '../../config/appMode';
+import { useAuthStore } from '../../store/authStore';
+import { useUIStore } from '../../store/uiStore';
+import { appMode } from '../../config/appMode';
+import { riskProfileLabel } from '../../utils/labels';
 import { Logo, LogoMark } from '../brand';
+import { NAV_SECTIONS } from './navigation';
 
-const ALL_MODES: AppMode[] = ['demo', 'supabase', 'api'];
+function initials(name?: string) {
+  const parts = (name || '?').trim().split(/\s+/);
+  return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+}
 
-// Modos em que a página tem implementação; nos demais ela mostra "Em desenvolvimento".
-const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, availableIn: ALL_MODES },
-  { name: 'Carteiras', href: '/portfolios', icon: Wallet, availableIn: ['demo', 'api'] as AppMode[] },
-  { name: 'Análise IA', href: '/ai-analysis', icon: Bot, availableIn: ['api'] as AppMode[] },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3, availableIn: ['api'] as AppMode[] },
-  { name: 'Simulações', href: '/simulations', icon: TrendingUp, availableIn: ['api'] as AppMode[] },
-  { name: 'Alertas', href: '/alerts', icon: AlertTriangle, availableIn: ['api'] as AppMode[] },
-  { name: 'Configurações', href: '/settings', icon: Settings, availableIn: ['api'] as AppMode[] },
-];
-
-export function Sidebar() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+function NavContent({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
   const location = useLocation();
   const { user, logout } = useAuthStore();
-  const { isMobileNavOpen, closeMobileNav } = useUIStore();
+  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
 
-  // No celular o menu fecha ao trocar de página
+  return (
+    <div className="flex h-full flex-col">
+      <div className={clsx('flex h-16 items-center gap-2 px-4', collapsed ? 'justify-center' : 'justify-between')}>
+        <NavLink to="/dashboard" aria-label="Ir para o painel" onClick={onNavigate}>
+          {collapsed ? <LogoMark className="h-9 w-9" /> : <Logo size="sm" />}
+        </NavLink>
+        {!collapsed && (
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            className="hidden rounded-lg p-1.5 text-dark-500 transition-colors hover:bg-dark-100 hover:text-dark-800 lg:block"
+            aria-label="Recolher menu"
+          >
+            <PanelLeftClose className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      <nav className="flex-1 overflow-y-auto px-3 pb-4 pt-2" aria-label="Navegação principal">
+        {NAV_SECTIONS.map((section) => (
+          <div key={section.title} className="mt-4 first:mt-1">
+            {!collapsed && <p className="px-3 pb-2 text-[11px] font-medium text-dark-500">{section.title}</p>}
+            {collapsed && <div className="mx-auto mb-2 h-px w-6 bg-dark-200" aria-hidden="true" />}
+            <ul className="space-y-1" role="list">
+              {section.items.map((item) => {
+                const active = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
+                const available = item.availableIn.includes(appMode);
+                return (
+                  <li key={item.href}>
+                    <NavLink
+                      to={item.href}
+                      onClick={onNavigate}
+                      title={collapsed ? item.name : undefined}
+                      aria-current={active ? 'page' : undefined}
+                      className={clsx(
+                        'group relative flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors',
+                        collapsed && 'justify-center px-0',
+                        active ? 'text-dark-900' : 'text-dark-600 hover:text-dark-900',
+                      )}
+                    >
+                      {active && (
+                        <motion.span
+                          layoutId="nav-active"
+                          className="absolute inset-0 rounded-xl border border-primary-500/30 bg-gradient-to-r from-primary-500/20 via-primary-500/[0.08] to-transparent"
+                          transition={{ type: 'spring', stiffness: 420, damping: 36 }}
+                        >
+                          <span className="absolute -left-3 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-primary-500 shadow-[0_0_12px_rgb(var(--violet))]" />
+                        </motion.span>
+                      )}
+                      {!active && <span className="absolute inset-0 rounded-xl bg-dark-100/0 transition-colors group-hover:bg-dark-100/70" aria-hidden="true" />}
+                      <item.icon
+                        className={clsx('relative h-[18px] w-[18px] shrink-0 transition-colors', active ? 'text-primary-700' : 'text-dark-500 group-hover:text-dark-700')}
+                        aria-hidden="true"
+                      />
+                      {!collapsed && <span className="relative">{item.name}</span>}
+                      {!collapsed && !available && (
+                        <span className="relative ml-auto rounded-full border border-dark-200 px-2 py-0.5 text-[10px] font-medium text-dark-500">Em breve</span>
+                      )}
+                    </NavLink>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </nav>
+
+      <div className="p-3">
+        {collapsed && (
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            className="mb-2 hidden w-full justify-center rounded-xl p-2 text-dark-500 hover:bg-dark-100 hover:text-dark-800 lg:flex"
+            aria-label="Expandir menu"
+          >
+            <PanelLeftOpen className="h-4 w-4" />
+          </button>
+        )}
+        <div className={clsx('flex items-center gap-3 rounded-2xl border border-dark-200/70 bg-dark-100/50 p-2.5', collapsed && 'flex-col')}>
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand text-sm font-semibold text-dark-900">
+            {initials(user?.name)}
+          </span>
+          {!collapsed && (
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-dark-900">{user?.name}</p>
+              <p className="truncate text-xs text-dark-500">{riskProfileLabel(user?.riskProfile)}</p>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => logout()}
+            className="rounded-lg p-2 text-dark-500 transition-colors hover:bg-red-500/10 hover:text-red-600"
+            aria-label="Sair"
+            title="Sair"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function Sidebar() {
+  const location = useLocation();
+  const { isMobileNavOpen, closeMobileNav, isSidebarCollapsed } = useUIStore();
+
   useEffect(() => {
     closeMobileNav();
   }, [location.pathname, closeMobileNav]);
 
   return (
     <>
-    {isMobileNavOpen && (
-      <div className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden" onClick={closeMobileNav} aria-hidden="true" />
-    )}
-    <aside
-      className={clsx(
-        'fixed left-0 top-0 z-40 h-screen border-r border-dark-200/70 bg-white transition-all duration-300',
-        isCollapsed ? 'w-20' : 'w-64',
-        isMobileNavOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-      )}
-    >
-      <div className="flex h-full flex-col">
-        <div className={clsx('flex h-16 items-center border-b border-dark-200/70 px-4', isCollapsed && 'justify-center')}>
-          <NavLink to="/dashboard" aria-label="Ir para o painel">
-            {isCollapsed ? <LogoMark className="h-8 w-8" /> : <Logo size="sm" />}
-          </NavLink>
-        </div>
+      <motion.aside
+        className="panel fixed inset-y-3 left-3 z-40 hidden overflow-hidden !rounded-[28px] lg:block"
+        animate={{ width: isSidebarCollapsed ? 84 : 256 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 34 }}
+        aria-label="Menu lateral"
+      >
+        <NavContent collapsed={isSidebarCollapsed} />
+      </motion.aside>
 
-        {/* Navigation */}
-        <nav className="flex-1 py-4 overflow-y-auto" aria-label="Main navigation">
-          <ul className="space-y-1 px-2" role="list">
-            {navigation.map((item) => {
-              const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
-              return (
-                <li key={item.name}>
-                  <NavLink
-                    to={item.href}
-                    className={clsx(
-                      'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                      isActive
-                        ? 'bg-primary-500/10 text-primary-700 shadow-[inset_2px_0_0_rgb(var(--primary-500))]'
-                        : 'text-dark-600 hover:bg-dark-100 hover:text-dark-900',
-                      isCollapsed && 'justify-center'
-                    )}
-                    aria-current={isActive ? 'page' : undefined}
-                    title={isCollapsed ? item.name : undefined}
-                  >
-                    <item.icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-                    {!isCollapsed && <span>{item.name}</span>}
-                    {!isCollapsed && !item.availableIn.includes(appMode) && (
-                      <span className="ml-auto rounded-full bg-dark-100 px-2 py-0.5 text-[11px] font-medium text-dark-500">
-                        Em breve
-                      </span>
-                    )}
-                  </NavLink>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-
-        {/* User Section */}
-        <div className={clsx('p-4 border-t border-dark-200', isCollapsed && 'items-center')}>
-          {!isCollapsed && user && (
-            <div className="mb-4">
-              <p className="text-sm font-medium text-dark-900 truncate">{user.name}</p>
-              <p className="text-xs text-dark-500 truncate">{user.email}</p>
-              <span className="inline-block mt-1 px-2 py-0.5 text-xs rounded-full bg-primary-100 text-primary-700 capitalize">
-                {user.riskProfile}
-              </span>
-            </div>
-          )}
-          <div className="flex items-center gap-2">
-            {!isCollapsed && (
-              <NavLink
-                to="/settings"
-                className="flex-1 flex items-center gap-2 px-3 py-2 text-sm text-dark-600 hover:bg-dark-100 rounded-lg transition-colors"
-              >
-                <Settings className="w-5 h-5" />
-                <span>Configurações</span>
-              </NavLink>
-            )}
-            {isCollapsed && (
-              <NavLink
-                to="/settings"
-                className="p-2 text-dark-600 hover:bg-dark-100 rounded-lg transition-colors"
-                title="Configurações"
-              >
-                <Settings className="w-5 h-5" />
-              </NavLink>
-            )}
-            <button
-              onClick={() => logout()}
-              className={clsx(
-                'flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors',
-                isCollapsed && 'justify-center p-2'
-              )}
-              title={isCollapsed ? 'Sair' : undefined}
+      <AnimatePresence>
+        {isMobileNavOpen && (
+          <>
+            <motion.div
+              className="fixed inset-0 z-40 bg-black/65 backdrop-blur-[3px] lg:hidden"
+              onClick={closeMobileNav}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              aria-hidden="true"
+            />
+            <motion.aside
+              className="panel fixed inset-y-3 left-3 z-50 w-[272px] max-w-[calc(100vw-24px)] overflow-hidden !rounded-[28px] lg:hidden"
+              initial={{ x: '-110%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-110%' }}
+              transition={{ type: 'spring', stiffness: 360, damping: 36 }}
+              aria-label="Menu lateral"
             >
-              <LogOut className="w-5 h-5" />
-              {!isCollapsed && <span>Sair</span>}
-            </button>
-          </div>
-          
-          {/* Collapse Toggle */}
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-8 bg-dark-100 border border-dark-200 rounded-r-lg hidden lg:flex items-center justify-center hover:bg-dark-200 transition-colors"
-            aria-label={isCollapsed ? 'Expandir menu' : 'Colapsar menu'}
-            aria-expanded={!isCollapsed}
-          >
-            {isCollapsed ? <Menu className="w-4 h-4" /> : <X className="w-4 h-4" />}
-          </button>
-        </div>
-      </div>
-    </aside>
+              <NavContent collapsed={false} onNavigate={closeMobileNav} />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
     </>
   );
 }

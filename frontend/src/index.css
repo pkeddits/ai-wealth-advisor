@@ -1,5 +1,5 @@
 @import '@fontsource-variable/inter/wght.css';
-@import '@fontsource-variable/unbounded/wght.css';
+@import '@fontsource-variable/bricolage-grotesque/opsz.css';
 @import './styles/theme.css';
 
 @tailwind base;
@@ -8,7 +8,6 @@
 
 @layer base {
   html {
-    @apply scroll-smooth;
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -25,17 +24,17 @@
   }
 
   ::selection {
-    background: rgb(var(--primary-500) / 0.3);
+    background: rgb(var(--violet) / 0.35);
     color: rgb(var(--dark-900));
   }
 
   :focus-visible {
-    outline: 2px solid rgb(var(--primary-500));
+    outline: 2px solid rgb(var(--violet));
     outline-offset: 2px;
   }
 
   input[type='date']::-webkit-calendar-picker-indicator {
-    filter: invert(0.8);
+    filter: invert(0.75);
   }
 
   ::-webkit-scrollbar {
@@ -55,25 +54,50 @@
 }
 
 @layer components {
-  /* Painel principal: superfície com realce superior e sombra profunda. */
+  /* Painel: superfície grafite com filete de luz no topo. */
   .panel {
-    @apply rounded-panel border border-dark-200/80 bg-white shadow-panel;
+    @apply relative rounded-panel border border-dark-200/70 shadow-panel;
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.035), transparent 38%),
+      rgb(var(--surface));
   }
 
   .panel-raised {
-    @apply rounded-panel border border-dark-200 bg-surface-raised shadow-panel;
+    @apply relative rounded-panel border border-dark-200 shadow-float;
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.05), transparent 42%),
+      rgb(var(--surface-raised));
+  }
+
+  /* Borda em gradiente para o painel de maior destaque da tela. */
+  .panel-feature {
+    @apply relative rounded-panel shadow-panel;
+    background:
+      radial-gradient(120% 90% at 0% 0%, rgb(var(--violet) / 0.16), transparent 55%),
+      radial-gradient(90% 80% at 100% 100%, rgb(var(--azure) / 0.1), transparent 60%),
+      rgb(var(--surface));
+  }
+
+  .panel-feature::before {
+    content: '';
+    @apply pointer-events-none absolute inset-0 rounded-panel;
+    padding: 1px;
+    background: linear-gradient(140deg, rgb(var(--violet) / 0.55), rgb(var(--dark-200) / 0.4) 40%, rgb(var(--azure) / 0.35));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
   }
 
   .chip {
-    @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium;
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium;
   }
 
   .chip-live {
-    @apply chip border-primary-500/30 bg-primary-500/10 text-primary-700;
+    @apply chip border-green-500/30 bg-green-500/10 text-green-700;
   }
 
   .chip-building {
-    @apply chip border-accent-500/30 bg-accent-500/10 text-accent-400;
+    @apply chip border-primary-500/35 bg-primary-500/10 text-primary-800;
   }
 
   .chip-planned {
@@ -81,15 +105,45 @@
   }
 
   .text-display {
-    @apply font-display font-semibold tracking-tight text-dark-900;
+    @apply font-display font-semibold text-dark-900;
+    letter-spacing: -0.035em;
   }
 
-  /* Textura de grade usada em fundos de seções de destaque. */
+  .text-brand {
+    background: linear-gradient(180deg, rgb(var(--dark-900)) 30%, rgb(var(--primary-800)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .eyebrow {
+    @apply text-sm font-medium text-primary-700;
+  }
+
   .bg-grid {
     background-image:
-      linear-gradient(rgb(var(--dark-200) / 0.35) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(var(--dark-200) / 0.35) 1px, transparent 1px);
-    background-size: 56px 56px;
+      linear-gradient(rgb(var(--dark-200) / 0.4) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--dark-200) / 0.4) 1px, transparent 1px);
+    background-size: 64px 64px;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden rounded-lg bg-dark-100;
+  }
+
+  .skeleton::after {
+    content: '';
+    @apply absolute inset-0 animate-shimmer;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.06), transparent);
+  }
+
+  .link-underline {
+    background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+    transition: background-size var(--duration-base) var(--ease-out), color var(--duration-fast);
+  }
+
+  .link-underline:hover {
+    background-size: 100% 1px;
   }
 }
 
@@ -98,6 +152,7 @@
   *::before,
   *::after {
     animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
     animation-delay: 0ms !important;
     transition-duration: 1ms !important;
     scroll-behavior: auto !important;
