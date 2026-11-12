@@ -5,7 +5,7 @@ import { dbError } from '../supabase/errors';
 import type { FinanceService } from './types';
 import { validateEntry } from './validation';
 
-const COLUMNS = 'id, kind, amount, category, description, occurred_on, source, status, flow, needs_review, created_at, updated_at, account:bank_accounts(name, connection:bank_connections(institution_name))';
+const COLUMNS = 'id, kind, amount, category, description, occurred_on, source, status, flow, needs_review, note, created_at, updated_at, account:bank_accounts(name, connection:bank_connections(institution_name))';
 
 interface EntryRow {
   id: string;
@@ -18,6 +18,7 @@ interface EntryRow {
   status: 'posted' | 'pending';
   flow: NonNullable<FinanceEntry['flow']>;
   needs_review: boolean;
+  note: string | null;
   account: { name: string; connection: { institution_name: string } | null } | null;
   created_at: string;
   updated_at: string;
@@ -34,6 +35,7 @@ const toEntry = (row: EntryRow): FinanceEntry => ({
   status: row.status,
   flow: row.flow,
   needsReview: row.needs_review,
+  note: row.note,
   origin: row.account ? { institution: row.account.connection?.institution_name ?? 'Instituição', account: row.account.name } : null,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
@@ -71,7 +73,7 @@ export const supabaseFinanceService: FinanceService = {
   async reclassify(id, change) {
     const { data, error } = await getSupabase()
       .from('finance_entries')
-      .update({ category: change.category, flow: change.flow, needs_review: false })
+      .update({ category: change.category, flow: change.flow, needs_review: false, ...(change.note !== undefined ? { note: change.note?.trim().slice(0, 300) || null } : {}) })
       .eq('id', id)
       .select(COLUMNS)
       .maybeSingle();

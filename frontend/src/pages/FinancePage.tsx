@@ -3,7 +3,11 @@ import { motion } from 'motion/react';
 import { ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight, Landmark, Pencil, Plus, ReceiptText, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 import type { FinanceCategory, FinanceEntry, FinanceEntryInput, FinanceKind } from '../types';
-import { financeService, CATEGORIES, loadDemoFinanceSample } from '../services/finance';
+import { financeService, CATEGORIES, categoryMeta, loadDemoFinanceSample } from '../services/finance';
+import { useCustomCategories } from '../services/planning';
+import { GoalsTab } from './finance/GoalsTab';
+import { BudgetsTab } from './finance/BudgetsTab';
+import { CategoriesTab } from './finance/CategoriesTab';
 import { summarizeMonth, shiftMonth } from '../domain/finance';
 import { isDemoMode } from '../config/appMode';
 import { useDisplayFormat } from '../lib/displayFormat';
@@ -38,8 +42,21 @@ function defaultDateFor(month: string) {
   return month === todayMonth ? `${todayMonth}-${String(today.getDate()).padStart(2, '0')}` : `${month}-01`;
 }
 
+const TABS = [
+  { id: 'mes', label: 'Visão do mês' },
+  { id: 'metas', label: 'Metas' },
+  { id: 'orcamentos', label: 'Orçamentos' },
+  { id: 'categorias', label: 'Categorias' },
+] as const;
+type Tab = (typeof TABS)[number]['id'];
+
 export function FinancePage() {
   const fmt = useDisplayFormat();
+  const [tab, setTabState] = useState<Tab>(() => (TABS.find((t) => `#${t.id}` === window.location.hash)?.id ?? 'mes'));
+  const setTab = (t: Tab) => { setTabState(t); window.history.replaceState(null, '', t === 'mes' ? window.location.pathname : `#${t}`); };
+  const loadCategories = useCustomCategories((st) => st.load);
+  useCustomCategories((st) => st.list);
+  useEffect(() => { loadCategories(); }, [loadCategories]);
   const [month, setMonth] = useState(currentMonth);
   const [entries, setEntries] = useState<FinanceEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +100,7 @@ export function FinancePage() {
     else await load();
   };
 
-  const reclassify = async (entry: FinanceEntry, change: { category: FinanceCategory; flow: FinanceFlow }) => {
+  const reclassify = async (entry: FinanceEntry, change: { category: FinanceCategory; flow: FinanceFlow; note: string | null }) => {
     await financeService.reclassify(entry.id, change);
     await load();
   };
@@ -113,7 +130,7 @@ export function FinancePage() {
     }
   };
 
-  const slices = summary.expensesByCategory.map((c, i) => ({ key: c.category, label: CATEGORIES[c.category as FinanceCategory]?.label ?? c.category, value: c.amount, color: SERIES_COLORS[i % SERIES_COLORS.length] }));
+  const slices = summary.expensesByCategory.map((c, i) => ({ key: c.category, label: categoryMeta(c.category).label, value: c.amount, color: SERIES_COLORS[i % SERIES_COLORS.length] }));
   const hasEntries = entries.length > 0;
 
   return (
@@ -138,9 +155,22 @@ export function FinancePage() {
             {isDemoMode && <span className="chip-planned">Dados fictícios</span>}
           </div>
         </div>
-        <Button onClick={openNew} icon={<Plus className="h-4 w-4" />}>Nova movimentação</Button>
+        {tab === 'mes' && <Button onClick={openNew} icon={<Plus className="h-4 w-4" />}>Nova movimentação</Button>}
       </div>
 
+      <div className="flex gap-1 overflow-x-auto rounded-2xl border border-dark-200/70 bg-dark-100/40 p-1 sm:inline-flex" role="tablist" aria-label="Seções de finanças pessoais">
+        {TABS.map((t) => (
+          <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)} className={clsx('relative whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-colors', tab === t.id ? 'text-dark-900' : 'text-dark-500 hover:text-dark-800')}>
+            {tab === t.id && <motion.span layoutId="finance-tab" className="absolute inset-0 rounded-xl border border-primary-500/30 bg-primary-500/15" transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
+            <span className="relative">{t.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {tab === 'metas' && <GoalsTab />}
+      {tab === 'orcamentos' && <BudgetsTab />}
+      {tab === 'categorias' && <CategoriesTab />}
+      {tab === 'mes' && (<>
       {error && <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700" role="alert">{error}</div>}
       {isSupabaseMode && !loading && !hasImported && (
         <p className="flex flex-wrap items-center gap-2 rounded-2xl border border-dark-200/70 bg-dark-50/40 px-4 py-3 text-sm text-dark-600">
@@ -249,7 +279,7 @@ export function FinancePage() {
                     aria-label="Filtrar por categoria"
                     value={categoryFilter}
                     onChange={(e) => setCategoryFilter(e.target.value as typeof categoryFilter)}
-                    options={[{ value: 'todas', label: 'Todas as categorias' }, ...(Object.keys(CATEGORIES) as FinanceCategory[]).map((c) => ({ value: c, label: CATEGORIES[c].label }))]}
+                    options={[{ value: 'todas', label: 'Todas as categorias' }, ...[...new Set([...Object.keys(CATEGORIES), ...entries.map((e) => e.category)])].map((c) => ({ value: c, label: categoryMeta(c).label }))]}
                   />
                 </div>
               </div>
@@ -264,8 +294,8 @@ export function FinancePage() {
                     <p className="mb-2 text-xs font-medium text-dark-500">{fmt.date(date)}</p>
                     <ul className="divide-y divide-dark-200/60 rounded-2xl border border-dark-200/60 bg-dark-50/30">
                       {items.map((entry) => {
-                        const meta = CATEGORIES[entry.category];
-                        const Icon = meta?.icon ?? ReceiptText;
+                        const meta = categoryMeta(entry.category);
+                        const Icon = meta.icon ?? ReceiptText;
                         const income = entry.kind === 'receita';
                         return (
                           <motion.li key={entry.id} layout="position" className="group flex items-center gap-3 px-4 py-3">
@@ -274,8 +304,9 @@ export function FinancePage() {
                             </span>
                             <span className="min-w-0 flex-1">
                               <span className="block truncate text-sm font-medium text-dark-900">{entry.description}</span>
+                              {entry.note && <span className="block truncate text-xs text-primary-700">{entry.note}</span>}
                               <span className="flex items-center gap-2 text-xs text-dark-500">
-                                {meta?.label ?? entry.category}
+                                {meta.label}
                                 <span className="inline-flex items-center gap-1">
                                   {entry.source !== 'manual' && <Landmark className="h-3 w-3" />}
                                   {entry.origin ? entry.origin.institution : 'Manual'}
@@ -309,6 +340,8 @@ export function FinancePage() {
           </motion.section>
         </>
       )}
+
+      </>)}
 
       <EntryModal isOpen={modalOpen} entry={editing} defaultDate={defaultDateFor(month)} onClose={() => setModalOpen(false)} onSubmit={save} onReclassify={reclassify} />
     </div>

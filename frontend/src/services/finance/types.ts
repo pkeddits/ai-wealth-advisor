@@ -6,6 +6,6 @@ export interface FinanceService {
   create(input: FinanceEntryInput): Promise<FinanceEntry>;
   update(id: string, input: FinanceEntryInput): Promise<FinanceEntry>;
   /** Corrige categoria e natureza de um lançamento importado (valor e data são preservados). */
-  reclassify(id: string, change: { category: FinanceCategory; flow: FinanceFlow }): Promise<FinanceEntry>;
+  reclassify(id: string, change: { category: FinanceCategory; flow: FinanceFlow; note?: string | null }): Promise<FinanceEntry>;
   delete(id: string): Promise<void>;
 }

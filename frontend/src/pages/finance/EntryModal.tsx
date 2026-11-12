@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { FinanceCategory, FinanceEntry, FinanceEntryInput, FinanceFlow, FinanceKind } from '../../types';
 import { Button, Input, Modal, Select } from '../../components/common';
 import { Segmented } from '../../components/settings';
-import { CATEGORIES, categoriesFor } from '../../services/finance';
+import { CATEGORIES, categoriesFor, categoryMeta } from '../../services/finance';
 import { errorMessage } from '../../lib/errorMessage';
 
 const localToday = () => {
@@ -16,7 +16,7 @@ interface EntryModalProps {
   defaultDate: string;
   onClose: () => void;
   onSubmit: (input: FinanceEntryInput) => Promise<void>;
-  onReclassify: (entry: FinanceEntry, change: { category: FinanceCategory; flow: FinanceFlow }) => Promise<void>;
+  onReclassify: (entry: FinanceEntry, change: { category: FinanceCategory; flow: FinanceFlow; note: string | null }) => Promise<void>;
 }
 
 export const FLOW_LABELS: Record<FinanceFlow, string> = {
@@ -27,11 +27,12 @@ export const FLOW_LABELS: Record<FinanceFlow, string> = {
   refund: 'Estorno',
 };
 
-const ALL_CATEGORIES = Object.keys(CATEGORIES) as FinanceCategory[];
+const allCategories = () => [...categoriesFor('receita'), ...categoriesFor('despesa')].filter((c, i, a) => a.indexOf(c) === i);
 
 export function EntryModal({ isOpen, entry, defaultDate, onClose, onSubmit, onReclassify }: EntryModalProps) {
   const imported = !!entry && entry.source !== 'manual';
   const [flow, setFlow] = useState<FinanceFlow>('regular');
+  const [note, setNote] = useState('');
   const [kind, setKind] = useState<FinanceKind>('despesa');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<FinanceCategory>('alimentacao');
@@ -48,12 +49,13 @@ export function EntryModal({ isOpen, entry, defaultDate, onClose, onSubmit, onRe
     setDescription(entry?.description ?? '');
     setDate(entry?.occurredOn ?? defaultDate);
     setFlow(entry?.flow ?? 'regular');
+    setNote(entry?.note ?? '');
     setError('');
   }, [isOpen, entry, defaultDate]);
 
   const changeKind = (next: FinanceKind) => {
     setKind(next);
-    if (!CATEGORIES[category].kinds.includes(next)) setCategory(categoriesFor(next)[0]);
+    if (!categoriesFor(next).includes(category)) setCategory(categoriesFor(next)[0]);
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -61,7 +63,7 @@ export function EntryModal({ isOpen, entry, defaultDate, onClose, onSubmit, onRe
     setError('');
     setSaving(true);
     try {
-      if (imported && entry) await onReclassify(entry, { category, flow });
+      if (imported && entry) await onReclassify(entry, { category, flow, note: note || null });
       else await onSubmit({ kind, amount: Number(amount.replace(',', '.')), category, description, occurredOn: date });
       onClose();
     } catch (err) {
@@ -83,7 +85,8 @@ export function EntryModal({ isOpen, entry, defaultDate, onClose, onSubmit, onRe
           </dl>
           <p className="text-xs text-dark-500">Valor, data e origem vêm da instituição e não podem ser alterados. Sua classificação é mantida nas próximas sincronizações.</p>
           <Select id="entry-flow" label="Natureza" value={flow} onChange={(e) => setFlow(e.target.value as FinanceFlow)} options={(Object.keys(FLOW_LABELS) as FinanceFlow[]).map((f) => ({ value: f, label: FLOW_LABELS[f] }))} />
-          <Select id="entry-category" label="Categoria" value={category} onChange={(e) => setCategory(e.target.value as FinanceCategory)} options={ALL_CATEGORIES.map((c) => ({ value: c, label: CATEGORIES[c].label }))} />
+          <Select id="entry-category" label="Categoria" value={category} onChange={(e) => setCategory(e.target.value as FinanceCategory)} options={[...allCategories(), ...(allCategories().includes(category) ? [] : [category])].map((c) => ({ value: c, label: categoryMeta(c).label }))} />
+          <Input id="entry-note" label="Anotação (opcional)" value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} placeholder="Ex.: aluguel de outubro" />
           {error && <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700" role="alert">{error}</div>}
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>Cancelar</Button>
@@ -102,7 +105,7 @@ export function EntryModal({ isOpen, entry, defaultDate, onClose, onSubmit, onRe
           label="Categoria"
           value={category}
           onChange={(e) => setCategory(e.target.value as FinanceCategory)}
-          options={categoriesFor(kind).map((c) => ({ value: c, label: CATEGORIES[c].label }))}
+          options={[...categoriesFor(kind), ...(categoriesFor(kind).includes(category) ? [] : [category])].map((c) => ({ value: c, label: categoryMeta(c).label }))}
         />
         <Input id="entry-description" label="Descrição" placeholder={kind === 'despesa' ? 'Ex.: Mercado do mês' : 'Ex.: Salário'} value={description} maxLength={200} onChange={(e) => setDescription(e.target.value)} />
         {error && <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700" role="alert">{error}</div>}

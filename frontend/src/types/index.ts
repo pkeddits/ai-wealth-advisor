@@ -445,7 +445,7 @@ export interface CorrelationDataPoint {
 }
 
 export type FinanceKind = 'receita' | 'despesa';
-export type FinanceCategory = 'alimentacao' | 'transporte' | 'moradia' | 'lazer' | 'saude' | 'educacao' | 'salario' | 'outros';
+export type FinanceCategory = string;
 
 export interface FinanceEntry {
   id: string;
@@ -460,6 +460,8 @@ export interface FinanceEntry {
   needsReview?: boolean;
   /** Instituição e conta de origem, para lançamentos importados. */
   origin?: { institution: string; account: string } | null;
+  /** Anotação do usuário; não altera a descrição original da instituição. */
+  note?: string | null;
   createdAt: string;
   updatedAt: string;
 }
