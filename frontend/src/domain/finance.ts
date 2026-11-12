@@ -5,6 +5,10 @@ export interface EntryInput {
   amount: number;
   category: string;
   occurredOn: string;
+  status?: 'posted' | 'pending';
+  /** regular: receita/despesa; refund: estorno (abate despesa); demais não entram nos totais. */
+  flow?: 'regular' | 'transfer' | 'investment' | 'card_payment' | 'refund';
+  needsReview?: boolean;
 }
 
 export interface MonthSummary {
@@ -13,6 +17,10 @@ export interface MonthSummary {
   net: number;
   expensesByCategory: { category: string; amount: number }[];
   byDay: { day: string; income: number; expenses: number }[];
+  /** Fora dos totais: pendentes, a revisar, transferências, investimentos e pagamentos de fatura. */
+  pending: number;
+  review: number;
+  neutral: number;
 }
 
 /** Limites [início, fim) de um mês no formato YYYY-MM. */
@@ -37,10 +45,21 @@ export function summarizeMonth(entries: EntryInput[], month: string): MonthSumma
   let expenses = 0;
   const categories = new Map<string, number>();
   const days = new Map<string, { income: number; expenses: number }>();
+  let pending = 0;
+  let review = 0;
+  let neutral = 0;
   for (const e of inMonth) {
     const value = cents(e.amount);
+    const flow = e.flow ?? 'regular';
+    if (e.status === 'pending') { pending++; continue; }
+    if (e.needsReview) { review++; continue; }
+    if (flow !== 'regular' && flow !== 'refund') { neutral++; continue; }
     const day = days.get(e.occurredOn) ?? { income: 0, expenses: 0 };
-    if (e.kind === 'receita') {
+    if (flow === 'refund') {
+      expenses -= value;
+      day.expenses -= value;
+      categories.set(e.category, (categories.get(e.category) ?? 0) - value);
+    } else if (e.kind === 'receita') {
       income += value;
       day.income += value;
     } else {
@@ -54,7 +73,10 @@ export function summarizeMonth(entries: EntryInput[], month: string): MonthSumma
     income: income / 100,
     expenses: expenses / 100,
     net: (income - expenses) / 100,
-    expensesByCategory: [...categories.entries()].map(([category, amount]) => ({ category, amount: amount / 100 })).sort((a, b) => b.amount - a.amount),
-    byDay: [...days.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([day, v]) => ({ day, income: v.income / 100, expenses: v.expenses / 100 })),
+    expensesByCategory: [...categories.entries()].filter(([, amount]) => amount > 0).map(([category, amount]) => ({ category, amount: amount / 100 })).sort((a, b) => b.amount - a.amount),
+    byDay: [...days.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([day, v]) => ({ day, income: v.income / 100, expenses: Math.max(v.expenses, 0) / 100 })),
+    pending,
+    review,
+    neutral,
   };
 }

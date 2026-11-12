@@ -10,22 +10,35 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * Variáveis sem prefixo VITE_ (ex.: BRAPI_API_KEY) ficam apenas no servidor.
  */
 function localApi(env: Record<string, string>): Plugin {
+  const routes: Record<string, [string, string]> = {
+    '/api/quotes': ['/server/quotes.ts', 'handleQuotesRequest'],
+    '/api/pluggy/connect-token': ['/server/pluggy/handlers.ts', 'handleConnectToken'],
+    '/api/pluggy/items': ['/server/pluggy/handlers.ts', 'handleRegisterItem'],
+    '/api/pluggy/sync': ['/server/pluggy/handlers.ts', 'handleSync'],
+    '/api/pluggy/disconnect': ['/server/pluggy/handlers.ts', 'handleDisconnect'],
+  };
   return {
     name: 'aiwa-local-api',
     configureServer(server) {
-      server.middlewares.use('/api/quotes', async (req, res) => {
-        const { handleQuotesRequest } = await server.ssrLoadModule('/server/quotes.ts');
-        const headers = new Headers();
-        for (const [key, value] of Object.entries(req.headers)) if (typeof value === 'string') headers.set(key, value);
-        const response: Response = await handleQuotesRequest(new Request(`http://localhost${req.originalUrl}`, { method: req.method, headers }), {
-          brapiKey: env.BRAPI_API_KEY,
-          supabaseUrl: env.SUPABASE_URL || env.VITE_SUPABASE_URL,
-          supabaseKey: env.SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_ANON_KEY,
+      for (const [route, [file, handler]] of Object.entries(routes)) {
+        server.middlewares.use(route, async (req, res) => {
+          const mod = await server.ssrLoadModule(file);
+          const { serverEnv } = await server.ssrLoadModule('/server/env.ts');
+          const headers = new Headers();
+          for (const [key, value] of Object.entries(req.headers)) if (typeof value === 'string') headers.set(key, value);
+          const chunks: Buffer[] = [];
+          for await (const chunk of req) chunks.push(chunk as Buffer);
+          const body = chunks.length && req.method !== 'GET' ? Buffer.concat(chunks) : undefined;
+          const request = new Request(`http://localhost${req.originalUrl}`, { method: req.method, headers, body });
+          const response: Response =
+            route === '/api/quotes'
+              ? await mod[handler](request, { brapiKey: env.BRAPI_API_KEY, supabaseUrl: env.SUPABASE_URL || env.VITE_SUPABASE_URL, supabaseKey: env.SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_ANON_KEY })
+              : await mod[handler](request, serverEnv(env));
+          res.statusCode = response.status;
+          response.headers.forEach((value, key) => res.setHeader(key, value));
+          res.end(await response.text());
         });
-        res.statusCode = response.status;
-        response.headers.forEach((value, key) => res.setHeader(key, value));
-        res.end(await response.text());
-      });
+      }
     },
   };
 }

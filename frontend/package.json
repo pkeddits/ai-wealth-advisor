@@ -10,7 +10,8 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "type-check": "tsc --noEmit",
     "check:domain": "esbuild scripts/check-positions.ts --bundle --platform=node --outfile=node_modules/.cache/check-positions.cjs --log-level=warning && node node_modules/.cache/check-positions.cjs",
-    "check:quotes": "esbuild scripts/check-quotes.ts --bundle --platform=node --outfile=node_modules/.cache/check-quotes.cjs --log-level=warning && node node_modules/.cache/check-quotes.cjs"
+    "check:quotes": "esbuild scripts/check-quotes.ts --bundle --platform=node --outfile=node_modules/.cache/check-quotes.cjs --log-level=warning && node node_modules/.cache/check-quotes.cjs",
+    "check:openfinance": "esbuild scripts/check-open-finance.ts --bundle --platform=node --outfile=node_modules/.cache/check-open-finance.cjs --log-level=warning && node node_modules/.cache/check-open-finance.cjs"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
@@ -26,6 +27,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.51.0",
+    "react-pluggy-connect": "^2.12.0",
     "react-router-dom": "^6.22.3",
     "recharts": "^2.12.3",
     "zod": "^3.22.4",
@@ -41,6 +43,7 @@
     "eslint": "^8.57.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.6",
+    "pluggy-js": "^0.19.3",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.3",
     "typescript": "^5.2.2",
