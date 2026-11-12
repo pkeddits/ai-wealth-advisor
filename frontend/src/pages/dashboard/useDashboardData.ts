@@ -49,11 +49,16 @@ export function useDashboardData() {
 
   const totals = useMemo(() => {
     const totalInvested = portfolios.reduce((s, p) => s + (p.totalInvested || 0), 0);
+    const realizedGain = portfolios.reduce((s, p) => s + (p.realizedGain ?? 0), 0);
+    const pendingQuotes = portfolios.reduce((s, p) => s + (p.pendingQuotes ?? 0), 0);
+    const pricedPositions = portfolios.reduce((s, p) => s + (p.positions ?? []).filter((x) => x.currentValue !== null).length, 0);
+    const oldestQuote = portfolios.flatMap((p) => p.positions ?? []).map((x) => x.quotedAt).filter((d): d is string => Boolean(d)).sort()[0] ?? null;
+    const extra = { realizedGain, pendingQuotes, pricedPositions, oldestQuote };
     const marketAvailable = portfolios.every((p) => p.totalValue !== null);
-    if (!marketAvailable) return { totalValue: null, totalInvested, totalReturn: null, totalReturnPct: null, marketAvailable };
+    if (!marketAvailable) return { totalValue: null, totalInvested, totalReturn: null, totalReturnPct: null, marketAvailable, ...extra };
     const totalValue = portfolios.reduce((s, p) => s + (p.totalValue as number), 0);
     const totalReturn = totalValue - totalInvested;
-    return { totalValue, totalInvested, totalReturn, totalReturnPct: totalInvested > 0 ? (totalReturn / totalInvested) * 100 : 0, marketAvailable };
+    return { totalValue, totalInvested, totalReturn, totalReturnPct: totalInvested > 0 ? (totalReturn / totalInvested) * 100 : null, marketAvailable, ...extra };
   }, [portfolios]);
 
   const holdings = useMemo<AggregatedHolding[]>(() => {

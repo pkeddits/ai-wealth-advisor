@@ -1,5 +1,6 @@
 import type { Asset, AssetClass, Portfolio, Position, Transaction, TransactionType } from '../../types';
-import { computeHoldings, type TradeInput } from '../../domain/positions';
+import { computeHoldings, computeRealized, type TradeInput } from '../../domain/positions';
+import type { QuoteResult } from '../quotes';
 
 export interface PortfolioRow {
   id: string;
@@ -83,46 +84,67 @@ export function toTrade(t: Transaction): TradeInput {
   return { assetId: t.assetId, type: t.type as TradeInput['type'], quantity: t.quantity, price: t.price, fees: t.fees, date: t.date, createdAt: t.createdAt };
 }
 
+export type PriceBook = Map<string, QuoteResult>;
+
+export function symbolsOf(transactions: Transaction[]): string[] {
+  return [...new Set(transactions.map((t) => t.asset?.symbol).filter((s): s is string => Boolean(s)))];
+}
+
 /**
- * Posições abertas pelo custo médio. Sem fonte de cotações, os campos de mercado
- * ficam null e a participação é calculada sobre o custo investido.
+ * Posições abertas pelo custo médio, com valores de mercado quando há cotação válida.
+ * Sem cotação, os campos de mercado ficam null. A participação usa o valor de mercado só
+ * quando todas as posições têm preço; caso contrário, usa o custo investido.
  */
-export function positionsFrom(portfolioId: string, transactions: Transaction[]): Position[] {
+export function positionsFrom(portfolioId: string, transactions: Transaction[], prices: PriceBook = new Map()): Position[] {
   const assets = new Map(transactions.filter((t) => t.asset).map((t) => [t.assetId, t.asset!]));
   const holdings = computeHoldings(transactions.map(toTrade));
-  const invested = holdings.reduce((sum, h) => sum + h.investedValue, 0);
   const updatedAt = transactions.reduce((latest, t) => (t.updatedAt > latest ? t.updatedAt : latest), '');
-  return holdings
-    .map((h) => ({
+  const positions: Position[] = holdings.map((h) => {
+    const asset = assets.get(h.assetId);
+    const quote = asset ? prices.get(asset.symbol) : undefined;
+    const price = quote?.status === 'ok' ? quote.price : null;
+    const currentValue = price === null ? null : h.quantity * price;
+    return {
       id: `${portfolioId}:${h.assetId}`,
       portfolioId,
       assetId: h.assetId,
-      asset: assets.get(h.assetId),
+      asset,
       quantity: h.quantity,
       averagePrice: h.averagePrice,
-      currentPrice: null,
-      currentValue: null,
+      currentPrice: price,
+      currentValue,
       investedValue: h.investedValue,
-      unrealizedGain: null,
-      unrealizedGainPct: null,
-      allocation: invested > 0 ? (h.investedValue / invested) * 100 : 0,
+      unrealizedGain: currentValue === null ? null : currentValue - h.investedValue,
+      unrealizedGainPct: currentValue === null || h.investedValue <= 0 ? null : ((currentValue - h.investedValue) / h.investedValue) * 100,
+      quotedAt: quote?.status === 'ok' ? quote.quotedAt : null,
+      allocation: 0,
       updatedAt,
-    }))
-    .sort((a, b) => b.investedValue - a.investedValue);
+    };
+  });
+  const allPriced = positions.every((p) => p.currentValue !== null);
+  const base = positions.reduce((sum, p) => sum + (allPriced ? p.currentValue ?? 0 : p.investedValue), 0);
+  for (const p of positions) p.allocation = base > 0 ? ((allPriced ? p.currentValue ?? 0 : p.investedValue) / base) * 100 : 0;
+  return positions.sort((a, b) => (b.currentValue ?? b.investedValue) - (a.currentValue ?? a.investedValue));
 }
 
-export function toPortfolio(row: PortfolioRow, transactions: Transaction[]): Portfolio {
-  const positions = positionsFrom(row.id, transactions);
+export function toPortfolio(row: PortfolioRow, transactions: Transaction[], prices?: PriceBook): Portfolio {
+  const positions = positionsFrom(row.id, transactions, prices);
+  const totalInvested = positions.reduce((sum, p) => sum + p.investedValue, 0);
+  const pendingQuotes = positions.filter((p) => p.currentValue === null).length;
+  const totalValue = pendingQuotes ? null : positions.reduce((sum, p) => sum + (p.currentValue ?? 0), 0);
+  const totalReturn = totalValue === null ? null : totalValue - totalInvested;
   return {
     id: row.id,
     userId: row.user_id,
     name: row.name,
     description: row.description ?? undefined,
     riskProfile: row.risk_profile,
-    totalValue: null,
-    totalInvested: positions.reduce((sum, p) => sum + p.investedValue, 0),
-    totalReturn: null,
-    totalReturnPct: null,
+    totalValue,
+    totalInvested,
+    totalReturn,
+    totalReturnPct: totalReturn === null || totalInvested <= 0 ? null : (totalReturn / totalInvested) * 100,
+    realizedGain: computeRealized(transactions.map(toTrade)),
+    pendingQuotes,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     positions,

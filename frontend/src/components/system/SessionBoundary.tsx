@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { usePortfolioStore } from '../../store/portfolioStore';
+import { clearQuoteCache } from '../../services/quotes';
 
 const EMPTY_PORTFOLIO_STATE = {
   portfolios: [],
@@ -21,7 +22,10 @@ export function SessionBoundary({ children }: { children: ReactNode }) {
   const previous = useRef(userId);
 
   useEffect(() => {
-    if (previous.current !== userId) usePortfolioStore.setState(EMPTY_PORTFOLIO_STATE);
+    if (previous.current !== userId) {
+      usePortfolioStore.setState(EMPTY_PORTFOLIO_STATE);
+      clearQuoteCache();
+    }
     previous.current = userId;
   }, [userId]);
 

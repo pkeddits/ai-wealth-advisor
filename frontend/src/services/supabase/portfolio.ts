@@ -3,7 +3,8 @@ import type { CreatePortfolioRequest, PaginatedResponse, Transaction } from '../
 import { getSupabase } from '../../lib/supabase';
 import { FeatureUnavailableError } from '../unavailable';
 import { dbError } from './errors';
-import { TRANSACTION_COLUMNS, toPortfolio, toTransaction, positionsFrom, type PortfolioRow, type TransactionRow } from './mappers';
+import { TRANSACTION_COLUMNS, toPortfolio, toTransaction, positionsFrom, symbolsOf, type PortfolioRow, type TransactionRow } from './mappers';
+import { getQuotes } from '../quotes';
 import { assertHoldings, validateTrade } from './trades';
 
 const PORTFOLIO_COLUMNS = 'id, user_id, name, description, risk_profile, created_at, updated_at';
@@ -54,12 +55,14 @@ export const supabasePortfolioService: typeof apiPortfolioService = {
     if (error) throw dbError(error, 'Não foi possível carregar as carteiras.');
     const rows = (data ?? []) as PortfolioRow[];
     const transactions = await transactionsOf(rows.map((r) => r.id));
-    return paginate(rows.map((row) => toPortfolio(row, transactions.filter((t) => t.portfolioId === row.id))));
+    const prices = await getQuotes(symbolsOf(transactions));
+    return paginate(rows.map((row) => toPortfolio(row, transactions.filter((t) => t.portfolioId === row.id), prices)));
   },
 
   get: async (id) => {
     const row = await portfolioRow(id);
-    return toPortfolio(row, await transactionsOf([id]));
+    const transactions = await transactionsOf([id]);
+    return toPortfolio(row, transactions, await getQuotes(symbolsOf(transactions)));
   },
 
   create: async (data) => {
@@ -74,7 +77,8 @@ export const supabasePortfolioService: typeof apiPortfolioService = {
     const { data: row, error } = await getSupabase().from('portfolios').update(cleanPortfolioInput(data)).eq('id', id).select(PORTFOLIO_COLUMNS).maybeSingle();
     if (error) throw dbError(error, 'Não foi possível salvar a carteira.');
     if (!row) throw new Error('Carteira não encontrada.');
-    return toPortfolio(row as PortfolioRow, await transactionsOf([id]));
+    const transactions = await transactionsOf([id]);
+    return toPortfolio(row as PortfolioRow, transactions, await getQuotes(symbolsOf(transactions)));
   },
 
   delete: async (id) => {
@@ -88,7 +92,10 @@ export const supabasePortfolioService: typeof apiPortfolioService = {
     return summary;
   },
 
-  getPositions: async (id) => positionsFrom(id, await transactionsOf([id])),
+  getPositions: async (id) => {
+    const transactions = await transactionsOf([id]);
+    return positionsFrom(id, transactions, await getQuotes(symbolsOf(transactions)));
+  },
 
   getTransactions: async (id) => paginate(await transactionsOf([id])),
 

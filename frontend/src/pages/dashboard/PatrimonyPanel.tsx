@@ -1,5 +1,7 @@
 import { motion } from 'motion/react';
-import { ArrowDownRight, ArrowUpRight, LineChart } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, LineChart, RefreshCw } from 'lucide-react';
+import { isSupabaseMode } from '../../config/appMode';
+import { requestQuoteRefresh, useQuoteStatus } from '../../services/quotes';
 import clsx from 'clsx';
 import { MoneyFigure, AnimatedNumber } from '../../components/motion';
 import { TimelineArea, type TimelinePoint } from '../../components/charts';
@@ -13,11 +15,22 @@ interface PatrimonyPanelProps {
   totalReturn: number | null;
   totalReturnPct: number | null;
   marketAvailable: boolean;
+  realizedGain: number;
+  pendingQuotes: number;
+  pricedPositions: number;
+  oldestQuote: string | null;
   timeline: TimelinePoint[];
+  onRefresh: () => Promise<void> | void;
 }
 
-export function PatrimonyPanel({ totalValue, totalInvested, totalReturn, totalReturnPct, marketAvailable, timeline }: PatrimonyPanelProps) {
+export function PatrimonyPanel({ totalValue, totalInvested, totalReturn, totalReturnPct, marketAvailable, realizedGain, pendingQuotes, pricedPositions, oldestQuote, timeline, onRefresh }: PatrimonyPanelProps) {
   const fmt = useDisplayFormat();
+  const { serviceDown, refreshing } = useQuoteStatus();
+  const quoteTime = oldestQuote ? new Date(oldestQuote).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : null;
+  const refreshQuotes = async () => {
+    requestQuoteRefresh();
+    await onRefresh();
+  };
   const positive = (totalReturn ?? 0) >= 0;
   const Trend = positive ? ArrowUpRight : ArrowDownRight;
 
@@ -30,8 +43,17 @@ export function PatrimonyPanel({ totalValue, totalInvested, totalReturn, totalRe
           <MoneyFigure value={marketAvailable ? totalValue ?? 0 : totalInvested} rounded={fmt.rounded} className="mt-2 block whitespace-nowrap text-[2.4rem] font-semibold leading-none tracking-[-0.03em] text-dark-900 sm:text-[3.4rem]" />
           {!marketAvailable ? (
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span className="chip-building">Cotações ainda não integradas</span>
-              <span className="text-sm text-dark-500">Valor de mercado e resultado aparecem quando as cotações forem conectadas.</span>
+              {isSupabaseMode ? (
+                <>
+                  <span className="chip-building">{serviceDown && !pricedPositions ? 'Cotações indisponíveis no momento' : `Cotação pendente para ${pendingQuotes} ${pendingQuotes === 1 ? 'ativo' : 'ativos'}`}</span>
+                  <span className="text-sm text-dark-500">O patrimônio a mercado aparece quando todas as posições tiverem cotação.</span>
+                </>
+              ) : (
+                <>
+                  <span className="chip-building">Cotações ainda não integradas</span>
+                  <span className="text-sm text-dark-500">Valor de mercado e resultado aparecem quando as cotações forem conectadas.</span>
+                </>
+              )}
             </div>
           ) : (
           <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -51,19 +73,35 @@ export function PatrimonyPanel({ totalValue, totalInvested, totalReturn, totalRe
           )}
         </div>
         {marketAvailable ? (
-          <dl className="grid grid-cols-2 gap-x-8 gap-y-1 text-sm">
+          <dl className="grid grid-cols-3 gap-x-8 gap-y-1 text-sm">
             <dt className="text-dark-500">Capital aplicado</dt>
             <dt className="text-dark-500">Valor de mercado</dt>
+            <dt className="text-dark-500">Resultado realizado</dt>
             <dd className="font-medium text-dark-900"><AnimatedNumber value={totalInvested} format={fmt.money} /></dd>
             <dd className="font-medium text-dark-900">{totalValue === null ? null : <AnimatedNumber value={totalValue} format={fmt.money} />}</dd>
+            <dd className={clsx('font-medium', realizedGain > 0 ? 'text-green-600' : realizedGain < 0 ? 'text-red-600' : 'text-dark-900')}>{fmt.signedMoney(realizedGain)}</dd>
           </dl>
         ) : (
-          <dl className="text-sm">
+          <dl className="grid grid-cols-2 gap-x-8 gap-y-1 text-sm">
             <dt className="text-dark-500">Valor de mercado</dt>
-            <dd className="mt-1 font-medium text-dark-500">Cotação pendente</dd>
+            <dt className="text-dark-500">Resultado realizado</dt>
+            <dd className="font-medium text-dark-500">Cotação pendente</dd>
+            <dd className={clsx('font-medium', realizedGain > 0 ? 'text-green-600' : realizedGain < 0 ? 'text-red-600' : 'text-dark-900')}>{fmt.signedMoney(realizedGain)}</dd>
           </dl>
         )}
       </div>
+
+      {isSupabaseMode && (
+        <div className="relative mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-dark-500">
+          <span>
+            {quoteTime ? `Cotações de ${quoteTime}, via brapi.dev. No plano gratuito os preços são atualizados a cada 30 minutos.` : serviceDown ? 'Serviço de cotações indisponível; os valores de custo continuam corretos.' : 'Nenhuma cotação disponível para as posições atuais.'}
+          </span>
+          <button type="button" onClick={refreshQuotes} disabled={refreshing} className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-medium text-primary-700 transition-colors hover:bg-primary-500/10 disabled:opacity-50">
+            <RefreshCw className={clsx('h-3.5 w-3.5', refreshing && 'animate-spin')} aria-hidden="true" />
+            Atualizar cotações
+          </button>
+        </div>
+      )}
 
       <div className="relative mt-8">
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">

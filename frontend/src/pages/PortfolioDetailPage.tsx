@@ -14,6 +14,7 @@ import { MoneyFigure } from '../components/motion';
 import clsx from 'clsx';
 import type { Position, Transaction } from '../types';
 import { useDisplayFormat } from '../lib/displayFormat';
+import { computeRealized } from '../domain/positions';
 import { errorMessage } from '../lib/errorMessage';
 
 const today = () => {
@@ -115,6 +116,10 @@ export function PortfolioDetailPage() {
   const totalValue = marketAvailable ? positions.reduce((sum, p) => sum + (p.currentValue ?? 0), 0) : null;
   const totalGain = totalValue === null ? null : totalValue - totalInvested;
   const totalGainPct = totalGain === null || totalInvested <= 0 ? null : (totalGain / totalInvested) * 100;
+  const pendingQuotes = positions.filter((p) => p.currentValue === null).length;
+  const realizedGain = transactions.length
+    ? computeRealized(transactions.map((t) => ({ assetId: t.assetId, type: t.type as 'compra' | 'venda', quantity: t.quantity, price: t.price, fees: t.fees, date: t.date.slice(0, 10), createdAt: t.createdAt })))
+    : undefined;
 
   const refresh = async () => {
     if (id) await selectPortfolio(await portfolioService.get(id));
@@ -234,7 +239,7 @@ export function PortfolioDetailPage() {
             <p className="text-sm text-dark-500">{marketAvailable ? 'Valor Total' : 'Capital aplicado'}</p>
             <MoneyFigure value={totalValue ?? totalInvested} rounded={fmt.rounded} className="mt-2 block whitespace-nowrap text-[2.2rem] font-semibold leading-none tracking-[-0.03em] text-dark-900 sm:text-[3rem]" />
             {totalGain === null || totalGainPct === null ? (
-              <p className="mt-4"><span className="chip-building">Cotações ainda não integradas</span></p>
+              <p className="mt-4"><span className="chip-building">{isDemoMode ? 'Cotações ainda não integradas' : `Cotação pendente para ${pendingQuotes} ${pendingQuotes === 1 ? 'ativo' : 'ativos'}`}</span></p>
             ) : (
               <p className={clsx('mt-4 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-medium', totalGain >= 0 ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600')}>
                 {fmt.result(totalGain, totalGainPct)}
@@ -245,6 +250,9 @@ export function PortfolioDetailPage() {
             <div><dt className="text-dark-500">Aplicado</dt><dd className="mt-1 whitespace-nowrap font-medium text-dark-900">{fmt.money(totalInvested)}</dd></div>
             <div><dt className="text-dark-500">Posições</dt><dd className="mt-1 font-medium text-dark-900">{positions.length}</dd></div>
             <div><dt className="text-dark-500">Operações</dt><dd className="mt-1 font-medium text-dark-900">{transactions.length}</dd></div>
+            {realizedGain !== undefined && (
+              <div className="col-span-3"><dt className="text-dark-500">Resultado realizado nas vendas</dt><dd className={clsx('mt-1 font-medium', realizedGain > 0 ? 'text-green-600' : realizedGain < 0 ? 'text-red-600' : 'text-dark-900')}>{fmt.signedMoney(realizedGain)}</dd></div>
+            )}
           </dl>
         </div>
       </motion.section>
@@ -304,7 +312,12 @@ export function PortfolioDetailPage() {
                   { key: 'quantity', header: 'Quantidade', render: (row: Position) => row.quantity.toLocaleString('pt-BR') },
                   { key: 'averagePrice', header: 'Preço Médio', render: (row: Position) => formatCurrency(row.averagePrice) },
                   { key: 'investedValue', header: 'Custo', render: (row: Position) => fmt.money(row.investedValue) },
-                  { key: 'currentPrice', header: 'Preço Atual', render: (row: Position) => (row.currentPrice === null ? pending : fmt.money(row.currentPrice)) },
+                  { key: 'currentPrice', header: 'Preço Atual', render: (row: Position) => (row.currentPrice === null ? pending : (
+                    <span>
+                      {fmt.money(row.currentPrice)}
+                      {row.quotedAt && <span className="block text-[11px] text-dark-500">{new Date(row.quotedAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>}
+                    </span>
+                  )) },
                   { key: 'currentValue', header: 'Valor Atual', render: (row: Position) => (row.currentValue === null ? pending : fmt.money(row.currentValue)) },
                   { key: 'unrealizedGain', header: 'Ganho/Perda', render: (row: Position) => row.unrealizedGain === null ? pending : (
                     <span className={clsx('font-medium', row.unrealizedGain >= 0 ? 'text-green-600' : 'text-red-600')}>

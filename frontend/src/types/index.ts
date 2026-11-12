@@ -126,6 +126,10 @@ export interface Portfolio {
   totalInvested: number;
   totalReturn: number | null;
   totalReturnPct: number | null;
+  /** Resultado das vendas já realizadas (custo médio). */
+  realizedGain?: number;
+  /** Posições sem cotação de mercado disponível. */
+  pendingQuotes?: number;
   createdAt: string;
   updatedAt: string;
   positions?: Position[];
@@ -150,6 +154,8 @@ export interface Position {
   investedValue: number;
   unrealizedGain: number | null;
   unrealizedGainPct: number | null;
+  /** Horário da cotação usada, quando houver. */
+  quotedAt?: string | null;
   /** Participação na carteira, pelo valor de mercado ou, sem cotação, pelo custo. */
   allocation: number;
   updatedAt: string;
@@ -436,4 +442,27 @@ export interface AllocationDataPoint {
 export interface CorrelationDataPoint {
   asset: string;
   correlations: Record<string, number>;
+}
+
+export type FinanceKind = 'receita' | 'despesa';
+export type FinanceCategory = 'alimentacao' | 'transporte' | 'moradia' | 'lazer' | 'saude' | 'educacao' | 'salario' | 'outros';
+
+export interface FinanceEntry {
+  id: string;
+  kind: FinanceKind;
+  amount: number;
+  category: FinanceCategory;
+  description: string;
+  occurredOn: string;
+  source: 'manual' | 'open_finance';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FinanceEntryInput {
+  kind: FinanceKind;
+  amount: number;
+  category: FinanceCategory;
+  description: string;
+  occurredOn: string;
 }

@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { Plus, RefreshCw, Sparkles } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { aiService } from '../services';
+import { requestQuoteRefresh } from '../services/quotes';
 import { loadDemoSample } from '../services/demo';
 import { isApiMode, isDemoMode } from '../config/appMode';
 import { Button } from '../components/common';
@@ -76,6 +77,7 @@ export function DashboardPage() {
   }, [firstPortfolioId]);
 
   const handleRefresh = async () => {
+    requestQuoteRefresh();
     await refresh();
     setUpdatedAt(new Date());
   };
@@ -131,7 +133,7 @@ export function DashboardPage() {
         <>
           <div className="grid gap-4 xl:grid-cols-12">
             <div className="xl:col-span-8">
-              <PatrimonyPanel {...totals} timeline={timeline} />
+              <PatrimonyPanel {...totals} timeline={timeline} onRefresh={handleRefresh} />
             </div>
             <div className="flex flex-col gap-4 xl:col-span-4">
               <StatsStrip portfolios={portfolios.length} assets={holdings.length} operations={transactionCount} />

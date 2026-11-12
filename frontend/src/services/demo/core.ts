@@ -3,7 +3,7 @@
  * valida transações usando os cálculos puros de ../../domain/positions.
  */
 import type { Portfolio, Position, Transaction, PaginatedResponse } from '../../types';
-import { computeHoldings, valueHoldings, summarize, OversellError, type TradeInput } from '../../domain/positions';
+import { computeHoldings, computeRealized, valueHoldings, summarize, OversellError, type TradeInput } from '../../domain/positions';
 import { findDemoAsset, demoPriceOf } from './catalog';
 import { loadState, saveState, newId, type DemoState } from './storage';
 
@@ -42,7 +42,7 @@ export function buildPortfolio(state: DemoState, id: string): Portfolio {
   const positions = positionsOf(state, id);
   // No modo demonstração todos os ativos têm preço fictício, então os campos de mercado estão sempre preenchidos.
   const totals = summarize(positions.map((p) => ({ ...p, currentPrice: p.currentPrice!, currentValue: p.currentValue!, unrealizedGain: p.unrealizedGain!, unrealizedGainPct: p.unrealizedGainPct! })));
-  return { ...record, userId: 'demo-user', ...totals, positions };
+  return { ...record, userId: 'demo-user', ...totals, realizedGain: computeRealized(tradesOf(state, id)), pendingQuotes: 0, positions };
 }
 
 export function transactionsOf(state: DemoState, portfolioId: string): Transaction[] {
