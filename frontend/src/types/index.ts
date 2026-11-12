@@ -455,8 +455,56 @@ export interface FinanceEntry {
   description: string;
   occurredOn: string;
   source: 'manual' | 'open_finance';
+  status?: 'posted' | 'pending';
+  flow?: FinanceFlow;
+  needsReview?: boolean;
+  /** Instituição e conta de origem, para lançamentos importados. */
+  origin?: { institution: string; account: string } | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export type FinanceFlow = 'regular' | 'transfer' | 'investment' | 'card_payment' | 'refund';
+
+export interface BankAccount {
+  id: string;
+  kind: 'BANK' | 'CREDIT';
+  name: string;
+  numberLast4: string | null;
+  currency: string;
+  balance: number | null;
+  balanceReportedAt: string | null;
+}
+
+export interface BankConnection {
+  id: string;
+  institutionName: string;
+  institutionLogo: string | null;
+  status: string;
+  statusMessage: string | null;
+  products: string[];
+  connectedAt: string;
+  lastSyncedAt: string | null;
+  lastSyncError: string | null;
+  accounts: BankAccount[];
+}
+
+export interface ImportedInvestment {
+  id: string;
+  connectionId: string;
+  institutionName: string;
+  name: string;
+  code: string | null;
+  type: string;
+  subtype: string | null;
+  status: string | null;
+  quantity: number | null;
+  unitValue: number | null;
+  balance: number | null;
+  amountOriginal: number | null;
+  reportedAt: string | null;
+  dueDate: string | null;
+  movements: number;
 }
 
 export interface FinanceEntryInput {

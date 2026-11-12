@@ -14,6 +14,11 @@ import { AnimatedNumber, MoneyFigure } from '../components/motion';
 import { Button, Select } from '../components/common';
 import { Segmented } from '../components/settings';
 import { EntryModal } from './finance/EntryModal';
+import { isSupabaseMode } from '../config/appMode';
+import { Link } from 'react-router-dom';
+import type { FinanceFlow } from '../types';
+
+const FLOW_CHIPS: Partial<Record<FinanceFlow, string>> = { transfer: 'Transferência', investment: 'Investimento', card_payment: 'Fatura', refund: 'Estorno' };
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -41,7 +46,7 @@ export function FinancePage() {
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<FinanceEntry | null>(null);
-  const [kindFilter, setKindFilter] = useState<'todos' | FinanceKind>('todos');
+  const [kindFilter, setKindFilter] = useState<'todos' | FinanceKind | 'revisar'>('todos');
   const [categoryFilter, setCategoryFilter] = useState<'todas' | FinanceCategory>('todas');
   const [loadingSample, setLoadingSample] = useState(false);
 
@@ -63,7 +68,8 @@ export function FinancePage() {
   }, [load]);
 
   const summary = useMemo(() => summarizeMonth(entries, month), [entries, month]);
-  const visible = entries.filter((e) => (kindFilter === 'todos' || e.kind === kindFilter) && (categoryFilter === 'todas' || e.category === categoryFilter));
+  const visible = entries.filter((e) => (kindFilter === 'todos' || (kindFilter === 'revisar' ? e.needsReview : e.kind === kindFilter)) && (categoryFilter === 'todas' || e.category === categoryFilter));
+  const hasImported = entries.some((e) => e.source !== 'manual');
   const grouped = useMemo(() => {
     const map = new Map<string, FinanceEntry[]>();
     for (const e of visible) map.set(e.occurredOn, [...(map.get(e.occurredOn) ?? []), e]);
@@ -75,6 +81,11 @@ export function FinancePage() {
     else await financeService.create(input);
     if (input.occurredOn.slice(0, 7) !== month) setMonth(input.occurredOn.slice(0, 7));
     else await load();
+  };
+
+  const reclassify = async (entry: FinanceEntry, change: { category: FinanceCategory; flow: FinanceFlow }) => {
+    await financeService.reclassify(entry.id, change);
+    await load();
   };
 
   const remove = async (entry: FinanceEntry) => {
@@ -131,6 +142,13 @@ export function FinancePage() {
       </div>
 
       {error && <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700" role="alert">{error}</div>}
+      {isSupabaseMode && !loading && !hasImported && (
+        <p className="flex flex-wrap items-center gap-2 rounded-2xl border border-dark-200/70 bg-dark-50/40 px-4 py-3 text-sm text-dark-600">
+          <Landmark className="h-4 w-4 text-primary-700" aria-hidden="true" />
+          Importe movimentações automaticamente conectando um banco.
+          <Link to="/settings#integracoes" className="font-medium text-primary-700 hover:underline">Conectar banco</Link>
+        </p>
+      )}
 
       {loading && !hasEntries ? (
         <div className="grid gap-4 lg:grid-cols-12">
@@ -174,7 +192,14 @@ export function FinancePage() {
                 rounded={fmt.rounded}
                 className={clsx('relative mt-2 block whitespace-nowrap text-[2.4rem] font-semibold leading-none tracking-[-0.03em] sm:text-[3.2rem]', summary.net < 0 ? 'text-red-600' : 'text-dark-900')}
               />
-              <p className="relative mt-4 max-w-md text-sm text-dark-500">Receitas menos despesas lançadas neste mês. Não é o saldo da sua conta bancária.</p>
+              <p className="relative mt-4 max-w-md text-sm text-dark-500">Receitas menos despesas do mês. Não é o saldo da sua conta bancária.</p>
+              {(summary.pending > 0 || summary.review > 0 || summary.neutral > 0) && (
+                <p className="relative mt-3 flex flex-wrap gap-2 text-xs">
+                  {summary.review > 0 && <button type="button" onClick={() => setKindFilter('revisar')} className="chip border-yellow-500/30 bg-yellow-500/10 text-yellow-700 hover:bg-yellow-500/20">{summary.review} para revisar</button>}
+                  {summary.pending > 0 && <span className="chip-planned">{summary.pending} pendentes</span>}
+                  {summary.neutral > 0 && <span className="chip-planned">{summary.neutral} transferências, aplicações ou faturas fora dos totais</span>}
+                </p>
+              )}
             </motion.section>
             {[
               { label: 'Receitas', value: summary.income, icon: ArrowUpRight, tone: 'text-green-600 bg-green-500/10' },
@@ -218,7 +243,7 @@ export function FinancePage() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <h2 id="movimentacoes-titulo" className="text-[15px] font-semibold">Movimentações</h2>
               <div className="flex flex-wrap items-center gap-3">
-                <Segmented label="Filtrar por tipo" value={kindFilter} onChange={setKindFilter} options={[{ value: 'todos', label: 'Todas' }, { value: 'receita', label: 'Receitas' }, { value: 'despesa', label: 'Despesas' }]} />
+                <Segmented label="Filtrar por tipo" value={kindFilter} onChange={setKindFilter} options={[{ value: 'todos', label: 'Todas' }, { value: 'receita', label: 'Receitas' }, { value: 'despesa', label: 'Despesas' }, ...(hasImported ? [{ value: 'revisar' as const, label: 'A revisar' }] : [])]} />
                 <div className="w-48">
                   <Select
                     aria-label="Filtrar por categoria"
@@ -251,19 +276,27 @@ export function FinancePage() {
                               <span className="block truncate text-sm font-medium text-dark-900">{entry.description}</span>
                               <span className="flex items-center gap-2 text-xs text-dark-500">
                                 {meta?.label ?? entry.category}
-                                {entry.source !== 'manual' && <span className="inline-flex items-center gap-1"><Landmark className="h-3 w-3" />Importado</span>}
+                                <span className="inline-flex items-center gap-1">
+                                  {entry.source !== 'manual' && <Landmark className="h-3 w-3" />}
+                                  {entry.origin ? entry.origin.institution : 'Manual'}
+                                </span>
+                                {entry.status === 'pending' && <span className="chip-planned !py-0">Pendente</span>}
+                                {entry.flow && FLOW_CHIPS[entry.flow] && <span className="chip-planned !py-0">{FLOW_CHIPS[entry.flow]}</span>}
+                                {entry.needsReview && <span className="chip !py-0 border-yellow-500/30 bg-yellow-500/10 text-yellow-700">Revisar</span>}
                               </span>
                             </span>
-                            <span className={clsx('whitespace-nowrap text-sm font-semibold', income ? 'text-green-600' : 'text-dark-900')}>
+                            <span className={clsx('sensitive whitespace-nowrap text-sm font-semibold', entry.flow && entry.flow !== 'regular' && entry.flow !== 'refund' ? 'text-dark-500' : income ? 'text-green-600' : 'text-dark-900')}>
                               {income ? '+' : '-'}{fmt.money(entry.amount)}
                             </span>
                             <span className="flex gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
-                              <button type="button" onClick={() => { setEditing(entry); setModalOpen(true); }} className="rounded-lg p-1.5 text-dark-500 hover:bg-dark-100 hover:text-dark-900" aria-label={`Editar ${entry.description}`}>
+                              <button type="button" onClick={() => { setEditing(entry); setModalOpen(true); }} className="rounded-lg p-1.5 text-dark-500 hover:bg-dark-100 hover:text-dark-900" aria-label={`${entry.source === 'manual' ? 'Editar' : 'Classificar'} ${entry.description}`}>
                                 <Pencil className="h-4 w-4" />
                               </button>
-                              <button type="button" onClick={() => remove(entry)} className="rounded-lg p-1.5 text-dark-500 hover:bg-red-500/10 hover:text-red-600" aria-label={`Excluir ${entry.description}`}>
-                                <Trash2 className="h-4 w-4" />
-                              </button>
+                              {entry.source === 'manual' && (
+                                <button type="button" onClick={() => remove(entry)} className="rounded-lg p-1.5 text-dark-500 hover:bg-red-500/10 hover:text-red-600" aria-label={`Excluir ${entry.description}`}>
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              )}
                             </span>
                           </motion.li>
                         );
@@ -277,7 +310,7 @@ export function FinancePage() {
         </>
       )}
 
-      <EntryModal isOpen={modalOpen} entry={editing} defaultDate={defaultDateFor(month)} onClose={() => setModalOpen(false)} onSubmit={save} />
+      <EntryModal isOpen={modalOpen} entry={editing} defaultDate={defaultDateFor(month)} onClose={() => setModalOpen(false)} onSubmit={save} onReclassify={reclassify} />
     </div>
   );
 }

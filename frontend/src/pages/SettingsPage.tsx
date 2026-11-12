@@ -38,6 +38,11 @@ function useActiveSection() {
 export function SettingsPage() {
   const [active, setActive] = useActiveSection();
 
+  useEffect(() => {
+    const id = window.location.hash.slice(1);
+    if (id && SECTIONS.some((s) => s.id === id)) setTimeout(() => document.getElementById(id)?.scrollIntoView({ block: 'start' }), 150);
+  }, []);
+
   const go = (id: string) => {
     setActive(id);
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });

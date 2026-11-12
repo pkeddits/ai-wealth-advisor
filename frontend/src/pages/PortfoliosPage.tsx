@@ -7,6 +7,8 @@ import { Button, Input, Badge, Modal } from '../components/common';
 import { SERIES_COLORS } from '../components/charts';
 import { spotlightHandler } from '../hooks/useSpotlight';
 import { useDisplayFormat } from '../lib/displayFormat';
+import { isSupabaseMode } from '../config/appMode';
+import { ImportedInvestments } from '../components/openfinance/ImportedInvestments';
 import { riskProfileLabel } from '../utils/labels';
 import clsx from 'clsx';
 
@@ -158,6 +160,8 @@ export function PortfoliosPage() {
           })}
         </div>
       )}
+
+      {isSupabaseMode && <ImportedInvestments />}
 
       {/* Create Portfolio Modal */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Nova Carteira" size="md">

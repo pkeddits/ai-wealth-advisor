@@ -20,6 +20,8 @@ export interface Preferences {
   motion: MotionPreference;
   density: DensityPreference;
   effects: boolean;
+  /** Desfoca valores financeiros na tela. */
+  hideValues: boolean;
   dateFormat: DateFormatPreference;
   valueDisplay: ValueDisplayPreference;
   returnDisplay: ReturnDisplayPreference;
@@ -34,6 +36,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   motion: 'full',
   density: 'comfortable',
   effects: true,
+  hideValues: false,
   dateFormat: 'dd/mm/aaaa',
   valueDisplay: 'full',
   returnDisplay: 'both',

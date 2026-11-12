@@ -37,6 +37,14 @@ export const demoFinanceService: FinanceService = {
     save(entries);
     return entries[index];
   },
+  async reclassify(id, change) {
+    const entries = load();
+    const index = entries.findIndex((e) => e.id === id);
+    if (index < 0) throw new Error('Lançamento não encontrado.');
+    entries[index] = { ...entries[index], category: change.category, updatedAt: new Date().toISOString() };
+    save(entries);
+    return entries[index];
+  },
   async delete(id) {
     save(load().filter((e) => e.id !== id));
   },

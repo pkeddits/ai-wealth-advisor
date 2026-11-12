@@ -6,7 +6,8 @@ import { useAuthStore } from '../store/authStore';
 import { aiService } from '../services';
 import { requestQuoteRefresh } from '../services/quotes';
 import { loadDemoSample } from '../services/demo';
-import { isApiMode, isDemoMode } from '../config/appMode';
+import { isApiMode, isDemoMode, isSupabaseMode } from '../config/appMode';
+import { OpenFinanceSummary } from '../components/openfinance/OpenFinanceSummary';
 import { Button } from '../components/common';
 import { Horizon } from '../components/brand';
 import { useDashboardData } from './dashboard/useDashboardData';
@@ -128,7 +129,10 @@ export function DashboardPage() {
       {isLoading && !hasPortfolios ? (
         <DashboardSkeleton />
       ) : !hasPortfolios ? (
-        <EmptyState onLoadSample={handleLoadSample} loadingSample={loadingSample} />
+        <>
+          <EmptyState onLoadSample={handleLoadSample} loadingSample={loadingSample} />
+          {isSupabaseMode && <OpenFinanceSummary />}
+        </>
       ) : (
         <>
           <div className="grid gap-4 xl:grid-cols-12">
@@ -140,6 +144,8 @@ export function DashboardPage() {
               <AllocationPanel holdings={holdings} marketAvailable={totals.marketAvailable} />
             </div>
           </div>
+
+          {isSupabaseMode && <OpenFinanceSummary />}
 
           <div className="grid items-start gap-4 lg:grid-cols-2 xl:grid-cols-12">
             <PortfoliosPanel portfolios={portfolios} />

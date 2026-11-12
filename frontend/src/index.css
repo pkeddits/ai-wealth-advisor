@@ -192,6 +192,11 @@
   }
 }
 
+[data-hide-values='on'] .sensitive {
+  filter: blur(8px);
+  user-select: none;
+}
+
 html[data-density='compact'] {
   font-size: 93.75%;
 }

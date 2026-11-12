@@ -5,7 +5,7 @@ import { dbError } from '../supabase/errors';
 import type { FinanceService } from './types';
 import { validateEntry } from './validation';
 
-const COLUMNS = 'id, kind, amount, category, description, occurred_on, source, created_at, updated_at';
+const COLUMNS = 'id, kind, amount, category, description, occurred_on, source, status, flow, needs_review, created_at, updated_at, account:bank_accounts(name, connection:bank_connections(institution_name))';
 
 interface EntryRow {
   id: string;
@@ -15,6 +15,10 @@ interface EntryRow {
   description: string;
   occurred_on: string;
   source: FinanceEntry['source'];
+  status: 'posted' | 'pending';
+  flow: NonNullable<FinanceEntry['flow']>;
+  needs_review: boolean;
+  account: { name: string; connection: { institution_name: string } | null } | null;
   created_at: string;
   updated_at: string;
 }
@@ -27,6 +31,10 @@ const toEntry = (row: EntryRow): FinanceEntry => ({
   description: row.description,
   occurredOn: row.occurred_on,
   source: row.source,
+  status: row.status,
+  flow: row.flow,
+  needsReview: row.needs_review,
+  origin: row.account ? { institution: row.account.connection?.institution_name ?? 'Instituição', account: row.account.name } : null,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -47,18 +55,29 @@ export const supabaseFinanceService: FinanceService = {
       .order('occurred_on', { ascending: false })
       .order('created_at', { ascending: false });
     if (error) throw dbError(error, 'Não foi possível carregar as movimentações.');
-    return ((data ?? []) as EntryRow[]).map(toEntry);
+    return ((data ?? []) as unknown as EntryRow[]).map(toEntry);
   },
   async create(input) {
     const { data, error } = await getSupabase().from('finance_entries').insert(toRow(input)).select(COLUMNS).single();
     if (error || !data) throw dbError(error, 'Não foi possível salvar a movimentação.');
-    return toEntry(data as EntryRow);
+    return toEntry(data as unknown as EntryRow);
   },
   async update(id, input) {
     const { data, error } = await getSupabase().from('finance_entries').update(toRow(input)).eq('id', id).select(COLUMNS).maybeSingle();
     if (error) throw dbError(error, 'Não foi possível salvar a movimentação.');
     if (!data) throw new Error('Lançamento não encontrado.');
-    return toEntry(data as EntryRow);
+    return toEntry(data as unknown as EntryRow);
+  },
+  async reclassify(id, change) {
+    const { data, error } = await getSupabase()
+      .from('finance_entries')
+      .update({ category: change.category, flow: change.flow, needs_review: false })
+      .eq('id', id)
+      .select(COLUMNS)
+      .maybeSingle();
+    if (error) throw dbError(error, 'Não foi possível salvar a classificação.');
+    if (!data) throw new Error('Lançamento não encontrado.');
+    return toEntry(data as unknown as EntryRow);
   },
   async delete(id) {
     const { data, error } = await getSupabase().from('finance_entries').delete().eq('id', id).select('id');

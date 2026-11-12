@@ -1,6 +1,8 @@
 import { Bell, CreditCard, Landmark, LineChart, Palette, Plug, Wallet } from 'lucide-react';
 import { usePreferences } from '../../store/preferencesStore';
 import { useDisplayFormat } from '../../lib/displayFormat';
+import { isSupabaseMode } from '../../config/appMode';
+import { ConnectionsManager } from '../../components/openfinance/ConnectionsManager';
 import { Button, Select } from '../../components/common';
 import { Segmented, SettingRow, SettingsSection, Switch } from '../../components/settings';
 
@@ -86,18 +88,25 @@ export function IntegrationsSection() {
   ];
   return (
     <SettingsSection id="integracoes" title="Integrações" description="Conexões com as suas instituições financeiras, sempre autorizadas por você." icon={<Plug className="h-5 w-5" />}>
-      <div className="grid gap-3 pt-1 md:grid-cols-3">
-        {items.map(({ icon: Icon, title, text }) => (
-          <div key={title} className="flex flex-col rounded-2xl border border-dark-200/70 bg-dark-50/40 p-4">
-            <div className="flex items-center justify-between gap-2">
-              <Icon className="h-5 w-5 text-primary-700" aria-hidden="true" />
-              <span className="chip-planned">Planejado</span>
-            </div>
-            <p className="mt-4 text-sm font-medium text-dark-900">{title}</p>
-            <p className="mt-1 text-sm text-dark-500">{text}</p>
+      {isSupabaseMode ? (
+        <ConnectionsManager />
+      ) : (
+        <>
+          <p className="pb-4 text-sm text-dark-500">A conexão bancária exige uma conta real. Na demonstração, nenhuma instituição é conectada.</p>
+          <div className="grid gap-3 md:grid-cols-3">
+            {items.map(({ icon: Icon, title, text }) => (
+              <div key={title} className="flex flex-col rounded-2xl border border-dark-200/70 bg-dark-50/40 p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <Icon className="h-5 w-5 text-primary-700" aria-hidden="true" />
+                  <span className="chip-planned">Com conta real</span>
+                </div>
+                <p className="mt-4 text-sm font-medium text-dark-900">{title}</p>
+                <p className="mt-1 text-sm text-dark-500">{text}</p>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
     </SettingsSection>
   );
 }

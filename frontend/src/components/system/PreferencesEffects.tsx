@@ -15,7 +15,7 @@ function useSystemDark() {
 
 /** Aplica as preferências de aparência ao documento e à configuração global de animação. */
 export function PreferencesEffects({ children }: { children: ReactNode }) {
-  const { theme, motion, density, effects } = usePreferences();
+  const { theme, motion, density, effects, hideValues } = usePreferences();
   const systemDark = useSystemDark();
   const resolvedTheme = theme === 'system' ? (systemDark ? 'dark' : 'light') : theme;
 
@@ -25,8 +25,9 @@ export function PreferencesEffects({ children }: { children: ReactNode }) {
     root.dataset.motion = motion;
     root.dataset.density = density;
     root.dataset.effects = effects ? 'on' : 'off';
+    root.dataset.hideValues = hideValues ? 'on' : 'off';
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', resolvedTheme === 'light' ? '#f6f7fb' : '#07080e');
-  }, [resolvedTheme, motion, density, effects]);
+  }, [resolvedTheme, motion, density, effects, hideValues]);
 
   return <MotionConfig reducedMotion={motion === 'off' ? 'always' : 'user'}>{children}</MotionConfig>;
 }

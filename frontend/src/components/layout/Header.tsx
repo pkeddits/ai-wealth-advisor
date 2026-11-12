@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { CalendarDays, ChevronDown, LogOut, Menu, User } from 'lucide-react';
+import { CalendarDays, ChevronDown, Eye, EyeOff, LogOut, Menu, User } from 'lucide-react';
+import { usePreferences } from '../../store/preferencesStore';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
 import { pageTitle } from './navigation';
@@ -17,6 +18,8 @@ export function Header() {
   const openMobileNav = useUIStore((s) => s.openMobileNav);
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const hideValues = usePreferences((s) => s.hideValues);
+  const setPreference = usePreferences((s) => s.set);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -51,6 +54,16 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPreference('hideValues', !hideValues)}
+            className="rounded-xl p-2 text-dark-500 transition-colors hover:bg-dark-100 hover:text-dark-900"
+            aria-pressed={hideValues}
+            aria-label={hideValues ? 'Mostrar valores' : 'Ocultar valores'}
+            title={hideValues ? 'Mostrar valores' : 'Ocultar valores'}
+          >
+            {hideValues ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
           <span className="hidden items-center gap-2 rounded-xl border border-dark-200/70 px-3 py-1.5 text-xs text-dark-500 md:inline-flex">
             <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
             {today}

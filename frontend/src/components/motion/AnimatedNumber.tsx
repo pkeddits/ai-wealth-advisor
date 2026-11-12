@@ -36,7 +36,7 @@ export function AnimatedNumber({ value, format, className, duration = 0.9 }: Ani
   }, [value, format, duration, reduced]);
 
   return (
-    <span ref={ref} className={className} aria-label={format(value)}>
+    <span ref={ref} className={className ? `sensitive ${className}` : 'sensitive'} aria-label={format(value)}>
       {format(value)}
     </span>
   );
@@ -70,5 +70,5 @@ export function MoneyFigure({ value, className, centsClassName = 'text-dark-500'
     return () => controls.stop();
   }, [value, reduced, centsClassName, rounded]);
 
-  return <span ref={ref} className={className} aria-label={value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />;
+  return <span ref={ref} className={`sensitive ${className ?? ''}`} aria-label={value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />;
 }
