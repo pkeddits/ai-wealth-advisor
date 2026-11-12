@@ -89,11 +89,11 @@ export function PersonalFinanceShowcase() {
 
         <div className="order-1 lg:order-2">
           <SectionHeading eyebrow="Finanças pessoais" title="Para onde vai o dinheiro que não está investido.">
-            Saldos, Pix e despesas importados das suas contas pelo Open Finance, com categorias e comparação mês a mês.
-            Útil também para quem ainda não investe.
+            Registre receitas e despesas, acompanhe gastos por categoria e o saldo de cada mês. A importação
+            automática das contas pelo Open Finance vem na próxima etapa. Útil também para quem ainda não investe.
           </SectionHeading>
           <Reveal delay={0.12}>
-            <span className="chip-building mt-7">Em desenvolvimento</span>
+            <span className="mt-7 flex flex-wrap gap-2"><span className="chip-live">Lançamentos manuais disponíveis</span><span className="chip-planned">Open Finance planejado</span></span>
           </Reveal>
         </div>
       </div>

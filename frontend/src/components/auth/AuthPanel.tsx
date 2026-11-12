@@ -5,7 +5,8 @@ import { Horizon, Logo } from '../brand';
 
 const MODULES = [
   { label: 'Carteiras, posições e operações', status: 'Disponível na demonstração', className: 'chip-live' },
-  { label: 'Contas, gastos e Open Finance', status: 'Em desenvolvimento', className: 'chip-building' },
+  { label: 'Receitas e despesas', status: 'Disponível', className: 'chip-live' },
+  { label: 'Contas pelo Open Finance', status: 'Planejado', className: 'chip-planned' },
   { label: 'Explicações com IA', status: 'Planejado', className: 'chip-planned' },
 ];
 

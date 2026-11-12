@@ -15,6 +15,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { ComingSoon } from './components/common/ComingSoon';
 import { LandingPage } from './pages/LandingPage';
+import { FinancePage } from './pages/FinancePage';
 import { appMode, isDemoMode } from './config/appMode';
 import { usePreferences } from './store/preferencesStore';
 
@@ -79,6 +80,7 @@ function App() {
         <Route path="/simulations" element={<ProtectedRoute>{apiOnlyModule(<SimulationsPage />, 'Simulações', 'Projeções de Monte Carlo e testes de estresse para cenários de mercado.')}</ProtectedRoute>} />
         <Route path="/alerts" element={<ProtectedRoute>{apiOnlyModule(<AlertsPage />, 'Alertas', 'Avisos quando um ativo ou a carteira atingir um valor definido por você.')}</ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+        <Route path="/financas" element={<ProtectedRoute>{appMode === 'api' ? <ComingSoon title="Finanças pessoais" description="Receitas, despesas e categorias." /> : <FinancePage />}</ProtectedRoute>} />
       </Route>
       
       <Route path="/" element={<LandingPage />} />

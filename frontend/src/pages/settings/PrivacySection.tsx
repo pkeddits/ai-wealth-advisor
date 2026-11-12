@@ -5,6 +5,7 @@ import { useSignOut } from '../../hooks/useSignOut';
 import { isDemoMode } from '../../config/appMode';
 import { clearDemoData } from '../../services/demo';
 import { clearDemoProfile, exportDemoData } from '../../services/account';
+import { clearDemoFinance } from '../../services/finance';
 import { Button } from '../../components/common';
 import { SettingRow, SettingsSection } from '../../components/settings';
 
@@ -16,6 +17,7 @@ export function PrivacySection() {
     if (!window.confirm('Apagar todas as carteiras, transações e o perfil da demonstração neste navegador?')) return;
     clearDemoData();
     clearDemoProfile();
+    clearDemoFinance();
     window.location.assign('/dashboard');
   };
 
@@ -23,6 +25,7 @@ export function PrivacySection() {
     if (!window.confirm('Encerrar a demonstração? Os dados fictícios deste navegador serão apagados.')) return;
     clearDemoData();
     clearDemoProfile();
+    clearDemoFinance();
     await signOut();
   };
 
@@ -37,7 +40,7 @@ export function PrivacySection() {
         <Button variant="secondary" icon={<Download className="h-4 w-4" />} onClick={exportDemoData} disabled={!isDemoMode}>Baixar</Button>
       </SettingRow>
       {isDemoMode && (
-        <SettingRow title="Limpar dados da demonstração" description="Apaga carteiras, transações e perfil fictícios deste navegador.">
+        <SettingRow title="Limpar dados da demonstração" description="Apaga carteiras, transações, movimentações e perfil fictícios deste navegador.">
           <Button variant="secondary" icon={<Trash2 className="h-4 w-4" />} onClick={clear}>Limpar dados</Button>
         </SettingRow>
       )}
