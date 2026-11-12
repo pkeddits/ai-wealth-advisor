@@ -27,6 +27,10 @@ Em **Settings → Environment Variables**, defina para Production (e Preview, se
 | `VITE_SUPABASE_URL` | URL do projeto Supabase |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | chave publicável (`sb_publishable_...`) |
 | `BRAPI_API_KEY` | opcional, somente servidor (cotações além de PETR4, VALE3, MGLU3, ITUB4) |
+| `PLUGGY_CLIENT_ID` | somente servidor (Open Finance) |
+| `PLUGGY_CLIENT_SECRET` | somente servidor (Open Finance) |
+| `SUPABASE_SECRET_KEY` | somente servidor; chave `sb_secret_...` usada para gravar dados importados |
+| `VITE_PLUGGY_INCLUDE_SANDBOX` | `true` para exibir o conector de testes no widget |
 
 Depois, faça um novo deploy. No Supabase, inclua a URL da Vercel em Site URL e Redirect URLs
 (ver `docs/SUPABASE.md`, seção 3).
