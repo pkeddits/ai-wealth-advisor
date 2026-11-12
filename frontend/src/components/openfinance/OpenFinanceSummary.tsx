@@ -14,7 +14,7 @@ export function OpenFinanceSummary() {
 
   useEffect(() => {
     Promise.all([openFinance.connections(), openFinance.investments()])
-      .then(([connections, investments]) => setData({ connections, investments }))
+      .then(([connections, investments]) => setData({ connections, investments: investments.filter((i) => i.status !== 'TOTAL_WITHDRAWAL') }))
       .catch(() => setFailed(true));
   }, []);
 
@@ -28,7 +28,7 @@ export function OpenFinanceSummary() {
           <p className="font-medium text-dark-900">Conecte suas contas pelo Open Finance</p>
           <p className="text-sm text-dark-500">Saldos, movimentações e investimentos importados com a sua autorização. O cadastro manual continua disponível.</p>
         </div>
-        <Link to="/settings#integracoes" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-700 hover:underline">Conectar banco <ArrowRight className="h-4 w-4" /></Link>
+        <Link to="/integracoes" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-700 hover:underline">Conectar banco <ArrowRight className="h-4 w-4" /></Link>
       </motion.section>
     );
   }
@@ -54,7 +54,7 @@ export function OpenFinanceSummary() {
       </div>
       <div className="text-sm sm:text-right">
         <p className={stale ? 'text-yellow-700' : 'text-dark-500'}>{stale ? 'Dados possivelmente desatualizados' : 'Sincronizado'}{lastSync ? ` em ${new Date(lastSync).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}` : ''}</p>
-        <Link to="/settings#integracoes" className="mt-1 inline-flex items-center gap-1 font-medium text-primary-700 hover:underline">Gerenciar <ArrowRight className="h-4 w-4" /></Link>
+        <Link to="/integracoes" className="mt-1 inline-flex items-center gap-1 font-medium text-primary-700 hover:underline">Gerenciar <ArrowRight className="h-4 w-4" /></Link>
       </div>
     </motion.section>
   );

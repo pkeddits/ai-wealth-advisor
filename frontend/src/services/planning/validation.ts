@@ -10,7 +10,9 @@ export function validateGoal(input: GoalInput): GoalInput {
   const initialAmount = input.initialAmount ? money(input.initialAmount) : 0;
   if (!Number.isFinite(initialAmount) || initialAmount < 0) throw new Error('O valor já guardado não pode ser negativo.');
   if (input.targetDate && !/^\d{4}-\d{2}-\d{2}$/.test(input.targetDate)) throw new Error('Data desejada inválida.');
-  return { name, kind: input.kind, targetAmount, targetDate: input.targetDate || null, initialAmount };
+  const plannedMonthly = input.plannedMonthly ? money(input.plannedMonthly) : null;
+  if (plannedMonthly !== null && (!Number.isFinite(plannedMonthly) || plannedMonthly <= 0)) throw new Error('O aporte planejado deve ser maior que zero.');
+  return { name, kind: input.kind, targetAmount, targetDate: input.targetDate || null, plannedMonthly, initialAmount };
 }
 
 export function validateAmount(amount: number) {

@@ -38,6 +38,10 @@ check('meta: ritmo dos últimos 3 meses com movimento', near(g.monthlyPace!, (50
 check('meta: aporte necessário até a data', g.monthsLeft === 6 && near(g.neededPerMonth!, 616.67), `${g.monthsLeft} ${g.neededPerMonth}`);
 g = goalProgress(1000, [mv('inicial', 1000, '2026-11-01')], '2026-11-12');
 check('meta alcançada', g.reached && g.pct === 100 && g.etaMonths === 0 && g.neededPerMonth === null);
+g = goalProgress(80000, [mv('aporte', 11000, '2026-11-02')], '2026-11-12');
+check('um aporte isolado não vira ritmo mensal', g.monthlyPace === null && g.etaMonths === null, `${g.monthlyPace} ${g.etaMonths}`);
+g = goalProgress(80000, [mv('inicial', 11000, '2026-10-01'), mv('aporte', 500, '2026-11-02')], '2026-11-12');
+check('valor inicial não conta como ritmo', g.monthlyPace === null);
 g = goalProgress(1000, [], '2026-11-12');
 check('meta sem movimentos: sem estimativa inventada', g.saved === 0 && g.monthlyPace === null && g.etaMonths === null);
 

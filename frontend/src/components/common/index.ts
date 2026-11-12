@@ -9,3 +9,4 @@ export { Table } from './Table';
 export { DemoBanner } from './DemoBanner';
 export { ComingSoon } from './ComingSoon';
 export { Avatar, AVATAR_GRADIENTS, initialsOf } from './Avatar';
+export { ViewSwitch } from './ViewSwitch';

@@ -24,6 +24,7 @@ export interface Preferences {
   hideValues: boolean;
   /** Uso do assistente (provedor externo) e envio do resumo financeiro calculado. */
   aiEnabled: boolean;
+  dashboardView: 'investimentos' | 'financas';
   aiShareData: boolean;
   dateFormat: DateFormatPreference;
   valueDisplay: ValueDisplayPreference;
@@ -41,6 +42,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   effects: true,
   hideValues: false,
   aiEnabled: false,
+  dashboardView: 'investimentos',
   aiShareData: false,
   dateFormat: 'dd/mm/aaaa',
   valueDisplay: 'full',

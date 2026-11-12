@@ -11,7 +11,10 @@ export interface GoalProgress {
   remaining: number;
   pct: number;
   reached: boolean;
-  /** Média mensal líquida de aportes nos últimos 3 meses com movimentação; null sem histórico. */
+  /**
+   * Média mensal líquida dos últimos 3 meses com aportes. Exige aportes em pelo menos dois meses
+   * diferentes: um aporte isolado não indica contribuição recorrente. null sem histórico suficiente.
+   */
   monthlyPace: number | null;
   /** Meses até o alvo no ritmo atual (sem rendimento); null se não há ritmo positivo. */
   etaMonths: number | null;
@@ -39,7 +42,7 @@ export function goalProgress(target: number, movements: GoalMovementInput[], tod
     byMonth.set(key, (byMonth.get(key) ?? 0) + (m.kind === 'retirada' ? -cents(m.amount) : cents(m.amount)));
   }
   const recent = [...byMonth.entries()].sort(([a], [b]) => b.localeCompare(a)).slice(0, 3);
-  const monthlyPace = recent.length ? recent.reduce((s, [, v]) => s + v, 0) / recent.length / 100 : null;
+  const monthlyPace = recent.length >= 2 ? recent.reduce((s, [, v]) => s + v, 0) / recent.length / 100 : null;
   const monthsLeft = targetDate ? Math.max(monthsBetween(today.slice(0, 7), targetDate.slice(0, 7)), 0) : null;
   return {
     saved,

@@ -11,6 +11,33 @@ import { Markdown } from '../components/ai/Markdown';
 import { useInsights } from './insights/useInsights';
 import { InsightCard } from './insights/InsightCard';
 
+function SentSummary({ data }: { data: Record<string, any> }) {
+  const [technical, setTechnical] = useState(false);
+  if (data.erro) return <p className="text-sm text-red-600">{String(data.erro)}</p>;
+  const n = (v: unknown, unit: string) => (Array.isArray(v) ? `${v.length} ${unit}` : typeof v === 'string' ? v : 'incluído');
+  const fin = data.financas_pessoais;
+  const rows = [
+    { label: 'Finanças pessoais do mês', value: typeof fin === 'object' ? `Receitas, despesas, saldo do período e ${fin.despesas_por_categoria?.length ?? 0} categorias de despesa (com comparação ao mês anterior)` : String(fin) },
+    { label: 'Orçamentos', value: n(data.orcamentos, 'orçamentos com limite e gasto') },
+    { label: 'Metas', value: n(data.metas, 'metas com valor-alvo e quanto já foi guardado') },
+    { label: 'Carteiras cadastradas', value: typeof data.investimentos_carteiras_manuais === 'object' ? `Capital aplicado, resultado realizado e participação de ${data.investimentos_carteiras_manuais.posicoes?.length ?? 0} ativos (pelo custo)` : String(data.investimentos_carteiras_manuais) },
+    { label: 'Investimentos importados', value: typeof data.investimentos_importados_open_finance === 'object' ? `${data.investimentos_importados_open_finance.posicoes} posições e o valor total informado` : String(data.investimentos_importados_open_finance) },
+    { label: 'Conexões bancárias', value: n(data.conexoes_bancarias, 'instituições com status e data da última sincronização') },
+  ];
+  return (
+    <div className="space-y-4 text-sm">
+      <p className="text-dark-600">Quando "Incluir meu resumo financeiro" está ativado, cada pergunta vai acompanhada deste resumo, calculado pelo Wealth Advisor. Período: <strong className="text-dark-900">{data.periodo?.mes}</strong> (comparado a {data.periodo?.mes_anterior}).</p>
+      <ul className="divide-y divide-dark-200/60 rounded-2xl border border-dark-200/60">
+        {rows.map((r) => <li key={r.label} className="flex flex-col gap-0.5 px-4 py-3 sm:flex-row sm:gap-4"><span className="w-48 shrink-0 font-medium text-dark-900">{r.label}</span><span className="text-dark-600">{r.value}</span></li>)}
+      </ul>
+      <p className="rounded-2xl border border-green-500/25 bg-green-500/[0.07] p-3 text-dark-700">Nunca enviado: descrições de transações, números de conta, documentos, credenciais e dados de outras pessoas. As conversas salvas guardam só o texto das perguntas e respostas.</p>
+      <p className="text-dark-500">Para parar de enviar, desative a opção em Configurações → Privacidade ou no próprio chat.</p>
+      <button type="button" onClick={() => setTechnical((v) => !v)} className="text-sm font-medium text-primary-700 hover:underline" aria-expanded={technical}>{technical ? 'Ocultar detalhes técnicos' : 'Ver detalhes técnicos'}</button>
+      {technical && <pre className="max-h-[40vh] overflow-auto rounded-2xl border border-dark-200 bg-dark-50/60 p-4 text-xs text-dark-700">{JSON.stringify(data, null, 2)}</pre>}
+    </div>
+  );
+}
+
 export function AIAnalysisPage() {
   const { insights, error } = useInsights();
   const { aiEnabled, aiShareData } = usePreferences();
@@ -94,9 +121,8 @@ export function AIAnalysisPage() {
         </motion.section>
       </div>
 
-      <Modal isOpen={sent !== null} onClose={() => setSent(null)} title="Dados enviados à IA" size="lg">
-        <p className="mb-3 text-sm text-dark-600">Este é o resumo calculado que acompanha suas perguntas quando o envio está ativado. Não inclui descrições de transações, contas, documentos ou dados de outras pessoas.</p>
-        <pre className="max-h-[60vh] overflow-auto rounded-2xl border border-dark-200 bg-dark-50/60 p-4 text-xs text-dark-700">{JSON.stringify(sent, null, 2)}</pre>
+      <Modal isOpen={sent !== null} onClose={() => setSent(null)} title="O que a IA recebe" size="lg">
+        {sent !== null && <SentSummary data={sent as Record<string, any>} />}
       </Modal>
     </div>
   );

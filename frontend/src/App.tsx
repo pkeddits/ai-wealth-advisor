@@ -16,6 +16,7 @@ import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { ComingSoon } from './components/common/ComingSoon';
 import { LandingPage } from './pages/LandingPage';
 import { FinancePage } from './pages/FinancePage';
+import { IntegrationsPage } from './pages/IntegrationsPage';
 import { appMode, isDemoMode } from './config/appMode';
 import { usePreferences } from './store/preferencesStore';
 
@@ -76,6 +77,7 @@ function App() {
         <Route path="/simulations" element={<ProtectedRoute><SimulationsPage /></ProtectedRoute>} />
         <Route path="/alerts" element={<ProtectedRoute><AlertsPage /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+        <Route path="/integracoes" element={<ProtectedRoute><IntegrationsPage /></ProtectedRoute>} />
         <Route path="/financas" element={<ProtectedRoute>{appMode === 'api' ? <ComingSoon title="Finanças pessoais" description="Receitas, despesas e categorias." /> : <FinancePage />}</ProtectedRoute>} />
       </Route>
       

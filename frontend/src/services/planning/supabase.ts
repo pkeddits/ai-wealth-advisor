@@ -16,7 +16,7 @@ function friendly(error: { code?: string; message?: string } | null, fallback: s
 
 export const supabasePlanningService: PlanningService = {
   async goals() {
-    const { data, error } = await getSupabase().from('goals').select('id, name, kind, target_amount, target_date, created_at, movements:goal_movements(id, goal_id, kind, amount, occurred_on, note)').order('created_at');
+    const { data, error } = await getSupabase().from('goals').select('id, name, kind, target_amount, target_date, planned_monthly, created_at, movements:goal_movements(id, goal_id, kind, amount, occurred_on, note)').order('created_at');
     if (error) throw friendly(error, 'Não foi possível carregar as metas.');
     return (data ?? []).map((g: any) => ({
       id: g.id,
@@ -24,13 +24,14 @@ export const supabasePlanningService: PlanningService = {
       kind: g.kind,
       targetAmount: Number(g.target_amount),
       targetDate: g.target_date,
+      plannedMonthly: g.planned_monthly === null || g.planned_monthly === undefined ? null : Number(g.planned_monthly),
       createdAt: g.created_at,
       movements: (g.movements ?? []).map((m: any) => ({ id: m.id, goalId: m.goal_id, kind: m.kind, amount: Number(m.amount), occurredOn: m.occurred_on, note: m.note })).sort((a: any, b: any) => b.occurredOn.localeCompare(a.occurredOn)),
     }));
   },
   async createGoal(input) {
     const v = validateGoal(input);
-    const { data, error } = await getSupabase().from('goals').insert({ name: v.name, kind: v.kind, target_amount: v.targetAmount, target_date: v.targetDate }).select('id').single();
+    const { data, error } = await getSupabase().from('goals').insert({ name: v.name, kind: v.kind, target_amount: v.targetAmount, target_date: v.targetDate, planned_monthly: v.plannedMonthly }).select('id').single();
     if (error || !data) throw friendly(error, 'Não foi possível criar a meta.');
     if (v.initialAmount) {
       const { error: e2 } = await getSupabase().from('goal_movements').insert({ goal_id: data.id, kind: 'inicial', amount: v.initialAmount, occurred_on: today() });
@@ -39,7 +40,7 @@ export const supabasePlanningService: PlanningService = {
   },
   async updateGoal(id, input) {
     const v = validateGoal(input);
-    const { error } = await getSupabase().from('goals').update({ name: v.name, kind: v.kind, target_amount: v.targetAmount, target_date: v.targetDate }).eq('id', id);
+    const { error } = await getSupabase().from('goals').update({ name: v.name, kind: v.kind, target_amount: v.targetAmount, target_date: v.targetDate, planned_monthly: v.plannedMonthly }).eq('id', id);
     if (error) throw friendly(error, 'Não foi possível salvar a meta.');
   },
   async deleteGoal(id) {

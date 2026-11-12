@@ -9,6 +9,7 @@ import { spotlightHandler } from '../hooks/useSpotlight';
 import { useDisplayFormat } from '../lib/displayFormat';
 import { isSupabaseMode } from '../config/appMode';
 import { ImportedInvestments } from '../components/openfinance/ImportedInvestments';
+import { ViewSwitch } from '../components/common/ViewSwitch';
 import { riskProfileLabel } from '../utils/labels';
 import clsx from 'clsx';
 
@@ -18,6 +19,7 @@ const emptyForm = { name: '', description: '', riskProfile: 'moderado' as RiskPr
 export function PortfoliosPage() {
   const { portfolios, fetchPortfolios, createPortfolio, isLoading, error } = usePortfolioStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [mode, setMode] = useState<'carteiras' | 'bancos' | 'completa'>('completa');
   const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState(emptyForm);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -54,6 +56,10 @@ export function PortfoliosPage() {
     }
   };
 
+  const fmtMoney = useDisplayFormat().money;
+  const manualInvested = portfolios.reduce((s, p) => s + (p.totalInvested ?? 0), 0);
+  const manualMarket = portfolios.every((p) => p.totalValue !== null) ? portfolios.reduce((s, p) => s + (p.totalValue ?? 0), 0) : null;
+
   const filteredPortfolios = portfolios.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -69,6 +75,23 @@ export function PortfoliosPage() {
           Nova Carteira
         </Button>
       </div>
+
+      {isSupabaseMode && (
+        <div className="flex flex-col gap-2">
+          <ViewSwitch id="investimentos" label="Origem dos investimentos" value={mode} onChange={setMode} options={[{ value: 'carteiras', label: 'Minhas carteiras' }, { value: 'bancos', label: 'Meus bancos' }, { value: 'completa', label: 'Visão completa' }]} />
+          <p className="text-xs text-dark-500">
+            {mode === 'carteiras' ? 'Operações que você registrou. Podem ser posições reais ou registros de estudo.' : mode === 'bancos' ? 'Investimentos informados pelas instituições conectadas pelo Open Finance.' : 'As duas origens lado a lado. Os subtotais não são somados porque podem representar os mesmos ativos.'}
+          </p>
+        </div>
+      )}
+      {isSupabaseMode && mode === 'completa' && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="panel p-4"><p className="text-xs text-dark-500">Minhas carteiras (capital aplicado)</p><p className="sensitive mt-1 text-xl font-semibold text-dark-900">{fmtMoney(manualInvested)}</p><p className="text-xs text-dark-500">{manualMarket === null ? 'Valor de mercado pendente' : `Valor de mercado ${fmtMoney(manualMarket)}`}</p></div>
+          <div className="panel p-4"><p className="text-xs text-dark-500">Meus bancos</p><p className="mt-1 text-sm text-dark-700">Subtotal informado pelas instituições, no quadro abaixo.</p><p className="text-xs text-dark-500">Não somado ao subtotal das carteiras.</p></div>
+        </div>
+      )}
+
+      {mode !== 'bancos' && (<>
 
       {error && (
         <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700" role="alert">
@@ -161,7 +184,9 @@ export function PortfoliosPage() {
         </div>
       )}
 
-      {isSupabaseMode && <ImportedInvestments />}
+      </>)}
+
+      {isSupabaseMode && mode !== 'carteiras' && <ImportedInvestments />}
 
       {/* Create Portfolio Modal */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Nova Carteira" size="md">

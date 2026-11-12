@@ -8,6 +8,10 @@ import { requestQuoteRefresh } from '../services/quotes';
 import { loadDemoSample } from '../services/demo';
 import { isApiMode, isDemoMode, isSupabaseMode } from '../config/appMode';
 import { OpenFinanceSummary } from '../components/openfinance/OpenFinanceSummary';
+import { FinanceOverview } from './dashboard/FinanceOverview';
+import { ViewSwitch } from '../components/common/ViewSwitch';
+import { AnimatePresence, motion as m } from 'motion/react';
+import { usePreferences } from '../store/preferencesStore';
 import { Button } from '../components/common';
 import { Horizon } from '../components/brand';
 import { useDashboardData } from './dashboard/useDashboardData';
@@ -67,6 +71,8 @@ export function DashboardPage() {
   const [insights, setInsights] = useState<string[] | null>(null);
   const [loadingSample, setLoadingSample] = useState(false);
   const [updatedAt, setUpdatedAt] = useState(() => new Date());
+  const view = usePreferences((s) => s.dashboardView);
+  const setPref = usePreferences((s) => s.set);
 
   const firstPortfolioId = portfolios[0]?.id;
   useEffect(() => {
@@ -120,6 +126,15 @@ export function DashboardPage() {
         </div>
       </div>
 
+      <ViewSwitch id="dashboard" label="Visão do dashboard" value={view} onChange={(v) => setPref('dashboardView', v)} options={[{ value: 'investimentos', label: 'Investimentos' }, { value: 'financas', label: 'Finanças' }]} />
+
+      <AnimatePresence mode="wait" initial={false}>
+      {view === 'financas' ? (
+        <m.div key="financas" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}>
+          <FinanceOverview />
+        </m.div>
+      ) : (
+      <m.div key="investimentos" className="space-y-6" initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 24 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}>
       {error && (
         <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700" role="alert">
           Não foi possível carregar as carteiras: {error}
@@ -158,6 +173,9 @@ export function DashboardPage() {
           <ActivityPanel transactions={recent} loading={loadingActivity} />
         </>
       )}
+      </m.div>
+      )}
+      </AnimatePresence>
 
       {!hasPortfolios && !isLoading && isDemoMode && (
         <p className="flex items-center justify-center gap-2 text-xs text-dark-500">

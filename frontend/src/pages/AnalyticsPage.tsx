@@ -41,7 +41,7 @@ export function AnalyticsPage() {
         planningService.goals().catch(() => []),
         planningService.budgets().catch(() => []),
         portfolioService.list().then((r) => ((r as { data?: Portfolio[] }).data ?? [])).catch(() => []),
-        isSupabaseMode ? openFinance.investments().catch(() => []) : Promise.resolve([]),
+        isSupabaseMode ? openFinance.investments().then((l) => l.filter((i) => i.status !== 'TOTAL_WITHDRAWAL')).catch(() => []) : Promise.resolve([]),
       ]);
       setData({ months: months.map((m, i) => ({ month: m, entries: lists[i], s: summarizeMonth(lists[i], m) })), goals, budgets, portfolios, imported });
     })();

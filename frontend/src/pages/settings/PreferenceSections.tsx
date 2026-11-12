@@ -1,8 +1,8 @@
-import { Bell, CreditCard, Landmark, LineChart, Palette, Plug, Wallet } from 'lucide-react';
+import { ArrowRight, Bell, Palette, Plug, Wallet } from 'lucide-react';
 import { usePreferences } from '../../store/preferencesStore';
 import { useDisplayFormat } from '../../lib/displayFormat';
 import { isSupabaseMode } from '../../config/appMode';
-import { ConnectionsManager } from '../../components/openfinance/ConnectionsManager';
+import { Link } from 'react-router-dom';
 import { Button, Select } from '../../components/common';
 import { Segmented, SettingRow, SettingsSection, Switch } from '../../components/settings';
 
@@ -81,32 +81,12 @@ export function NotificationsSection() {
 }
 
 export function IntegrationsSection() {
-  const items = [
-    { icon: Landmark, title: 'Contas bancárias', text: 'Saldos, Pix e extratos importados com a sua autorização pelo Open Finance.' },
-    { icon: CreditCard, title: 'Cartões de crédito', text: 'Faturas e gastos por categoria, sem precisar digitar cada compra.' },
-    { icon: LineChart, title: 'Investimentos em corretoras', text: 'Posições de outras instituições reunidas no seu patrimônio.' },
-  ];
   return (
     <SettingsSection id="integracoes" title="Integrações" description="Conexões com as suas instituições financeiras, sempre autorizadas por você." icon={<Plug className="h-5 w-5" />}>
-      {isSupabaseMode ? (
-        <ConnectionsManager />
-      ) : (
-        <>
-          <p className="pb-4 text-sm text-dark-500">A conexão bancária exige uma conta real. Na demonstração, nenhuma instituição é conectada.</p>
-          <div className="grid gap-3 md:grid-cols-3">
-            {items.map(({ icon: Icon, title, text }) => (
-              <div key={title} className="flex flex-col rounded-2xl border border-dark-200/70 bg-dark-50/40 p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <Icon className="h-5 w-5 text-primary-700" aria-hidden="true" />
-                  <span className="chip-planned">Com conta real</span>
-                </div>
-                <p className="mt-4 text-sm font-medium text-dark-900">{title}</p>
-                <p className="mt-1 text-sm text-dark-500">{text}</p>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
+      <div className="flex flex-col gap-3 rounded-2xl border border-primary-500/25 bg-primary-500/[0.06] p-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-dark-700">Conecte, sincronize, reconecte ou desvincule instituições na Central de Integrações.</p>
+        <Link to="/integracoes" className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-on-brand">Abrir Central de Integrações <ArrowRight className="h-4 w-4" /></Link>
+      </div>
     </SettingsSection>
   );
 }

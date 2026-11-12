@@ -1,4 +1,4 @@
-import { AlertTriangle, BarChart3, Bot, LayoutDashboard, ReceiptText, Settings, TrendingUp, Wallet, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, BarChart3, Bot, LayoutDashboard, Plug, ReceiptText, Settings, TrendingUp, Wallet, type LucideIcon } from 'lucide-react';
 import type { AppMode } from '../../config/appMode';
 
 export interface NavItem {
@@ -25,6 +25,10 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
       { name: 'Analytics', href: '/analytics', icon: BarChart3, availableIn: ['demo', 'supabase'] },
       { name: 'Simulações', href: '/simulations', icon: TrendingUp, availableIn: ['demo', 'supabase'] },
     ],
+  },
+  {
+    title: 'Integrações',
+    items: [{ name: 'Integrações', href: '/integracoes', icon: Plug, availableIn: ['demo', 'supabase'] }],
   },
   {
     title: 'Conta',

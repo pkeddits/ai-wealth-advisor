@@ -4,6 +4,7 @@ import { ArrowDownLeft, ArrowUpRight, Pencil, Plus, Target, Trash2 } from 'lucid
 import clsx from 'clsx';
 import { planningService, GOAL_KINDS, type Goal, type GoalKind } from '../../services/planning';
 import { goalProgress } from '../../domain/planning';
+import { monthsToTarget } from '../../domain/simulation';
 import { useDisplayFormat } from '../../lib/displayFormat';
 import { errorMessage } from '../../lib/errorMessage';
 import { Button, Input, Modal, Select } from '../../components/common';
@@ -33,7 +34,7 @@ export function GoalsTab() {
   const [goals, setGoals] = useState<Goal[] | null>(null);
   const [error, setError] = useState('');
   const [editing, setEditing] = useState<Goal | 'new' | null>(null);
-  const [form, setForm] = useState({ name: '', kind: 'reserva' as GoalKind, target: '', initial: '', date: '' });
+  const [form, setForm] = useState({ name: '', kind: 'reserva' as GoalKind, target: '', initial: '', date: '', planned: '' });
   const [moving, setMoving] = useState<Goal | null>(null);
   const [move, setMove] = useState({ kind: 'aporte' as 'aporte' | 'retirada', amount: '', date: today(), note: '' });
   const [formError, setFormError] = useState('');
@@ -51,7 +52,7 @@ export function GoalsTab() {
 
   const openGoal = (g: Goal | 'new') => {
     setFormError('');
-    setForm(g === 'new' ? { name: '', kind: 'reserva', target: '', initial: '', date: '' } : { name: g.name, kind: g.kind, target: String(g.targetAmount), initial: '', date: g.targetDate ?? '' });
+    setForm(g === 'new' ? { name: '', kind: 'reserva', target: '', initial: '', date: '', planned: '' } : { name: g.name, kind: g.kind, target: String(g.targetAmount), initial: '', date: g.targetDate ?? '', planned: g.plannedMonthly ? String(g.plannedMonthly) : '' });
     setEditing(g);
   };
 
@@ -60,7 +61,7 @@ export function GoalsTab() {
     setBusy(true);
     setFormError('');
     try {
-      const input = { name: form.name, kind: form.kind, targetAmount: num(form.target), targetDate: form.date || null };
+      const input = { name: form.name, kind: form.kind, targetAmount: num(form.target), targetDate: form.date || null, plannedMonthly: form.planned ? num(form.planned) : null };
       if (editing === 'new') await planningService.createGoal({ ...input, initialAmount: form.initial ? num(form.initial) : 0 });
       else if (editing) await planningService.updateGoal(editing.id, input);
       setEditing(null);
@@ -126,11 +127,15 @@ export function GoalsTab() {
                   <div>
                     <dt className="text-dark-500">{g.targetDate ? 'Por mês até a data' : 'No ritmo atual'}</dt>
                     <dd className="font-medium text-dark-900">
-                      {p.reached ? '—' : g.targetDate ? <span className="sensitive">{fmt.money(p.neededPerMonth ?? 0)}</span> : p.etaMonths !== null ? `${p.etaMonths} ${p.etaMonths === 1 ? 'mês' : 'meses'}` : <span className="text-dark-500">sem aportes recentes</span>}
+                      {p.reached ? '—' : g.targetDate ? <span className="sensitive">{fmt.money(p.neededPerMonth ?? 0)}</span> : p.etaMonths !== null ? `${p.etaMonths} ${p.etaMonths === 1 ? 'mês' : 'meses'}` : <span className="text-xs font-normal text-dark-500">Histórico insuficiente para estimar seu ritmo mensal.</span>}
                     </dd>
                   </div>
                 </dl>
                 {g.targetDate && <p className="mt-2 text-xs text-dark-500">Data desejada: {fmt.date(g.targetDate)}</p>}
+                {!p.reached && g.plannedMonthly && (() => {
+                  const m = monthsToTarget(p.saved, g.plannedMonthly, g.targetAmount, 0);
+                  return <p className="mt-2 rounded-xl border border-dashed border-primary-500/40 bg-primary-500/[0.06] px-3 py-2 text-xs text-dark-600">Projeção hipotética: guardando <span className="sensitive font-medium text-dark-900">{fmt.money(g.plannedMonthly)}</span> por mês, você alcança a meta em {m === null ? 'mais de 100 anos' : `${m} ${m === 1 ? 'mês' : 'meses'}`} (sem rendimento).</p>;
+                })()}
                 <div className="mt-4 flex flex-wrap gap-2 pt-1">
                   <Button size="sm" onClick={() => { setFormError(''); setMoving(g); }} icon={<Plus className="h-4 w-4" />}>Aportar ou retirar</Button>
                   <Button size="sm" variant="ghost" onClick={() => openGoal(g)} icon={<Pencil className="h-4 w-4" />} aria-label={`Editar ${g.name}`}>Editar</Button>
@@ -150,7 +155,10 @@ export function GoalsTab() {
             <Input id="goal-target" label="Valor-alvo (R$)" inputMode="decimal" value={form.target} onChange={(e) => setForm({ ...form, target: e.target.value })} />
             <Input id="goal-date" label="Data desejada (opcional)" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
           </div>
-          {editing === 'new' && <Input id="goal-initial" label="Valor já guardado (opcional)" inputMode="decimal" value={form.initial} onChange={(e) => setForm({ ...form, initial: e.target.value })} />}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {editing === 'new' && <Input id="goal-initial" label="Valor já guardado (opcional)" inputMode="decimal" value={form.initial} onChange={(e) => setForm({ ...form, initial: e.target.value })} />}
+            <Input id="goal-planned" label="Aporte mensal planejado (opcional)" inputMode="decimal" value={form.planned} onChange={(e) => setForm({ ...form, planned: e.target.value })} helperText="Usado só para projetar o prazo." />
+          </div>
           {formError && <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700" role="alert">{formError}</div>}
           <div className="flex gap-3 pt-2"><Button type="button" variant="secondary" className="flex-1" onClick={() => setEditing(null)}>Cancelar</Button><Button type="submit" className="flex-1" loading={busy}>Salvar meta</Button></div>
         </form>

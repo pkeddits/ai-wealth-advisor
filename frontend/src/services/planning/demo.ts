@@ -22,20 +22,20 @@ export function clearDemoPlanning() {
 export const demoPlanningService: PlanningService = {
   async goals() {
     const s = load();
-    return s.goals.map((g) => ({ ...g, movements: s.movements.filter((m) => m.goalId === g.id).sort((a, b) => b.occurredOn.localeCompare(a.occurredOn)) }));
+    return s.goals.map((g) => ({ ...g, plannedMonthly: g.plannedMonthly ?? null, movements: s.movements.filter((m) => m.goalId === g.id).sort((a, b) => b.occurredOn.localeCompare(a.occurredOn)) }));
   },
   async createGoal(input) {
     const v = validateGoal(input);
     const s = load();
     const id = newId();
-    s.goals.push({ id, name: v.name, kind: v.kind, targetAmount: v.targetAmount, targetDate: v.targetDate, createdAt: new Date().toISOString() });
+    s.goals.push({ id, name: v.name, kind: v.kind, targetAmount: v.targetAmount, targetDate: v.targetDate, plannedMonthly: v.plannedMonthly ?? null, createdAt: new Date().toISOString() });
     if (v.initialAmount) s.movements.push({ id: newId(), goalId: id, kind: 'inicial', amount: v.initialAmount, occurredOn: today(), note: null });
     save(s);
   },
   async updateGoal(id, input) {
     const v = validateGoal(input);
     const s = load();
-    s.goals = s.goals.map((g) => (g.id === id ? { ...g, name: v.name, kind: v.kind, targetAmount: v.targetAmount, targetDate: v.targetDate } : g));
+    s.goals = s.goals.map((g) => (g.id === id ? { ...g, name: v.name, kind: v.kind, targetAmount: v.targetAmount, targetDate: v.targetDate, plannedMonthly: v.plannedMonthly ?? null } : g));
     save(s);
   },
   async deleteGoal(id) {

@@ -9,7 +9,7 @@ Categorias: categorias predefinidas e personalizadas (criar, renomear, desativar
 Simulações: projeção com juros compostos (valor inicial, aporte mensal, prazo, taxa mensal ou anual efetiva), comparação de dois cenários e cálculo de aporte para uma meta. São hipotéticas, sem impostos, taxas ou inflação.
 Analytics: receitas e despesas por mês, gastos por categoria, saldo do período, aportes em metas, orçamento planejado e realizado, distribuição e concentração das carteiras e investimentos importados separados.
 Alertas: alertas por regras (orçamento, metas, concentração, cotação indisponível, conexões) calculados ao abrir o app; podem ser marcados como lidos. Não há envio por e-mail ou celular.
-Configurações → Integrações: "Conectar banco" abre a janela oficial do Open Finance (Pluggy); sincronizar, reconectar e desvincular. O site não pede nem guarda senhas bancárias.
+Integrações (menu lateral, também acessível em Configurações): Central de Integrações com resumo (instituições, contas, movimentações importadas, investimentos, pendências), cards por instituição com status e última sincronização; "Conectar banco" abre a janela oficial do Open Finance (Pluggy); "Sincronizar", "Reconectar" e "Desvincular". O site não pede nem guarda senhas bancárias.
 Configurações: perfil, senha, aparência, preferências financeiras, notificações (preferências), privacidade e uso do assistente de IA.
 Não existem no site: execução de compras ou vendas na bolsa, Pix ou pagamentos, relatórios em PDF, notificações externas, dashboard alternável, conciliação automática entre carteiras manuais e investimentos importados.
 `.trim();
@@ -24,6 +24,6 @@ export const PAGE_NAMES: Record<string, string> = {
   analytics: 'Analytics',
   alertas: 'Alertas',
   configuracoes: 'Configurações',
-  integracoes: 'Configurações → Integrações',
+  integracoes: 'Integrações',
   analise: 'Análise IA',
 };

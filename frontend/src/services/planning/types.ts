@@ -15,6 +15,8 @@ export interface Goal {
   kind: GoalKind;
   targetAmount: number;
   targetDate: string | null;
+  /** Aporte mensal planejado pelo usuário, usado só em projeções hipotéticas. */
+  plannedMonthly: number | null;
   createdAt: string;
   movements: GoalMovement[];
 }
@@ -38,6 +40,7 @@ export interface GoalInput {
   kind: GoalKind;
   targetAmount: number;
   targetDate: string | null;
+  plannedMonthly?: number | null;
   initialAmount?: number;
 }
 

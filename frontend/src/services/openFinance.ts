@@ -67,7 +67,6 @@ export const openFinance = {
     const { data, error } = await getSupabase()
       .from('investment_positions')
       .select('id, connection_id, name, code, type, subtype, status, quantity, unit_value, balance, amount_original, reported_at, due_date, connection:bank_connections(institution_name), movements:investment_movements(count)')
-      .neq('status', 'TOTAL_WITHDRAWAL')
       .order('balance', { ascending: false, nullsFirst: false });
     if (error) throw dbError(error, 'Não foi possível carregar os investimentos importados.');
     const n = (v: unknown) => (v === null || v === undefined ? null : Number(v));
@@ -90,6 +89,26 @@ export const openFinance = {
     }));
   },
 };
+
+export interface OpenFinanceStats {
+  importedEntries: number;
+  toReview: number;
+  investmentsActive: number;
+  investmentsWithdrawn: number;
+}
+
+/** Contagens para o resumo da Central de Integrações (consultas de contagem, sem trazer registros). */
+export async function openFinanceStats(): Promise<OpenFinanceStats> {
+  const sb = getSupabase();
+  const count = async (q: PromiseLike<{ count: number | null }>) => (await q).count ?? 0;
+  const [importedEntries, toReview, investmentsActive, investmentsWithdrawn] = await Promise.all([
+    count(sb.from('finance_entries').select('id', { count: 'exact', head: true }).eq('source', 'open_finance')),
+    count(sb.from('finance_entries').select('id', { count: 'exact', head: true }).eq('source', 'open_finance').eq('needs_review', true)),
+    count(sb.from('investment_positions').select('id', { count: 'exact', head: true }).or('status.is.null,status.neq.TOTAL_WITHDRAWAL')),
+    count(sb.from('investment_positions').select('id', { count: 'exact', head: true }).eq('status', 'TOTAL_WITHDRAWAL')),
+  ]);
+  return { importedEntries, toReview, investmentsActive, investmentsWithdrawn };
+}
 
 export const INVESTMENT_TYPE_LABELS: Record<string, string> = {
   FIXED_INCOME: 'Renda fixa',

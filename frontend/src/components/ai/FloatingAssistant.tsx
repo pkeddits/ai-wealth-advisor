@@ -16,7 +16,8 @@ export function pageKey(pathname: string, hash = ''): string {
   if (pathname.startsWith('/analytics')) return 'analytics';
   if (pathname.startsWith('/alerts')) return 'alertas';
   if (pathname.startsWith('/ai-analysis')) return 'analise';
-  if (pathname.startsWith('/settings')) return hash === '#integracoes' ? 'integracoes' : 'configuracoes';
+  if (pathname.startsWith('/integracoes')) return 'integracoes';
+  if (pathname.startsWith('/settings')) return 'configuracoes';
   return 'dashboard';
 }
 

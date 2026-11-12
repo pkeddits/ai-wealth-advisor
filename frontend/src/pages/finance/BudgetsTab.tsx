@@ -1,21 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { ChevronLeft, ChevronRight, PiggyBank, Plus, Trash2 } from 'lucide-react';
+import { PiggyBank, Plus, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 import { planningService, type Budget } from '../../services/planning';
 import { financeService, categoriesFor, categoryMeta } from '../../services/finance';
 import { budgetUsage, type BudgetUsage } from '../../domain/planning';
-import { summarizeMonth, shiftMonth } from '../../domain/finance';
+import { summarizeMonth } from '../../domain/finance';
 import { useDisplayFormat } from '../../lib/displayFormat';
 import { errorMessage } from '../../lib/errorMessage';
 import { Button, Input, Modal, Select } from '../../components/common';
 
-const currentMonth = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
 const label = (m: string) => { const l = new Date(`${m}-15T12:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }); return l[0].toUpperCase() + l.slice(1); };
 
-export function BudgetsTab() {
+/** O mês vem do seletor único da página de Finanças pessoais. */
+export function BudgetsTab({ month }: { month: string }) {
   const fmt = useDisplayFormat();
-  const [month, setMonth] = useState(currentMonth);
   const [budgets, setBudgets] = useState<Budget[] | null>(null);
   const [usage, setUsage] = useState<BudgetUsage[]>([]);
   const [open, setOpen] = useState(false);
@@ -53,11 +52,7 @@ export function BudgetsTab() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="inline-flex items-center gap-1 self-start rounded-2xl border border-dark-200/70 bg-dark-100/50 p-1">
-          <button type="button" onClick={() => setMonth(shiftMonth(month, -1))} className="rounded-xl p-1.5 text-dark-600 hover:bg-dark-200/60" aria-label="Mês anterior"><ChevronLeft className="h-4 w-4" /></button>
-          <span className="min-w-[150px] px-2 text-center text-sm font-medium text-dark-900" aria-live="polite">{label(month)}</span>
-          <button type="button" onClick={() => setMonth(shiftMonth(month, 1))} className="rounded-xl p-1.5 text-dark-600 hover:bg-dark-200/60" aria-label="Próximo mês"><ChevronRight className="h-4 w-4" /></button>
-        </div>
+        <p className="text-sm font-medium text-dark-900">Gastos de {label(month).toLowerCase()} comparados aos limites</p>
         <Button onClick={() => { setError(''); setForm({ category: 'alimentacao', limit: '', threshold: '80' }); setOpen(true); }} icon={<Plus className="h-4 w-4" />}>Definir orçamento</Button>
       </div>
       <p className="text-sm text-dark-500">Os limites valem para todos os meses. O gasto considera lançamentos manuais e importados válidos; transferências, aplicações, faturas, pendentes e itens a revisar ficam fora.</p>

@@ -139,7 +139,8 @@ export function FinancePage() {
         <div>
           <p className="text-sm text-dark-500">Finanças pessoais</p>
           <h1 className="text-display mt-1 text-[2rem] leading-tight sm:text-[2.4rem]">Receitas e despesas</h1>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className={clsx('mt-3 flex flex-wrap items-center gap-2', (tab === 'metas' || tab === 'categorias') && 'hidden')}>
+            <span className="text-xs text-dark-500">Período:</span>
             <div className="inline-flex items-center gap-1 rounded-2xl border border-dark-200/70 bg-dark-100/50 p-1">
               <button type="button" onClick={() => setMonth(shiftMonth(month, -1))} className="rounded-xl p-1.5 text-dark-600 hover:bg-dark-200/60 hover:text-dark-900" aria-label="Mês anterior">
                 <ChevronLeft className="h-4 w-4" />
@@ -168,7 +169,7 @@ export function FinancePage() {
       </div>
 
       {tab === 'metas' && <GoalsTab />}
-      {tab === 'orcamentos' && <BudgetsTab />}
+      {tab === 'orcamentos' && <BudgetsTab month={month} />}
       {tab === 'categorias' && <CategoriesTab />}
       {tab === 'mes' && (<>
       {error && <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700" role="alert">{error}</div>}
@@ -176,7 +177,7 @@ export function FinancePage() {
         <p className="flex flex-wrap items-center gap-2 rounded-2xl border border-dark-200/70 bg-dark-50/40 px-4 py-3 text-sm text-dark-600">
           <Landmark className="h-4 w-4 text-primary-700" aria-hidden="true" />
           Importe movimentações automaticamente conectando um banco.
-          <Link to="/settings#integracoes" className="font-medium text-primary-700 hover:underline">Conectar banco</Link>
+          <Link to="/integracoes" className="font-medium text-primary-700 hover:underline">Conectar banco</Link>
         </p>
       )}
 
