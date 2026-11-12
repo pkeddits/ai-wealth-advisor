@@ -31,6 +31,10 @@ Em **Settings → Environment Variables**, defina para Production (e Preview, se
 | `PLUGGY_CLIENT_SECRET` | somente servidor (Open Finance) |
 | `SUPABASE_SECRET_KEY` | somente servidor; chave `sb_secret_...` usada para gravar dados importados |
 | `VITE_PLUGGY_INCLUDE_SANDBOX` | `true` para exibir o conector de testes no widget |
+| `AI_PROVIDER` | `groq` (único provedor aceito com dados reais) |
+| `GROQ_API_KEY` | somente servidor; chave da Groq |
+| `GROQ_MODEL` | opcional; padrão `openai/gpt-oss-120b` |
+| `AI_COMPARE_ENABLED`, `GEMINI_API_KEY`, `GEMINI_MODEL` | opcionais; comparação com dados sintéticos |
 
 Depois, faça um novo deploy. No Supabase, inclua a URL da Vercel em Site URL e Redirect URLs
 (ver `docs/SUPABASE.md`, seção 3).
