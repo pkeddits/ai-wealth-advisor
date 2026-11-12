@@ -48,6 +48,15 @@ begin
   exception when check_violation then ok := true; end;
   if not ok then raise exception 'FALHA: data de transação importada alterada'; end if;
 
+  if exists (select 1 from information_schema.columns where table_name = 'finance_entries' and column_name = 'note') then
+    ok := false;
+    begin update public.finance_entries set description = 'Descrição editada' where external_id = 'tx-1';
+    exception when check_violation then ok := true; end;
+    if not ok then raise exception 'FALHA: descrição original de transação importada alterada'; end if;
+    execute $q$update public.finance_entries set note = 'Aluguel de outubro' where external_id = 'tx-1'$q$;
+    raise notice 'OK: descrição original preservada; anotação própria permitida';
+  end if;
+
   ok := false;
   begin update public.finance_entries set external_id = 'outro' where external_id = 'tx-1';
   exception when insufficient_privilege then ok := true; end;
