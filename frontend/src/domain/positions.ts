@@ -117,3 +117,28 @@ export function summarize(valued: ValuedHolding[]): PortfolioTotals {
     totalReturnPct: totalInvested > 0 ? (totalReturn / totalInvested) * 100 : 0,
   };
 }
+
+/**
+ * Resultado realizado nas vendas pelo custo médio: (preço de venda × quantidade − taxas)
+ * menos o custo médio da quantidade vendida. Não inclui ganhos ainda não realizados.
+ */
+export function computeRealized(trades: TradeInput[]): number {
+  const state = new Map<string, { quantity: number; cost: number }>();
+  let realized = 0;
+  for (const t of [...trades].sort(byChronology)) {
+    const s = state.get(t.assetId) ?? { quantity: 0, cost: 0 };
+    if (t.type === 'compra') {
+      s.quantity += t.quantity;
+      s.cost += t.quantity * t.price + t.fees;
+    } else {
+      if (t.quantity > s.quantity + EPSILON) throw new OversellError(t.assetId, s.quantity, t.quantity, t.date);
+      const avg = s.quantity > 0 ? s.cost / s.quantity : 0;
+      realized += t.quantity * t.price - t.fees - avg * t.quantity;
+      s.quantity -= t.quantity;
+      s.cost -= avg * t.quantity;
+      if (s.quantity < EPSILON) { s.quantity = 0; s.cost = 0; }
+    }
+    state.set(t.assetId, s);
+  }
+  return realized;
+}
