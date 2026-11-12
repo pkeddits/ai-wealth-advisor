@@ -8,9 +8,13 @@ insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-4000-8000-0000000000fa', 'ana.fin@teste.invalid', '{"name": "Ana"}'),
   ('00000000-0000-4000-8000-0000000000fb', 'bruno.fin@teste.invalid', '{"name": "Bruno"}');
 
--- Lançamento importado simulado (no futuro, inserido pelo servidor com service role).
-insert into public.finance_entries (user_id, kind, amount, category, description, occurred_on, source, external_id) values
-  ('00000000-0000-4000-8000-0000000000fa', 'despesa', 89.90, 'alimentacao', 'Mercado (importado)', current_date - 3, 'open_finance', 'ext-001');
+-- Lançamento importado como o servidor faria (service role), com conexão e conta de origem.
+insert into public.bank_connections (id, user_id, item_id, institution_name, status) values
+  ('00000000-0000-4000-8000-0000000000c1', '00000000-0000-4000-8000-0000000000fa', 'item-fin', 'Banco Teste', 'UPDATED');
+insert into public.bank_accounts (id, user_id, connection_id, external_id, kind, name) values
+  ('00000000-0000-4000-8000-0000000000a1', '00000000-0000-4000-8000-0000000000fa', '00000000-0000-4000-8000-0000000000c1', 'acc-fin', 'BANK', 'Conta corrente');
+insert into public.finance_entries (user_id, kind, amount, category, description, occurred_on, source, external_id, account_id) values
+  ('00000000-0000-4000-8000-0000000000fa', 'despesa', 89.90, 'alimentacao', 'Mercado (importado)', current_date - 3, 'open_finance', 'ext-001', '00000000-0000-4000-8000-0000000000a1');
 
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub": "00000000-0000-4000-8000-0000000000fa", "role": "authenticated"}', true);
