@@ -22,7 +22,8 @@ type LoginForm = z.infer<typeof loginSchema>;
 function useRedirectTarget() {
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
-  return from && from.startsWith('/') && !from.startsWith('//') ? from : usePreferences.getState().homePage;
+  // Só caminhos internos: barra dupla e barra invertida podem levar a outro domínio.
+  return from && /^\/(?![\/\\])/.test(from) && !from.includes('\\') ? from : usePreferences.getState().homePage;
 }
 
 function DemoEntry() {
