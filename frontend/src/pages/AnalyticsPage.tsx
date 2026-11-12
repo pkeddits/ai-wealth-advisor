@@ -1,219 +1,174 @@
-import { useState, useEffect } from 'react';
-import { BarChart3, TrendingUp, Download, Calendar, Filter } from 'lucide-react';
-import { analyticsService } from '../services';
-import { usePortfolioStore } from '../store/portfolioStore';
-import { Card, CardBody, Button, Select, Input, LoadingSpinner, Badge } from '../components/common';
-import { formatCurrency, formatPercent } from '../utils/format';
+import { useEffect, useState } from 'react';
+import { motion } from 'motion/react';
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import clsx from 'clsx';
+import { financeService, categoryMeta } from '../services/finance';
+import { planningService, useCustomCategories, type Budget, type Goal } from '../services/planning';
+import { portfolioService } from '../services';
+import { openFinance, INVESTMENT_TYPE_LABELS } from '../services/openFinance';
+import { isSupabaseMode } from '../config/appMode';
+import { summarizeMonth, shiftMonth, type MonthSummary } from '../domain/finance';
+import { budgetUsage } from '../domain/planning';
+import { useDisplayFormat } from '../lib/displayFormat';
+import { AllocationDonut, SERIES_COLORS, INCOME_COLOR, EXPENSE_COLOR } from '../components/charts';
+import type { FinanceEntry, ImportedInvestment, Portfolio } from '../types';
 
-interface AnalyticsData {
-  returns: { date: string; value: number }[];
-  volatility: number;
-  sharpeRatio: number;
-  maxDrawdown: number;
-  beta: number;
-  var95: number;
-  correlationMatrix: { asset: string; correlations: Record<string, number> }[];
+const currentMonth = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
+const short = (m: string) => new Date(`${m}-15T12:00:00`).toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
+
+function Panel({ title, note, children, className }: { title: string; note?: string; children: React.ReactNode; className?: string }) {
+  return (
+    <motion.section className={clsx('panel p-5 sm:p-6', className)} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
+      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2"><h2 className="text-[15px] font-semibold">{title}</h2>{note && <p className="text-xs text-dark-500">{note}</p>}</div>
+      {children}
+    </motion.section>
+  );
 }
 
-export function AnalyticsPage() {
-  const { currentPortfolio } = usePortfolioStore();
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [period, setPeriod] = useState('1y');
-  const [benchmark, setBenchmark] = useState('ibov');
+const tooltipStyle = { background: 'rgb(var(--surface-raised))', border: '1px solid rgb(var(--dark-200))', borderRadius: 12 };
 
-  const loadAnalytics = async () => {
-    if (!currentPortfolio) return;
-    setIsLoading(true);
-    try {
-      const data = await analyticsService.getAnalytics(currentPortfolio.id, period, benchmark);
-      setAnalytics(data);
-    } catch (error) {
-      console.error('Failed to load analytics:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+export function AnalyticsPage() {
+  const fmt = useDisplayFormat();
+  const loadCategories = useCustomCategories((s) => s.load);
+  const [data, setData] = useState<{ months: { month: string; s: MonthSummary; entries: FinanceEntry[] }[]; goals: Goal[]; budgets: Budget[]; portfolios: Portfolio[]; imported: ImportedInvestment[] } | null>(null);
 
   useEffect(() => {
-    loadAnalytics();
-  }, [currentPortfolio, period, benchmark]);
+    (async () => {
+      await loadCategories();
+      const months = Array.from({ length: 6 }, (_, i) => shiftMonth(currentMonth(), i - 5));
+      const lists = await Promise.all(months.map((m) => financeService.list(m).catch(() => [])));
+      const [goals, budgets, portfolios, imported] = await Promise.all([
+        planningService.goals().catch(() => []),
+        planningService.budgets().catch(() => []),
+        portfolioService.list().then((r) => ((r as { data?: Portfolio[] }).data ?? [])).catch(() => []),
+        isSupabaseMode ? openFinance.investments().catch(() => []) : Promise.resolve([]),
+      ]);
+      setData({ months: months.map((m, i) => ({ month: m, entries: lists[i], s: summarizeMonth(lists[i], m) })), goals, budgets, portfolios, imported });
+    })();
+  }, [loadCategories]);
 
-  if (!currentPortfolio) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-dark-900 flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-primary-600" />
-            Analytics
-          </h1>
-          <p className="text-dark-600 mt-1">Análise de risco e retorno da sua carteira</p>
-        </div>
-        <Card>
-          <CardBody className="p-12 text-center">
-            <BarChart3 className="w-16 h-16 text-primary-600 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-dark-900 mb-2">Selecione uma carteira</h2>
-            <p className="text-dark-600">Escolha uma carteira no menu lateral para ver a análise completa</p>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
+  if (!data) return <div className="grid gap-4 lg:grid-cols-2">{[0, 1, 2, 3].map((i) => <div key={i} className="skeleton h-72 !rounded-panel" />)}</div>;
+
+  const hasEntries = data.months.some((m) => m.entries.length);
+  const monthly = data.months.map((m) => ({ mes: short(m.month), receitas: m.s.income, despesas: m.s.expenses, saldo: m.s.net }));
+  const byCategory = new Map<string, number>();
+  for (const m of data.months) for (const c of m.s.expensesByCategory) byCategory.set(c.category, (byCategory.get(c.category) ?? 0) + c.amount);
+  const slices = [...byCategory.entries()].sort((x, y) => y[1] - x[1]).map(([cat, value], i) => ({ key: cat, label: categoryMeta(cat).label, value, color: SERIES_COLORS[i % SERIES_COLORS.length] }));
+  const contributions = data.months.map((m) => ({
+    mes: short(m.month),
+    aportes: data.goals.flatMap((g) => g.movements).filter((mv) => mv.occurredOn.startsWith(m.month)).reduce((s, mv) => s + (mv.kind === 'retirada' ? -mv.amount : mv.kind === 'aporte' ? mv.amount : 0), 0),
+  }));
+  const cur = data.months[data.months.length - 1];
+  const usage = budgetUsage(data.budgets, cur.s.expensesByCategory);
+
+  const positions = data.portfolios.flatMap((p) => p.positions ?? []);
+  const capital = positions.reduce((s, p) => s + p.investedValue, 0);
+  const priced = positions.length > 0 && positions.every((p) => p.currentValue !== null);
+  const market = priced ? positions.reduce((s, p) => s + (p.currentValue ?? 0), 0) : null;
+  const realized = data.portfolios.reduce((s, p) => s + (p.realizedGain ?? 0), 0);
+  const bySymbol = new Map<string, number>();
+  for (const p of positions) bySymbol.set(p.asset?.symbol ?? p.assetId, (bySymbol.get(p.asset?.symbol ?? p.assetId) ?? 0) + (priced ? p.currentValue ?? 0 : p.investedValue));
+  const assetSlices = [...bySymbol.entries()].sort((x, y) => y[1] - x[1]).map(([sym, value], i) => ({ key: sym, label: sym, value, color: SERIES_COLORS[i % SERIES_COLORS.length] }));
+  const base = assetSlices.reduce((s, a) => s + a.value, 0);
+  const importedTotal = data.imported.reduce((s, i) => s + (i.balance ?? 0), 0);
+  const byType = new Map<string, number>();
+  for (const i of data.imported) byType.set(i.type, (byType.get(i.type) ?? 0) + (i.balance ?? 0));
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-dark-900 flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-primary-600" />
-            Analytics
-          </h1>
-          <p className="text-dark-600 mt-1">Análise de risco e retorno de {currentPortfolio.name}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Select
-            value={period}
-            onChange={(e) => setPeriod(e.target.value)}
-            options={[
-              { value: '1m', label: '1 Mês' },
-              { value: '3m', label: '3 Meses' },
-              { value: '6m', label: '6 Meses' },
-              { value: '1y', label: '1 Ano' },
-              { value: '3y', label: '3 Anos' },
-              { value: '5y', label: '5 Anos' },
-            ]}
-            className="w-40"
-          />
-          <Select
-            value={benchmark}
-            onChange={(e) => setBenchmark(e.target.value)}
-            options={[
-              { value: 'ibov', label: 'IBOVESPA' },
-              { value: 'cdi', label: 'CDI' },
-              { value: 'sp500', label: 'S&P 500' },
-            ]}
-            className="w-40"
-          />
-          <Button variant="secondary" icon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-        </div>
+      <div>
+        <p className="text-sm text-dark-500">Inteligência</p>
+        <h1 className="text-display mt-1 text-[2rem] leading-tight sm:text-[2.4rem]">Analytics</h1>
+        <p className="mt-1 max-w-3xl text-dark-600">Análises dos últimos 6 meses com base nos lançamentos, metas, orçamentos e carteiras. Investimentos cadastrados e importados ficam separados porque podem representar os mesmos ativos.</p>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {analytics && [
-          { label: 'Volatilidade (anual)', value: `${(analytics.volatility * 100).toFixed(2)}%`, icon: TrendingUp, color: 'blue' },
-          { label: 'Sharpe Ratio', value: analytics.sharpeRatio.toFixed(2), icon: BarChart3, color: 'green' },
-          { label: 'Max Drawdown', value: `${(analytics.maxDrawdown * 100).toFixed(2)}%`, icon: TrendingUp, color: 'red' },
-          { label: 'Beta vs Benchmark', value: analytics.beta.toFixed(2), icon: BarChart3, color: 'purple' },
-        ].map((metric, i) => (
-          <Card key={i}>
-            <CardBody className="p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-dark-500">{metric.label}</p>
-                  <p className="text-2xl font-bold text-dark-900 mt-1">{metric.value}</p>
-                </div>
-                <div className={clsx('w-10 h-10 rounded-xl flex items-center justify-center', `bg-${metric.color}-100`)}>
-                  <metric.icon className={clsx('w-5 h-5', `text-${metric.color}-600`)} />
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        ))}
+      <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
+        <Panel title="Receitas e despesas por mês" note="Sem transferências, aplicações, faturas, pendentes e itens a revisar">
+          {hasEntries ? (
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthly} margin={{ top: 8, right: 4, left: 4, bottom: 0 }}>
+                  <CartesianGrid vertical={false} stroke="rgb(var(--dark-200))" strokeDasharray="3 6" />
+                  <XAxis dataKey="mes" tick={{ fill: 'rgb(var(--dark-500))', fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis hide />
+                  <Tooltip formatter={(v: number) => fmt.money(v)} contentStyle={tooltipStyle} cursor={{ fill: 'rgb(var(--dark-100) / 0.5)' }} />
+                  <Legend />
+                  <Bar dataKey="receitas" name="Receitas" fill={INCOME_COLOR} radius={[6, 6, 2, 2]} maxBarSize={22} />
+                  <Bar dataKey="despesas" name="Despesas" fill={EXPENSE_COLOR} radius={[6, 6, 2, 2]} maxBarSize={22} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : <p className="py-16 text-center text-sm text-dark-500">Sem movimentações nos últimos 6 meses.</p>}
+          {hasEntries && (
+            <ul className="mt-3 grid grid-cols-3 gap-2 text-xs sm:grid-cols-6">
+              {monthly.map((m) => <li key={m.mes} className="rounded-xl border border-dark-200/60 px-2 py-1.5 text-center"><span className="block text-dark-500">{m.mes}</span><span className={clsx('sensitive font-medium', m.saldo < 0 ? 'text-red-600' : 'text-dark-900')}>{fmt.money(m.saldo)}</span></li>)}
+            </ul>
+          )}
+        </Panel>
+        <Panel title="Gastos por categoria" note="Soma dos 6 meses">
+          {slices.length ? <AllocationDonut slices={slices} formatValue={fmt.money} size={170} stacked /> : <p className="py-16 text-center text-sm text-dark-500">Sem despesas no período.</p>}
+        </Panel>
       </div>
 
-      {/* Additional Metrics */}
-      {analytics && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card>
-            <CardBody className="p-5">
-              <p className="text-sm text-dark-500">VaR 95% (1 dia)</p>
-              <p className="text-2xl font-bold text-red-600 mt-1">{formatCurrency(Math.abs(analytics.var95))}</p>
-              <p className="text-sm text-dark-500 mt-1">Perda máxima esperada em 95% dos dias</p>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody className="p-5">
-              <p className="text-sm text-dark-500">Retorno Acumulado ({period})</p>
-              <p className="text-2xl font-bold text-dark-900 mt-1">
-                {analytics.returns.length > 0 
-                  ? formatPercent((analytics.returns[analytics.returns.length - 1].value - analytics.returns[0].value) / analytics.returns[0].value)
-                  : 'N/A'}
-              </p>
-            </CardBody>
-          </Card>
-        </div>
-      )}
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardBody className="p-5">
-            <h3 className="text-lg font-semibold text-dark-900 mb-4">Evolução do Patrimônio</h3>
-            <div className="h-80 bg-dark-50 rounded-lg flex items-center justify-center">
-              {isLoading ? (
-                <LoadingSpinner size="lg" />
-              ) : analytics ? (
-                <span className="text-dark-400">Gráfico de linha (Recharts) - {analytics.returns.length} pontos de dados</span>
-              ) : (
-                <span className="text-dark-400">Carregando...</span>
-              )}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Panel title="Orçamento planejado e realizado" note={`Mês atual`}>
+          {usage.length ? (
+            <ul className="space-y-3">
+              {usage.map((u) => (
+                <li key={u.category}>
+                  <div className="flex justify-between text-sm"><span className="text-dark-800">{categoryMeta(u.category).label}</span><span className="sensitive text-dark-500">{fmt.money(u.spent)} / {fmt.money(u.limit)}</span></div>
+                  <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-dark-100"><div className={clsx('h-full rounded-full', u.status === 'over' ? 'bg-red-500' : u.status === 'warning' ? 'bg-yellow-500' : 'bg-brand')} style={{ width: `${Math.min(u.pct, 100)}%` }} /></div>
+                </li>
+              ))}
+            </ul>
+          ) : <p className="py-10 text-center text-sm text-dark-500">Nenhum orçamento definido.</p>}
+        </Panel>
+        <Panel title="Aportes líquidos em metas" note="Aportes menos retiradas registrados">
+          {data.goals.length ? (
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={contributions} margin={{ top: 8, right: 4, left: 4, bottom: 0 }}>
+                  <CartesianGrid vertical={false} stroke="rgb(var(--dark-200))" strokeDasharray="3 6" />
+                  <XAxis dataKey="mes" tick={{ fill: 'rgb(var(--dark-500))', fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis hide />
+                  <Tooltip formatter={(v: number) => fmt.money(v)} contentStyle={tooltipStyle} cursor={{ fill: 'rgb(var(--dark-100) / 0.5)' }} />
+                  <Bar dataKey="aportes" name="Aportes" fill="rgb(var(--violet))" radius={[6, 6, 2, 2]} maxBarSize={26} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardBody className="p-5">
-            <h3 className="text-lg font-semibold text-dark-900 mb-4">Drawdown</h3>
-            <div className="h-80 bg-dark-50 rounded-lg flex items-center justify-center">
-              <span className="text-dark-400">Gráfico de drawdown (Recharts)</span>
-            </div>
-          </CardBody>
-        </Card>
+          ) : <p className="py-10 text-center text-sm text-dark-500">Nenhuma meta cadastrada.</p>}
+        </Panel>
       </div>
 
-      {/* Correlation Matrix */}
-      {analytics && analytics.correlationMatrix.length > 0 && (
-        <Card>
-          <CardBody className="p-5">
-            <h3 className="text-lg font-semibold text-dark-900 mb-4">Matriz de Correlação</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-dark-200">
-                    <th className="text-left p-3 font-medium text-dark-500">Ativo</th>
-                    {analytics.correlationMatrix.map((row) => (
-                      <th key={row.asset} className="text-center p-3 font-medium text-dark-500">{row.asset}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {analytics.correlationMatrix.map((row) => (
-                    <tr key={row.asset} className="border-b border-dark-100">
-                      <td className="p-3 font-medium text-dark-900">{row.asset}</td>
-                      {analytics.correlationMatrix.map((col) => (
-                        <td key={col.asset} className="text-center p-3">
-                          <span className={clsx(
-                            'font-medium',
-                            row.correlations[col.asset] > 0.7 ? 'text-red-600' :
-                            row.correlations[col.asset] > 0.3 ? 'text-yellow-600' : 'text-green-600'
-                          )}>
-                            {(row.correlations[col.asset] * 100).toFixed(0)}%
-                          </span>
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardBody>
-        </Card>
-      )}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Panel title="Carteiras cadastradas" note={priced ? 'Distribuição pelo valor de mercado' : 'Distribuição pelo custo (cotação pendente)'}>
+          {positions.length ? (
+            <>
+              <dl className="mb-5 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+                <div><dt className="text-dark-500">Capital aplicado</dt><dd className="sensitive font-medium text-dark-900">{fmt.money(capital)}</dd></div>
+                <div><dt className="text-dark-500">Valor de mercado</dt><dd className="sensitive font-medium text-dark-900">{market === null ? <span className="text-dark-500">pendente</span> : fmt.money(market)}</dd></div>
+                <div><dt className="text-dark-500">Não realizado</dt><dd className="sensitive font-medium">{market === null ? <span className="text-dark-500">—</span> : <span className={market - capital >= 0 ? 'text-green-600' : 'text-red-600'}>{fmt.signedMoney(market - capital)}</span>}</dd></div>
+                <div><dt className="text-dark-500">Realizado</dt><dd className={clsx('sensitive font-medium', realized >= 0 ? 'text-green-600' : 'text-red-600')}>{fmt.signedMoney(realized)}</dd></div>
+              </dl>
+              <AllocationDonut slices={assetSlices} formatValue={fmt.money} size={160} />
+              {assetSlices[0] && <p className="mt-3 text-xs text-dark-500">Maior posição: {assetSlices[0].label}, {Math.round((assetSlices[0].value / base) * 100)}% da carteira.</p>}
+            </>
+          ) : <p className="py-10 text-center text-sm text-dark-500">Nenhuma posição cadastrada.</p>}
+        </Panel>
+        <Panel title="Investimentos importados" note="Informado pelas instituições; não somado às carteiras">
+          {data.imported.length ? (
+            <>
+              <p className="text-sm text-dark-500">Valor informado</p>
+              <p className="sensitive text-2xl font-semibold tracking-tight text-dark-900">{fmt.money(importedTotal)}</p>
+              <ul className="mt-4 space-y-2">
+                {[...byType.entries()].map(([t, v]) => <li key={t} className="flex justify-between text-sm"><span className="text-dark-700">{INVESTMENT_TYPE_LABELS[t] ?? t}</span><span className="sensitive text-dark-900">{fmt.money(v)}</span></li>)}
+              </ul>
+              {data.imported.some((i) => i.balance === null) && <p className="mt-3 text-xs text-dark-500">Algumas posições não têm valor informado e não entram no total.</p>}
+            </>
+          ) : <p className="py-10 text-center text-sm text-dark-500">{isSupabaseMode ? 'Nenhum investimento importado.' : 'Disponível com conta real conectada.'}</p>}
+        </Panel>
+      </div>
+      <p className="text-xs text-dark-500">A evolução diária do patrimônio a mercado não é exibida porque não há histórico de cotações suficiente para calculá-la corretamente.</p>
     </div>
   );
 }

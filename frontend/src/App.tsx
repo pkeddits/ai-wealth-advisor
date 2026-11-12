@@ -19,10 +19,6 @@ import { FinancePage } from './pages/FinancePage';
 import { appMode, isDemoMode } from './config/appMode';
 import { usePreferences } from './store/preferencesStore';
 
-/** IA, analytics, simulações e alertas só têm implementação na API Go (modo "api"). */
-const apiOnlyModule = (page: ReactNode, title: string, description: string) =>
-  appMode === 'api' ? page : <ComingSoon title={title} description={description} />;
-
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
   const location = useLocation();
@@ -75,10 +71,10 @@ function App() {
         <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         <Route path="/portfolios" element={<ProtectedRoute><PortfoliosPage /></ProtectedRoute>} />
         <Route path="/portfolios/:id" element={<ProtectedRoute><PortfolioDetailPage /></ProtectedRoute>} />
-        <Route path="/ai-analysis" element={<ProtectedRoute>{apiOnlyModule(<AIAnalysisPage />, 'Análise com IA', 'Explicações geradas por IA sobre a composição e os riscos da carteira, a partir de métricas calculadas pelo sistema.')}</ProtectedRoute>} />
-        <Route path="/analytics" element={<ProtectedRoute>{apiOnlyModule(<AnalyticsPage />, 'Analytics', 'Métricas de risco e retorno da carteira, como volatilidade, drawdown e índice de Sharpe.')}</ProtectedRoute>} />
-        <Route path="/simulations" element={<ProtectedRoute>{apiOnlyModule(<SimulationsPage />, 'Simulações', 'Projeções de Monte Carlo e testes de estresse para cenários de mercado.')}</ProtectedRoute>} />
-        <Route path="/alerts" element={<ProtectedRoute>{apiOnlyModule(<AlertsPage />, 'Alertas', 'Avisos quando um ativo ou a carteira atingir um valor definido por você.')}</ProtectedRoute>} />
+        <Route path="/ai-analysis" element={<ProtectedRoute><AIAnalysisPage /></ProtectedRoute>} />
+        <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
+        <Route path="/simulations" element={<ProtectedRoute><SimulationsPage /></ProtectedRoute>} />
+        <Route path="/alerts" element={<ProtectedRoute><AlertsPage /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
         <Route path="/financas" element={<ProtectedRoute>{appMode === 'api' ? <ComingSoon title="Finanças pessoais" description="Receitas, despesas e categorias." /> : <FinancePage />}</ProtectedRoute>} />
       </Route>

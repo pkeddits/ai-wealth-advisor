@@ -22,6 +22,9 @@ export interface Preferences {
   effects: boolean;
   /** Desfoca valores financeiros na tela. */
   hideValues: boolean;
+  /** Uso do assistente (provedor externo) e envio do resumo financeiro calculado. */
+  aiEnabled: boolean;
+  aiShareData: boolean;
   dateFormat: DateFormatPreference;
   valueDisplay: ValueDisplayPreference;
   returnDisplay: ReturnDisplayPreference;
@@ -37,6 +40,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
   density: 'comfortable',
   effects: true,
   hideValues: false,
+  aiEnabled: false,
+  aiShareData: false,
   dateFormat: 'dd/mm/aaaa',
   valueDisplay: 'full',
   returnDisplay: 'both',

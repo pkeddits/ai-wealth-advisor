@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import clsx from 'clsx';
 import { useUIStore } from '../../store/uiStore';
 import { useProfileSync } from '../../hooks/useProfileSync';
+import { FloatingAssistant } from '../ai/FloatingAssistant';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { DemoBanner } from '../common/DemoBanner';
@@ -34,6 +35,7 @@ export function MainLayout() {
           <Outlet />
         </motion.main>
       </div>
+      <FloatingAssistant />
     </div>
   );
 }

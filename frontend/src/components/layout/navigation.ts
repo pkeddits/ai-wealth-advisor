@@ -21,15 +21,15 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
   {
     title: 'Inteligência',
     items: [
-      { name: 'Análise IA', href: '/ai-analysis', icon: Bot, availableIn: ['api'] },
-      { name: 'Analytics', href: '/analytics', icon: BarChart3, availableIn: ['api'] },
-      { name: 'Simulações', href: '/simulations', icon: TrendingUp, availableIn: ['api'] },
+      { name: 'Análise IA', href: '/ai-analysis', icon: Bot, availableIn: ['supabase'] },
+      { name: 'Analytics', href: '/analytics', icon: BarChart3, availableIn: ['demo', 'supabase'] },
+      { name: 'Simulações', href: '/simulations', icon: TrendingUp, availableIn: ['demo', 'supabase'] },
     ],
   },
   {
     title: 'Conta',
     items: [
-      { name: 'Alertas', href: '/alerts', icon: AlertTriangle, availableIn: ['api'] },
+      { name: 'Alertas', href: '/alerts', icon: AlertTriangle, availableIn: ['demo', 'supabase'] },
       { name: 'Configurações', href: '/settings', icon: Settings, availableIn: ['demo', 'supabase', 'api'] },
     ],
   },

@@ -6,8 +6,10 @@ import { isDemoMode } from '../../config/appMode';
 import { clearDemoData } from '../../services/demo';
 import { clearDemoProfile, exportDemoData } from '../../services/account';
 import { clearDemoFinance } from '../../services/finance';
+import { clearDemoPlanning } from '../../services/planning';
 import { Button } from '../../components/common';
 import { SettingRow, SettingsSection } from '../../components/settings';
+import { AiConsent } from '../../components/ai/ChatPanel';
 
 export function PrivacySection() {
   const signOut = useSignOut();
@@ -18,6 +20,7 @@ export function PrivacySection() {
     clearDemoData();
     clearDemoProfile();
     clearDemoFinance();
+    clearDemoPlanning();
     window.location.assign('/dashboard');
   };
 
@@ -26,11 +29,16 @@ export function PrivacySection() {
     clearDemoData();
     clearDemoProfile();
     clearDemoFinance();
+    clearDemoPlanning();
     await signOut();
   };
 
   return (
     <SettingsSection id="privacidade" title="Privacidade e dados" description="Seus dados, avisos e controle sobre a conta." icon={<Lock className="h-5 w-5" />}>
+      <div className="py-5 first:pt-0">
+        <p className="mb-3 text-sm font-medium text-dark-900">Assistente de IA</p>
+        <AiConsent />
+      </div>
       <SettingRow title="Projeto acadêmico" description="Desenvolvido para a disciplina ADS II. Não é uma instituição financeira e não oferece recomendação de investimento." />
       <SettingRow
         title="Baixar meus dados"

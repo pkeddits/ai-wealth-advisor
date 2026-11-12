@@ -52,8 +52,9 @@ export function MoneyFigure({ value, className, centsClassName = 'text-dark-500'
     const node = ref.current;
     if (!node) return;
     const render = (v: number) => {
-      const [whole, cents] = v.toLocaleString('pt-BR', { minimumFractionDigits: rounded ? 0 : 2, maximumFractionDigits: rounded ? 0 : 2 }).split(',');
-      node.innerHTML = cents ? `R$&nbsp;${whole}<span class="${centsClassName}">,${cents}</span>` : `R$&nbsp;${whole}`;
+      const sign = v < -0.004 ? '-' : '';
+      const [whole, cents] = Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: rounded ? 0 : 2, maximumFractionDigits: rounded ? 0 : 2 }).split(',');
+      node.innerHTML = cents ? `${sign}R$&nbsp;${whole}<span class="${centsClassName}">,${cents}</span>` : `${sign}R$&nbsp;${whole}`;
     };
     if (reduced) {
       render(value);
