@@ -15,7 +15,10 @@ interface ChatState {
   turns: ChatTurn[];
   /** Usuário dono da conversa salva; outra conta nunca a reaproveita. */
   owner: string | null;
+  /** Conversa ativa, compartilhada entre o chatbot flutuante e a Análise IA. */
+  conversationId: string | null;
   set: (turns: ChatTurn[]) => void;
+  open: (conversationId: string | null, turns?: ChatTurn[]) => void;
   reset: (owner?: string | null) => void;
 }
 
@@ -24,10 +27,17 @@ interface ChatState {
  * Fica no sessionStorage (some ao fechar a aba) e é apagada no logout.
  */
 export const useChatStore = create<ChatState>()(
-  persist((set) => ({ turns: [], owner: null, set: (turns) => set({ turns: turns.slice(-30) }), reset: (owner = null) => set({ turns: [], owner }) }), {
+  persist((set) => ({
+    turns: [],
+    owner: null,
+    conversationId: null,
+    set: (turns) => set({ turns: turns.slice(-60) }),
+    open: (conversationId, turns = []) => set({ conversationId, turns }),
+    reset: (owner = null) => set({ turns: [], owner, conversationId: null }),
+  }), {
     name: 'aiwa.chat.v1',
     storage: createJSONStorage(() => sessionStorage),
-    partialize: (state) => ({ turns: state.turns, owner: state.owner }),
+    partialize: (state) => ({ turns: state.turns, owner: state.owner, conversationId: state.conversationId }),
     onRehydrateStorage: () => (state) => {
       if (state) state.turns = state.turns.map((t) => (t.status === 'streaming' ? { ...t, status: 'stopped' } : t));
     },

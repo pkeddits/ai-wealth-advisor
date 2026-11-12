@@ -12,6 +12,8 @@ export function serverEnv(source: Record<string, string | undefined>): OpenFinan
     aiProvider: source.AI_PROVIDER || 'groq',
     groqApiKey: source.GROQ_API_KEY,
     groqModel: source.GROQ_MODEL || source.AI_MODEL,
+    // Opcional: endpoint compatível (proxy corporativo ou testes). Padrão: API oficial da Groq.
+    groqBaseUrl: source.GROQ_BASE_URL || undefined,
     geminiApiKey: source.GEMINI_API_KEY,
     geminiModel: source.GEMINI_MODEL,
     aiCompareEnabled: source.AI_COMPARE_ENABLED === 'true',

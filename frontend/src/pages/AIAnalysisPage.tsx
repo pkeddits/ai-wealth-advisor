@@ -6,6 +6,7 @@ import { usePreferences } from '../store/preferencesStore';
 import { fetchSnapshot, streamChat } from '../services/assistant';
 import { Button, Modal } from '../components/common';
 import { ChatPanel, AiConsent } from '../components/ai/ChatPanel';
+import { ConversationList } from '../components/ai/ConversationList';
 import { Markdown } from '../components/ai/Markdown';
 import { useInsights } from './insights/useInsights';
 import { InsightCard } from './insights/InsightCard';
@@ -48,7 +49,7 @@ export function AIAnalysisPage() {
         )}
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+      <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-4">
           <section className="panel-feature overflow-hidden p-6" aria-labelledby="diag-titulo">
             <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-primary-500/20 blur-[80px]" aria-hidden="true" />
@@ -86,7 +87,10 @@ export function AIAnalysisPage() {
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand text-on-brand"><Sparkles className="h-4 w-4" /></span>
             <p className="text-sm font-semibold text-dark-900">Pergunte ao assistente</p>
           </header>
-          <ChatPanel page="analise" className="flex-1" />
+          <div className="grid min-h-0 flex-1 md:grid-cols-[200px_minmax(0,1fr)]">
+            {isSupabaseMode && aiEnabled && <ConversationList className="hidden border-r border-dark-200/60 md:flex" />}
+            <ChatPanel page="analise" className={isSupabaseMode && aiEnabled ? 'min-h-0' : 'min-h-0 md:col-span-2'} />
+          </div>
         </motion.section>
       </div>
 

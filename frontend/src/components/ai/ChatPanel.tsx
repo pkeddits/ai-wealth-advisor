@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { ArrowUp, Check, Copy, RotateCcw, Sparkles, Square } from 'lucide-react';
+import { ArrowDown, ArrowUp, Check, Copy, RotateCcw, Sparkles, Square } from 'lucide-react';
+import { conversationsApi, useConversations } from '../../services/conversations';
 import clsx from 'clsx';
 import { streamChat, useChatStore, type ChatTurn } from '../../services/assistant';
 import { usePreferences } from '../../store/preferencesStore';
@@ -26,10 +27,18 @@ function Bubble({ turn, onRetry }: { turn: ChatTurn; onRetry: () => void }) {
   const [copied, setCopied] = useState(false);
   const user = turn.role === 'user';
   return (
-    <motion.li initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }} className={clsx('flex gap-2.5', user && 'justify-end')}>
+    <motion.li
+      layout="position"
+      initial={user ? { opacity: 0, y: 12, scale: 0.96 } : { opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={user ? { type: 'spring', stiffness: 500, damping: 32 } : { duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+      style={{ transformOrigin: user ? 'bottom right' : 'top left' }}
+      className={clsx('flex gap-2.5', user && 'justify-end')}
+    >
       {!user && (
-        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-brand text-on-brand" aria-hidden="true">
-          <Sparkles className="h-3.5 w-3.5" />
+        <span className="relative mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-brand text-on-brand" aria-hidden="true">
+          {turn.status === 'streaming' && <motion.span className="absolute inset-0 rounded-xl bg-primary-500/50" animate={{ scale: [1, 1.35], opacity: [0.6, 0] }} transition={{ duration: 1.4, repeat: Infinity, ease: 'easeOut' }} />}
+          <Sparkles className="relative h-3.5 w-3.5" />
         </span>
       )}
       <div className={clsx('group max-w-[85%] text-[15px]', user ? 'rounded-2xl rounded-br-md bg-primary-500/15 px-4 py-2.5 text-dark-900' : 'min-w-0 text-dark-700')}>
@@ -38,13 +47,16 @@ function Bubble({ turn, onRetry }: { turn: ChatTurn; onRetry: () => void }) {
         ) : turn.content ? (
           <div className="relative">
             <Markdown text={turn.content} />
-            {turn.status === 'streaming' && <span className="ml-0.5 inline-block h-4 w-[2px] translate-y-0.5 animate-pulse-soft bg-primary-500 align-middle" aria-hidden="true" />}
+            {turn.status === 'streaming' && <span className="ml-0.5 inline-block h-[1.05em] w-[3px] translate-y-[3px] animate-pulse-soft rounded-full bg-gradient-to-b from-primary-500 to-blue-500 align-baseline" aria-hidden="true" />}
           </div>
         ) : turn.status === 'streaming' ? (
-          <span className="inline-flex gap-1 py-2" aria-label="Gerando resposta">
-            {[0, 1, 2].map((i) => (
-              <motion.span key={i} className="h-1.5 w-1.5 rounded-full bg-primary-500" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1, repeat: Infinity, delay: i * 0.15 }} />
-            ))}
+          <span className="inline-flex items-center gap-2 py-1.5" aria-label="Gerando resposta">
+            <span className="inline-flex gap-1">
+              {[0, 1, 2].map((i) => (
+                <motion.span key={i} className="h-1.5 w-1.5 rounded-full bg-primary-500" animate={{ y: [0, -4, 0], opacity: [0.4, 1, 0.4] }} transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.12, ease: 'easeInOut' }} />
+              ))}
+            </span>
+            <span className="text-xs text-dark-500">Analisando</span>
           </span>
         ) : null}
         {turn.status === 'error' && (
@@ -85,7 +97,9 @@ export function AiConsent({ compact = false }: { compact?: boolean }) {
 }
 
 export function ChatPanel({ page, className, autoFocus }: { page: string; className?: string; autoFocus?: boolean }) {
-  const { turns, set } = useChatStore();
+  const { turns, set, conversationId, open } = useChatStore();
+  const reloadConversations = useConversations((st) => st.load);
+  const [showJump, setShowJump] = useState(false);
   const { aiEnabled, aiShareData } = usePreferences();
   const [input, setInput] = useState('');
   const controller = useRef<AbortController | null>(null);
@@ -96,9 +110,21 @@ export function ChatPanel({ page, className, autoFocus }: { page: string; classN
   useEffect(() => {
     const el = list.current;
     if (el && stick.current) el.scrollTop = el.scrollHeight;
-  }, [turns]);
+    else if (busy) setShowJump(true);
+  }, [turns, busy]);
 
-  const run = async (history: ChatTurn[]) => {
+  useEffect(() => {
+    if (!conversationId || busy || !isSupabaseMode) return;
+    conversationsApi.messages(conversationId).then((messages) => {
+      if (useChatStore.getState().conversationId === conversationId && !useChatStore.getState().turns.some((t) => t.status === 'streaming')) {
+        set(messages.map((m) => ({ id: m.id, role: m.role, content: m.content, status: m.status })));
+      }
+    }).catch(() => open(null));
+    // Atualiza ao abrir o painel com uma conversa salva.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId]);
+
+  const run = async (history: ChatTurn[], saveTo: string | null) => {
     const answer: ChatTurn = { id: newId(), role: 'assistant', content: '', status: 'streaming' };
     let current = [...history, answer];
     set(current);
@@ -118,25 +144,44 @@ export function ChatPanel({ page, className, autoFocus }: { page: string; classN
         onDelta: (text) => update({ content: (current.find((t) => t.id === answer.id)?.content ?? '') + text }),
       });
       update({ status: 'done' });
+      const text = current.find((t) => t.id === answer.id)?.content ?? '';
+      if (saveTo && text) conversationsApi.add(saveTo, 'assistant', text, 'done').then(reloadConversations).catch(() => undefined);
     } catch (err) {
-      if (ctrl.signal.aborted) update({ status: 'stopped' });
+      if (ctrl.signal.aborted) {
+        update({ status: 'stopped' });
+        const text = current.find((t) => t.id === answer.id)?.content ?? '';
+        if (saveTo && text) conversationsApi.add(saveTo, 'assistant', text, 'stopped').catch(() => undefined);
+      }
       else update({ status: 'error', error: err instanceof Error ? err.message : 'O assistente encontrou um erro.' });
     } finally {
       controller.current = null;
     }
   };
 
-  const send = (text: string) => {
-    const question = text.trim();
+  const send = async (text: string) => {
+    const question = text.trim().slice(0, 1500);
     if (!question || busy) return;
     setInput('');
-    run([...turns, { id: newId(), role: 'user', content: question.slice(0, 1500), status: 'done' }]);
+    const history: ChatTurn[] = [...turns, { id: newId(), role: 'user', content: question, status: 'done' }];
+    set(history);
+    let target = conversationId;
+    try {
+      if (!target) {
+        target = await conversationsApi.create(question);
+        open(target, history);
+      }
+      await conversationsApi.add(target, 'user', question);
+      reloadConversations();
+    } catch {
+      target = null;
+    }
+    run(history, target);
   };
 
   const retry = () => {
     const lastUser = [...turns].reverse().findIndex((t) => t.role === 'user');
     if (lastUser < 0) return;
-    run(turns.slice(0, turns.length - lastUser));
+    run(turns.slice(0, turns.length - lastUser), conversationId);
   };
 
   if (!isSupabaseMode || !aiEnabled) {
@@ -148,8 +193,8 @@ export function ChatPanel({ page, className, autoFocus }: { page: string; classN
     <div className={clsx('flex min-h-0 flex-col', className)}>
       <div
         ref={list}
-        onScroll={(e) => { const el = e.currentTarget; stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60; }}
-        className="min-h-0 flex-1 overflow-y-auto px-4 py-4"
+        onScroll={(e) => { const el = e.currentTarget; stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60; if (stick.current) setShowJump(false); }}
+        className="relative min-h-0 flex-1 overflow-y-auto px-4 py-4"
       >
         {turns.length === 0 ? (
           <div className="space-y-3">
@@ -168,7 +213,21 @@ export function ChatPanel({ page, className, autoFocus }: { page: string; classN
           </ul>
         )}
       </div>
-      <form onSubmit={(e) => { e.preventDefault(); send(input); }} className="border-t border-dark-200/60 p-3">
+      <AnimatePresence>
+        {showJump && (
+          <motion.button
+            type="button"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            onClick={() => { const el = list.current; if (el) el.scrollTop = el.scrollHeight; stick.current = true; setShowJump(false); }}
+            className="mx-auto -mt-12 mb-2 flex items-center gap-1 rounded-full border border-dark-200 bg-surface-raised/95 px-3 py-1.5 text-xs text-dark-700 shadow-float backdrop-blur"
+          >
+            <ArrowDown className="h-3.5 w-3.5" />Ir para o fim
+          </motion.button>
+        )}
+      </AnimatePresence>
+      <form onSubmit={(e) => { e.preventDefault(); send(input); }} className="relative border-t border-dark-200/60 p-3">
         <div className="flex items-end gap-2 rounded-2xl border border-dark-200 bg-dark-50/60 p-1.5 transition-colors focus-within:border-primary-500/50">
           <textarea
             value={input}
@@ -184,7 +243,7 @@ export function ChatPanel({ page, className, autoFocus }: { page: string; classN
           {busy ? (
             <button type="button" onClick={() => controller.current?.abort()} className="flex h-10 w-10 items-center justify-center rounded-xl bg-dark-200 text-dark-900 transition-colors hover:bg-dark-300" aria-label="Interromper resposta"><Square className="h-4 w-4" /></button>
           ) : (
-            <button type="submit" disabled={!input.trim()} className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand text-on-brand transition-opacity disabled:opacity-40" aria-label="Enviar pergunta"><ArrowUp className="h-4 w-4" /></button>
+            <motion.button whileTap={{ scale: 0.88 }} type="submit" disabled={!input.trim()} className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand text-on-brand shadow-[0_6px_18px_-8px_rgb(var(--violet)/0.9)] transition-opacity disabled:opacity-40 disabled:shadow-none" aria-label="Enviar pergunta"><ArrowUp className="h-4 w-4" /></motion.button>
           )}
         </div>
         <p className="mt-1.5 px-1 text-[11px] text-dark-500">{aiShareData ? 'Com resumo financeiro calculado pelo sistema.' : 'Sem dados financeiros.'} A IA pode errar; confira os números nas telas.</p>

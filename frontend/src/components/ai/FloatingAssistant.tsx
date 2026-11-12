@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { Sparkles, X } from 'lucide-react';
+import { MessagesSquare, Sparkles, X } from 'lucide-react';
+import { ConversationList } from './ConversationList';
+import { useChatStore } from '../../services/assistant';
+import { useConversations } from '../../services/conversations';
+import { usePreferences } from '../../store/preferencesStore';
+import { isSupabaseMode } from '../../config/appMode';
 import { ChatPanel } from './ChatPanel';
 
 export function pageKey(pathname: string, hash = ''): string {
@@ -18,6 +23,15 @@ export function pageKey(pathname: string, hash = ''): string {
 export function FloatingAssistant() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const [showList, setShowList] = useState(false);
+  const aiEnabled = usePreferences((s) => s.aiEnabled);
+  const conversationId = useChatStore((s) => s.conversationId);
+  const title = useConversations((s) => s.list.find((c) => c.id === conversationId)?.title);
+  const conversationsLoaded = useConversations((s) => s.loaded);
+  const loadConversations = useConversations((s) => s.load);
+  useEffect(() => {
+    if (open && isSupabaseMode && aiEnabled && !conversationsLoaded) loadConversations();
+  }, [open, aiEnabled, conversationsLoaded, loadConversations]);
   const page = pageKey(location.pathname, location.hash);
 
   useEffect(() => {
@@ -47,11 +61,25 @@ export function FloatingAssistant() {
               <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand text-on-brand"><Sparkles className="h-4 w-4" /></span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-dark-900">Assistente</p>
-                <p className="text-xs text-dark-500">Explica seus números e como usar o site</p>
+                <p className="truncate text-xs text-dark-500">{title ?? 'Explica seus números e como usar o site'}</p>
               </div>
+              {isSupabaseMode && aiEnabled && (
+                <button type="button" onClick={() => setShowList((v) => !v)} aria-pressed={showList} className={`rounded-lg p-1.5 transition-colors ${showList ? 'bg-primary-500/15 text-primary-800' : 'text-dark-500 hover:bg-dark-100 hover:text-dark-900'}`} aria-label="Conversas">
+                  <MessagesSquare className="h-4 w-4" />
+                </button>
+              )}
               <button type="button" onClick={() => setOpen(false)} className="rounded-lg p-1.5 text-dark-500 hover:bg-dark-100 hover:text-dark-900" aria-label="Fechar assistente"><X className="h-4 w-4" /></button>
             </header>
-            <ChatPanel page={page} className="flex-1" autoFocus />
+            <div className="relative flex min-h-0 flex-1 flex-col">
+              <ChatPanel page={page} className="flex-1" autoFocus />
+              <AnimatePresence>
+                {showList && (
+                  <motion.div className="absolute inset-0 z-10 bg-surface-raised" initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}>
+                    <ConversationList className="h-full" onPick={() => setShowList(false)} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </motion.section>
         )}
       </AnimatePresence>
