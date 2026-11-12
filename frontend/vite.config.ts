@@ -16,6 +16,8 @@ function localApi(env: Record<string, string>): Plugin {
     '/api/pluggy/items': ['/server/pluggy/handlers.ts', 'handleRegisterItem'],
     '/api/pluggy/sync': ['/server/pluggy/handlers.ts', 'handleSync'],
     '/api/pluggy/disconnect': ['/server/pluggy/handlers.ts', 'handleDisconnect'],
+    '/api/ai/chat': ['/server/ai/handler.ts', 'handleChat'],
+    '/api/ai/snapshot': ['/server/ai/handler.ts', 'handleSnapshot'],
   };
   return {
     name: 'aiwa-local-api',
@@ -29,14 +31,23 @@ function localApi(env: Record<string, string>): Plugin {
           const chunks: Buffer[] = [];
           for await (const chunk of req) chunks.push(chunk as Buffer);
           const body = chunks.length && req.method !== 'GET' ? Buffer.concat(chunks) : undefined;
-          const request = new Request(`http://localhost${req.originalUrl}`, { method: req.method, headers, body });
+          const abort = new AbortController();
+          res.on('close', () => abort.abort());
+          const request = new Request(`http://localhost${req.originalUrl}`, { method: req.method, headers, body, signal: abort.signal });
           const response: Response =
             route === '/api/quotes'
               ? await mod[handler](request, { brapiKey: env.BRAPI_API_KEY, supabaseUrl: env.SUPABASE_URL || env.VITE_SUPABASE_URL, supabaseKey: env.SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_ANON_KEY })
               : await mod[handler](request, serverEnv(env));
           res.statusCode = response.status;
           response.headers.forEach((value, key) => res.setHeader(key, value));
-          res.end(await response.text());
+          if (!response.body) return res.end();
+          const reader = response.body.getReader();
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            res.write(value);
+          }
+          res.end();
         });
       }
     },
