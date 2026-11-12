@@ -26,6 +26,7 @@ Em **Settings → Environment Variables**, defina para Production (e Preview, se
 | `VITE_APP_MODE` | `supabase` |
 | `VITE_SUPABASE_URL` | URL do projeto Supabase |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | chave publicável (`sb_publishable_...`) |
+| `BRAPI_API_KEY` | opcional, somente servidor (cotações além de PETR4, VALE3, MGLU3, ITUB4) |
 
 Depois, faça um novo deploy. No Supabase, inclua a URL da Vercel em Site URL e Redirect URLs
 (ver `docs/SUPABASE.md`, seção 3).
