@@ -68,7 +68,7 @@ export function BudgetsTab({ month }: { month: string }) {
           {usage.map((u, i) => {
             const budget = budgets.find((b) => b.category === u.category)!;
             return (
-              <motion.li key={u.category} className="panel p-5" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+              <motion.li key={u.category} className="panel lift p-5" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-medium text-dark-900">{categoryMeta(u.category).label}</p>
                   <span className={clsx('chip', u.status === 'over' ? 'border-red-500/30 bg-red-500/10 text-red-700' : u.status === 'warning' ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-700' : 'border-green-500/30 bg-green-500/10 text-green-700')}>

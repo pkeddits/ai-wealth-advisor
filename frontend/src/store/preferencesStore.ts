@@ -13,6 +13,7 @@ export interface NotificationPreferences {
   email: boolean;
   system: boolean;
   goals: boolean;
+  integrations?: boolean;
 }
 
 export interface Preferences {
@@ -53,7 +54,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   valueDisplay: 'full',
   returnDisplay: 'both',
   homePage: '/dashboard',
-  notifications: { email: false, system: true, goals: true },
+  notifications: { email: false, system: true, goals: true, integrations: true },
   avatar: { kind: 'gradient', index: 0 },
 };
 

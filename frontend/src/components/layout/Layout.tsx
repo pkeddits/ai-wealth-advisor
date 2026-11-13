@@ -18,6 +18,8 @@ export function MainLayout() {
 
   return (
     <div className="relative min-h-screen">
+      <div className="ambient-orb -left-40 top-24 h-[420px] w-[420px] text-primary-500/30" style={{ zIndex: -1 }} aria-hidden="true" />
+      <div className="ambient-orb -right-40 bottom-0 h-[380px] w-[380px] text-blue-500/25" style={{ zIndex: -1, animationDelay: '-9s' }} aria-hidden="true" />
       <div className="fx-decor pointer-events-none fixed inset-0 -z-10" aria-hidden="true">
         <div className="absolute -top-48 left-1/3 h-[520px] w-[720px] rounded-full bg-primary-500/[0.08] blur-[120px]" />
         <div className="absolute bottom-[-20%] right-[-10%] h-[520px] w-[620px] rounded-full bg-blue-500/[0.06] blur-[120px]" />

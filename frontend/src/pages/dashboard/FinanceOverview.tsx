@@ -49,14 +49,14 @@ export function FinanceOverview() {
       <p className="text-sm text-dark-500">Resumo de {monthName(cur.month)}. O saldo do período é receitas menos despesas, não o saldo bancário.</p>
       <div className="grid gap-4 sm:grid-cols-3">
         {stats.map((s, i) => (
-          <motion.div key={s.label} className={clsx('panel p-5', i === 2 && 'panel-feature')} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06, ease: EASE }}>
+          <motion.div key={s.label} className={clsx('panel lift p-5', i === 2 && 'panel-feature')} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06, ease: EASE }}>
             <p className="flex items-center gap-2 text-sm text-dark-500"><s.icon className={clsx('h-4 w-4', s.tone)} />{s.label}</p>
             <AnimatedNumber value={s.value} format={fmt.money} className={clsx('sensitive mt-2 block text-2xl font-semibold tracking-tight', s.tone)} />
           </motion.div>
         ))}
       </div>
       <div className="grid gap-4 xl:grid-cols-[1.3fr_1fr]">
-        <motion.section className="panel p-5" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, ease: EASE }}>
+        <motion.section className="panel lift p-5" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, ease: EASE }}>
           <h2 className="mb-3 text-[15px] font-semibold">Tendência dos últimos 6 meses</h2>
           {data.months.some((m) => m.count) ? (
             <div className="h-52">
@@ -71,13 +71,13 @@ export function FinanceOverview() {
             </div>
           ) : <p className="py-12 text-center text-sm text-dark-500">Sem movimentações nos últimos 6 meses.</p>}
         </motion.section>
-        <motion.section className="panel p-5" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, ease: EASE }}>
+        <motion.section className="panel lift p-5" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, ease: EASE }}>
           <h2 className="mb-3 text-[15px] font-semibold">Distribuição dos gastos</h2>
           {slices.length ? <AllocationDonut slices={slices} formatValue={fmt.money} size={150} stacked /> : <p className="py-12 text-center text-sm text-dark-500">Sem despesas neste mês.</p>}
         </motion.section>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
-        <motion.section className="panel p-5" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, ease: EASE }}>
+        <motion.section className="panel lift p-5" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, ease: EASE }}>
           <div className="mb-3 flex items-center justify-between"><h2 className="text-[15px] font-semibold">Orçamentos</h2><Link to="/financas#orcamentos" className="inline-flex items-center gap-1 text-sm text-primary-700 hover:underline">Ver <ArrowRight className="h-3.5 w-3.5" /></Link></div>
           {usage.length ? (
             <ul className="space-y-3">{usage.map((u) => (
@@ -88,7 +88,7 @@ export function FinanceOverview() {
             ))}</ul>
           ) : <p className="py-6 text-sm text-dark-500">Nenhum orçamento definido.</p>}
         </motion.section>
-        <motion.section className="panel p-5" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, ease: EASE }}>
+        <motion.section className="panel lift p-5" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, ease: EASE }}>
           <div className="mb-3 flex items-center justify-between"><h2 className="text-[15px] font-semibold">Metas</h2><Link to="/financas#metas" className="inline-flex items-center gap-1 text-sm text-primary-700 hover:underline">Ver <ArrowRight className="h-3.5 w-3.5" /></Link></div>
           {data.goals.length ? (
             <ul className="space-y-3">{data.goals.slice(0, 3).map((g) => {

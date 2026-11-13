@@ -88,7 +88,7 @@ function NavContent({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?
                       />
                       {!collapsed && <span className="relative">{item.name}</span>}
                       {!collapsed && !available && (
-                        <span className="relative ml-auto rounded-full border border-dark-200 px-2 py-0.5 text-[10px] font-medium text-dark-500">Em breve</span>
+                        <span className="relative ml-auto rounded-full border border-dark-200 px-2 py-0.5 text-[10px] font-medium text-dark-500">Com conta</span>
                       )}
                     </NavLink>
                   </li>

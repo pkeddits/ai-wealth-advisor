@@ -144,7 +144,6 @@ export function HeroStage({ pointerX, pointerY, tilt, rich }: HeroStageProps) {
         <div className="panel-glass w-64 !border-accent-500/30 p-4">
           <p className="flex items-center gap-1.5 text-xs font-medium text-accent-400">
             <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> Explicação com IA
-            <span className="ml-auto rounded-full border border-dark-300 px-1.5 py-px text-[10px] text-dark-500">Planejado</span>
           </p>
           <p className="mt-2 text-sm leading-snug text-dark-700">Quase metade do patrimônio está em ações. Entenda como isso afeta a variação da carteira.</p>
         </div>
@@ -156,7 +155,6 @@ export function HeroStage({ pointerX, pointerY, tilt, rich }: HeroStageProps) {
             <p className="flex items-center gap-1.5 text-xs text-dark-500">
               <ShoppingBag className="h-3.5 w-3.5" aria-hidden="true" /> Gastos do mês
             </p>
-            <span className="rounded-full border border-primary-500/35 px-1.5 py-px text-[10px] text-primary-800">Em breve</span>
           </div>
           <p className="mt-1.5 flex items-center gap-2 text-lg font-semibold text-dark-900">
             R$ 3.140,90

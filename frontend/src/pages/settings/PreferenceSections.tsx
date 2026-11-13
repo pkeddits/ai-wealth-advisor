@@ -60,21 +60,18 @@ export function NotificationsSection() {
   const { notifications, set } = usePreferences();
   const toggle = (key: keyof typeof notifications) => (value: boolean) => set('notifications', { ...notifications, [key]: value });
   return (
-    <SettingsSection id="notificacoes" title="Notificações" description="Preferências salvas agora; os envios começam quando as notificações forem integradas ao servidor." icon={<Bell className="h-5 w-5" />}>
-      <SettingRow title="Notificações por e-mail" description="Resumo de movimentações e avisos da conta.">
-        <Switch checked={notifications.email} onChange={toggle('email')} label="Notificações por e-mail" />
+    <SettingsSection id="notificacoes" title="Notificações" description="Escolha quais alertas aparecem na página Alertas. O envio por e-mail estará disponível em breve." icon={<Bell className="h-5 w-5" />}>
+      <SettingRow title="Notificações por e-mail" description="Resumo de movimentações e avisos da conta." status={<span className="chip-planned">Em breve</span>}>
+        <Switch checked={false} onChange={() => undefined} disabled label="Notificações por e-mail" />
       </SettingRow>
-      <SettingRow title="Alertas do sistema" description="Avisos sobre a conta e operações recusadas.">
+      <SettingRow title="Alertas de orçamento e carteira" description="Orçamentos perto do limite, concentração e cotações pendentes.">
         <Switch checked={notifications.system} onChange={toggle('system')} label="Alertas do sistema" />
       </SettingRow>
       <SettingRow title="Alertas de metas" description="Quando uma meta de aporte estiver próxima ou for atingida.">
         <Switch checked={notifications.goals} onChange={toggle('goals')} label="Alertas de metas" />
       </SettingRow>
-      <SettingRow title="Alertas de IA" description="Explicações sobre mudanças relevantes na carteira." status={<span className="chip-planned">Planejado</span>}>
-        <Switch checked={false} onChange={() => undefined} disabled label="Alertas de IA" />
-      </SettingRow>
-      <SettingRow title="Alertas de integrações" description="Falhas ou novas sincronizações do Open Finance." status={<span className="chip-planned">Planejado</span>}>
-        <Switch checked={false} onChange={() => undefined} disabled label="Alertas de integrações" />
+      <SettingRow title="Alertas de integrações" description="Instituições que precisam de nova autorização, falhas de sincronização e dados desatualizados.">
+        <Switch checked={notifications.integrations !== false} onChange={toggle('integrations')} label="Alertas de integrações" />
       </SettingRow>
     </SettingsSection>
   );

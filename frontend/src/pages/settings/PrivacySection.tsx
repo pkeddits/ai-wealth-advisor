@@ -39,7 +39,7 @@ export function PrivacySection() {
         <p className="mb-3 text-sm font-medium text-dark-900">Assistente de IA</p>
         <AiConsent />
       </div>
-      <SettingRow title="Projeto acadêmico" description="Desenvolvido para a disciplina ADS II. Não é uma instituição financeira e não oferece recomendação de investimento." />
+      <SettingRow title="Aviso legal" description="O Wealth Advisor AI é uma ferramenta de organização financeira. Não é instituição financeira e não oferece recomendação de investimento." />
       <SettingRow
         title="Baixar meus dados"
         description={isDemoMode ? 'Carteiras e transações da demonstração em um arquivo JSON.' : 'Exportação da conta.'}

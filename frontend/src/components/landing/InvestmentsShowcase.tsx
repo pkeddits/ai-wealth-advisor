@@ -26,7 +26,7 @@ export function InvestmentsShowcase() {
             Registre compras e vendas e veja posições, preço médio e distribuição recalculados por cálculos determinísticos e verificáveis.
           </SectionHeading>
           <Reveal delay={0.1}>
-            <span className="chip-live mt-7">Disponível na demonstração</span>
+            <span className="chip-live mt-7">Experimente na demonstração</span>
           </Reveal>
           <ul className="mt-8 space-y-3.5">
             {POINTS.map((point, i) => (

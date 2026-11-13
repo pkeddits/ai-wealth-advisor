@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
+import { useRichMotion } from '../motion';
 import { ArrowLeft, ArrowRight, Check, X } from 'lucide-react';
 import clsx from 'clsx';
 import type { Tutorial } from '../../tutorials/content';
 
 export function TutorialModal({ tutorial, onClose }: { tutorial: Tutorial | null; onClose: (completed: boolean) => void }) {
   const [step, setStep] = useState(0);
-  const reduced = useReducedMotion();
+  const reduced = !useRichMotion();
   useEffect(() => setStep(0), [tutorial?.id]);
 
   const total = tutorial?.steps.length ?? 0;

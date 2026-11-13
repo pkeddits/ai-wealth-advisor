@@ -75,7 +75,7 @@ export function Hero() {
           transition={{ duration: 0.7, delay: 0.1, ease: EASE }}
         >
           <span className="h-1.5 w-1.5 animate-pulse-soft rounded-full bg-primary-500" aria-hidden="true" />
-          Projeto acadêmico em desenvolvimento
+          Finanças pessoais e investimentos com IA
         </motion.span>
 
         <h1 className="text-display mx-auto mt-7 max-w-5xl text-[clamp(2.7rem,8.2vw,6.6rem)] leading-[0.98]">

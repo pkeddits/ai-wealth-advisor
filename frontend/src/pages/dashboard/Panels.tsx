@@ -232,7 +232,7 @@ export function InsightsPanel({ insights }: { insights: string[] | null }) {
         <h2 className="flex items-center gap-2 text-[15px] font-semibold text-dark-900">
           <Sparkles className="h-4 w-4 text-accent-400" aria-hidden="true" /> Insights da IA
         </h2>
-        {!insights && <span className="chip-planned">Planejado</span>}
+        {!insights && <a href="/ai-analysis" className="text-xs font-medium text-primary-700 hover:underline">Abrir Análise IA</a>}
       </div>
       {insights?.length ? (
         <ul className="mt-4 space-y-2">

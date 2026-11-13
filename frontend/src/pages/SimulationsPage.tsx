@@ -12,7 +12,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 function ScenarioForm({ title, value, onChange }: { title: string; value: Record<string, string>; onChange: (v: Record<string, string>) => void }) {
   return (
-    <div className="panel space-y-3 p-5">
+    <div className="panel lift space-y-3 p-5">
       <p className="font-medium text-dark-900">{title}</p>
       <div className="grid gap-3 sm:grid-cols-2">
         <Input label="Valor inicial (R$)" inputMode="decimal" value={value.initial} onChange={(e) => onChange({ ...value, initial: e.target.value })} />

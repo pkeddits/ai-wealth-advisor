@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Bell, RefreshCw } from 'lucide-react';
 import { planningService } from '../services/planning';
 import { Button } from '../components/common';
+import { usePreferences } from '../store/preferencesStore';
 import { useInsights } from './insights/useInsights';
 import { InsightCard } from './insights/InsightCard';
 
@@ -11,7 +12,9 @@ export function AlertsPage() {
   const { insights, error, reload } = useInsights();
   const [read, setRead] = useState<Set<string>>(new Set());
   useEffect(() => { planningService.readAlerts().then(setRead).catch(() => undefined); }, []);
-  const alerts = (insights ?? []).filter((i) => ALERT_KINDS.has(i.kind));
+  const notifications = usePreferences((s) => s.notifications);
+  const enabled = (kind: string) => (kind === 'meta' ? notifications.goals !== false : kind === 'integracao' ? notifications.integrations !== false : notifications.system !== false);
+  const alerts = (insights ?? []).filter((i) => ALERT_KINDS.has(i.kind) && enabled(i.kind));
   const unread = alerts.filter((a) => !read.has(a.key));
 
   const markRead = async (key: string) => {

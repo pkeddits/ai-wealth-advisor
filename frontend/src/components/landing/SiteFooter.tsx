@@ -16,7 +16,7 @@ export function SiteFooter() {
         <div>
           <Logo />
           <p className="mt-5 max-w-sm text-sm leading-relaxed text-dark-500">
-            Projeto acadêmico desenvolvido para a disciplina Análise e Desenvolvimento de Sistemas II, em 2026.
+            O Wealth Advisor AI é uma ferramenta de organização financeira. Não é instituição financeira e não oferece recomendação de investimento. Os valores das demonstrações são fictícios.
           </p>
         </div>
         <nav aria-label="Rodapé" className="text-sm">

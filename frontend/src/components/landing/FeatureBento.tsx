@@ -24,7 +24,7 @@ function Tile({ status, icon, title, text, children, className }: {
 }) {
   return (
     <RevealItem variant="scale" className={className}>
-      <article onPointerMove={spotlightHandler} className="panel spotlight group relative flex h-full flex-col overflow-hidden p-6 transition-[border-color,transform] duration-500 hover:-translate-y-1 hover:border-dark-300 sm:p-7">
+      <article onPointerMove={spotlightHandler} className="panel spotlight lift group relative flex h-full flex-col overflow-hidden p-6 transition-[border-color,transform] duration-500 hover:-translate-y-1 hover:border-dark-300 sm:p-7">
         <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-primary-500/0 blur-3xl transition-colors duration-700 group-hover:bg-primary-500/15" aria-hidden="true" />
         <div className="flex items-center justify-between gap-3">
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-dark-200 bg-dark-100 text-primary-700">{icon}</span>
@@ -85,7 +85,7 @@ export function FeatureBento() {
 
       <RevealGroup className="mt-16 grid gap-4 lg:grid-cols-6" stagger={0.1}>
         <Tile
-          status="planned"
+          status="live"
           icon={<Landmark className="h-5 w-5" />}
           title="Contas pelo Open Finance"
           text="Conexão autorizada por você, no fluxo oficial da instituição. Saldos, transações e investimentos importados automaticamente."
@@ -103,7 +103,7 @@ export function FeatureBento() {
         />
 
         <Tile
-          status="planned"
+          status="live"
           icon={<Sparkles className="h-5 w-5" />}
           title="Explicações com IA"
           text="A IA interpreta indicadores calculados pelo sistema e explica o que eles significam, em linguagem simples."
@@ -115,7 +115,7 @@ export function FeatureBento() {
         </Tile>
 
         <Tile
-          status="planned"
+          status="live"
           icon={<Target className="h-5 w-5" />}
           title="Para quem está começando"
           text="Metas e simulação de aportes, úteis mesmo sem nenhum investimento."

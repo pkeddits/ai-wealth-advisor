@@ -158,7 +158,7 @@ export function PersonalFinanceShowcase() {
           <Reveal delay={0.12}>
             <span className="mt-7 flex flex-wrap gap-2">
               <span className="chip-live">Lançamentos manuais disponíveis</span>
-              <span className="chip-building">Open Finance em fase de testes</span>
+              <span className="chip-live">Open Finance com o Pluggy Bank · bancos reais em liberação</span>
             </span>
           </Reveal>
         </div>

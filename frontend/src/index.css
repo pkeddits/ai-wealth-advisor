@@ -54,6 +54,35 @@
 }
 
 @layer components {
+  /* Elevação suave no hover, só com ponteiro fino e sem movimento reduzido. */
+  .lift {
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease, border-color 0.35s ease;
+  }
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    html:not([data-motion='reduced']) .lift:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 22px 50px -28px rgb(var(--indigo) / 0.75), 0 0 0 1px rgb(var(--violet) / 0.18);
+    }
+  }
+  /* Brilho ambiente: gradiente radial (sem filter: blur, que custa caro ao animar). */
+  .ambient-orb {
+    position: fixed;
+    border-radius: 9999px;
+    pointer-events: none;
+    background: radial-gradient(closest-side, currentColor, transparent);
+    will-change: transform;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    html:not([data-motion='reduced']):not([data-effects='off']) .ambient-orb {
+      animation: ambient-drift 26s ease-in-out infinite alternate;
+    }
+  }
+  @keyframes ambient-drift {
+    0% { transform: translate3d(0, 0, 0) scale(1); }
+    50% { transform: translate3d(60px, 40px, 0) scale(1.08); }
+    100% { transform: translate3d(-40px, 70px, 0) scale(0.95); }
+  }
+
   /* Painel: superfície grafite com filete de luz no topo. */
   .panel {
     @apply relative rounded-panel border border-dark-200/70 shadow-panel;

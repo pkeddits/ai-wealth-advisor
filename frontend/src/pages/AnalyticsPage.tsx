@@ -18,7 +18,7 @@ const short = (m: string) => new Date(`${m}-15T12:00:00`).toLocaleDateString('pt
 
 function Panel({ title, note, children, className }: { title: string; note?: string; children: React.ReactNode; className?: string }) {
   return (
-    <motion.section className={clsx('panel p-5 sm:p-6', className)} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
+    <motion.section className={clsx('panel lift p-5 sm:p-6', className)} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2"><h2 className="text-[15px] font-semibold">{title}</h2>{note && <p className="text-xs text-dark-500">{note}</p>}</div>
       {children}
     </motion.section>
