@@ -6,7 +6,7 @@ import { planningService, type Goal } from '../services/planning';
 import { useDisplayFormat } from '../lib/displayFormat';
 import { Input, Select } from '../components/common';
 import { Segmented } from '../components/settings';
-import { FloatingNote, useRichMotion } from '../components/motion';
+import { AnimatedNumber, FloatingNote, useRichMotion } from '../components/motion';
 import { tilt } from '../lib/tilt';
 
 const parse = (v: string) => (v.trim() === '' ? NaN : Number(v.replace(/\./g, '').replace(',', '.')));
@@ -49,6 +49,12 @@ export function SimulationsPage() {
     const max = Math.max(ra?.points.length ?? 0, rb?.points.length ?? 0);
     return Array.from({ length: max }, (_, i) => ({ month: i, a: ra?.points[i]?.value, b: rb?.points[i]?.value, aportado: ra?.points[i]?.invested }));
   }, [ra, rb]);
+  // O gráfico acompanha a digitação com 300 ms de atraso e transita da curva anterior para a nova.
+  const [plotted, setPlotted] = useState(chart);
+  useEffect(() => {
+    const t = setTimeout(() => setPlotted(chart), 300);
+    return () => clearTimeout(t);
+  }, [chart]);
 
   const goal = goals.find((g) => g.id === goalId);
   const gp = goal ? goalProgress(goal.targetAmount, goal.movements, today(), goal.targetDate) : null;
@@ -74,9 +80,9 @@ export function SimulationsPage() {
               <p className="text-sm text-dark-500">{name}</p>
               {err || !r ? <p className="mt-2 text-sm text-red-600" role="alert">{err}</p> : (
                 <dl className="mt-2 grid grid-cols-3 gap-2 text-sm">
-                  <div><dt className="text-dark-500">Aportado</dt><dd className="font-medium text-dark-900">{fmt.money(r.totalInvested)}</dd></div>
-                  <div><dt className="text-dark-500">Projetado</dt><dd className="font-semibold text-dark-900">{fmt.money(r.finalValue)}</dd></div>
-                  <div><dt className="text-dark-500">Rendimentos</dt><dd className="font-medium text-green-600">{fmt.money(r.earnings)}</dd></div>
+                  <div><dt className="text-dark-500">Aportado</dt><dd className="font-medium text-dark-900"><AnimatedNumber value={r.totalInvested} format={fmt.money} duration={0.5} /></dd></div>
+                  <div><dt className="text-dark-500">Projetado</dt><dd className="font-semibold text-dark-900"><AnimatedNumber value={r.finalValue} format={fmt.money} duration={0.6} /></dd></div>
+                  <div><dt className="text-dark-500">Rendimentos</dt><dd className="font-medium text-green-600"><AnimatedNumber value={r.earnings} format={fmt.money} duration={0.6} /></dd></div>
                 </dl>
               )}
               {r && <p className="mt-2 text-xs text-dark-500">Taxa mensal equivalente: {(r.monthlyRate * 100).toFixed(4).replace('.', ',')}%</p>}
@@ -86,15 +92,15 @@ export function SimulationsPage() {
         <div className="relative mt-6 h-72">
           {ra && rb && Math.abs(rb.finalValue - ra.finalValue) >= 1 && <FloatingNote className="right-2 top-0" delay={0.5}>Diferença entre cenários: {fmt.money(Math.abs(rb.finalValue - ra.finalValue))}</FloatingNote>}
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chart} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+            <LineChart data={plotted} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
               <CartesianGrid vertical={false} stroke="rgb(var(--dark-200))" strokeDasharray="3 6" />
               <XAxis dataKey="month" tick={{ fill: 'rgb(var(--dark-500))', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(m: number) => (m % 12 === 0 ? `${m / 12}a` : '')} interval={0} />
               <YAxis hide />
               <Tooltip formatter={(v: number) => fmt.money(v)} labelFormatter={(m: number) => `Mês ${m}`} contentStyle={{ background: 'rgb(var(--surface-raised))', border: '1px solid rgb(var(--dark-200))', borderRadius: 12 }} />
               <Legend />
-              <Line type="monotone" dataKey="a" name="Cenário A" stroke="rgb(var(--violet))" strokeWidth={2.5} dot={false} isAnimationActive={rich && firstDraw} animationDuration={1100} />
-              <Line type="monotone" dataKey="b" name="Cenário B" stroke="rgb(var(--azure))" strokeWidth={2.5} dot={false} isAnimationActive={rich && firstDraw} animationDuration={1100} />
-              <Line type="monotone" dataKey="aportado" name="Aportado (A)" stroke="rgb(var(--dark-400))" strokeDasharray="4 4" dot={false} isAnimationActive={rich && firstDraw} animationDuration={1100} />
+              <Line type="monotone" dataKey="a" name="Cenário A" stroke="rgb(var(--violet))" strokeWidth={2.5} dot={false} isAnimationActive={rich} animationDuration={firstDraw ? 1100 : 520} animationEasing="ease-out" />
+              <Line type="monotone" dataKey="b" name="Cenário B" stroke="rgb(var(--azure))" strokeWidth={2.5} dot={false} isAnimationActive={rich} animationDuration={firstDraw ? 1100 : 520} animationEasing="ease-out" />
+              <Line type="monotone" dataKey="aportado" name="Aportado (A)" stroke="rgb(var(--dark-400))" strokeDasharray="4 4" dot={false} isAnimationActive={rich} animationDuration={firstDraw ? 1100 : 520} animationEasing="ease-out" />
             </LineChart>
           </ResponsiveContainer>
         </div>

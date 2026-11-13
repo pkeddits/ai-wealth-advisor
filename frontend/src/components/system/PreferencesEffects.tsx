@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { MotionConfig } from 'motion/react';
+import { useShallow } from 'zustand/react/shallow';
 import { usePreferences } from '../../store/preferencesStore';
 
 function useSystemDark() {
@@ -15,7 +16,7 @@ function useSystemDark() {
 
 /** Aplica as preferências de aparência ao documento e à configuração global de animação. */
 export function PreferencesEffects({ children }: { children: ReactNode }) {
-  const { theme, motion, density, effects, hideValues } = usePreferences();
+  const { theme, motion, density, effects, hideValues } = usePreferences(useShallow((s) => ({ theme: s.theme, motion: s.motion, density: s.density, effects: s.effects, hideValues: s.hideValues })));
   const systemDark = useSystemDark();
   const resolvedTheme = theme === 'system' ? (systemDark ? 'dark' : 'light') : theme;
 

@@ -10,7 +10,8 @@ const QUERY = '(min-width: 1024px) and (pointer: fine)';
  */
 export function useRichMotion(): boolean {
   const reduced = useReducedMotion();
-  const { motion, effects } = usePreferences();
+  const motion = usePreferences((s) => s.motion);
+  const effects = usePreferences((s) => s.effects);
   const [desktop, setDesktop] = useState(() => typeof window !== 'undefined' && window.matchMedia(QUERY).matches);
 
   useEffect(() => {

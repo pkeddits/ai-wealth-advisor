@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ImagePlus, Trash2, UserRound } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuthStore } from '../../store/authStore';
+import { useShallow } from 'zustand/react/shallow';
 import { usePreferences } from '../../store/preferencesStore';
 import { updateProfile } from '../../services/account';
 import { accountSync } from '../../services/accountSync';
@@ -20,7 +21,7 @@ const RISK_OPTIONS = [
 export function ProfileSection() {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
-  const { avatar, set } = usePreferences();
+  const { avatar, set } = usePreferences(useShallow((s) => ({ avatar: s.avatar, set: s.set })));
   const [name, setName] = useState(user?.name ?? '');
   const [risk, setRisk] = useState<User['riskProfile']>(user?.riskProfile ?? 'moderado');
   const [error, setError] = useState('');

@@ -1,4 +1,5 @@
 import { ArrowRight, Bell, Palette, Plug, Wallet } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { usePreferences } from '../../store/preferencesStore';
 import { useDisplayFormat } from '../../lib/displayFormat';
 import { isSupabaseMode } from '../../config/appMode';
@@ -7,7 +8,7 @@ import { Button, Select } from '../../components/common';
 import { Segmented, SettingRow, SettingsSection, Switch } from '../../components/settings';
 
 export function AppearanceSection() {
-  const { theme, motion, density, effects, set, reset } = usePreferences();
+  const { theme, motion, density, effects, set, reset } = usePreferences(useShallow((s) => ({ theme: s.theme, motion: s.motion, density: s.density, effects: s.effects, set: s.set, reset: s.reset })));
   return (
     <SettingsSection id="aparencia" title="Aparência" description="As mudanças são aplicadas na hora e salvas neste navegador." icon={<Palette className="h-5 w-5" />}>
       <SettingRow title="Tema" description="Sistema acompanha a configuração do seu dispositivo.">
@@ -30,7 +31,7 @@ export function AppearanceSection() {
 }
 
 export function FinanceSection() {
-  const { dateFormat, valueDisplay, returnDisplay, homePage, set } = usePreferences();
+  const { dateFormat, valueDisplay, returnDisplay, homePage, set } = usePreferences(useShallow((s) => ({ dateFormat: s.dateFormat, valueDisplay: s.valueDisplay, returnDisplay: s.returnDisplay, homePage: s.homePage, set: s.set })));
   const fmt = useDisplayFormat();
   const sampleDate = new Date().toISOString().slice(0, 10);
   return (
@@ -57,7 +58,7 @@ export function FinanceSection() {
 }
 
 export function NotificationsSection() {
-  const { notifications, set } = usePreferences();
+  const { notifications, set } = usePreferences(useShallow((s) => ({ notifications: s.notifications, set: s.set })));
   const toggle = (key: keyof typeof notifications) => (value: boolean) => set('notifications', { ...notifications, [key]: value });
   return (
     <SettingsSection id="notificacoes" title="Notificações" description="Escolha quais alertas aparecem na página Alertas. O envio por e-mail estará disponível em breve." icon={<Bell className="h-5 w-5" />}>

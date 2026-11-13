@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import clsx from 'clsx';
 import { useUIStore } from '../../store/uiStore';
+import { usePreferences } from '../../store/preferencesStore';
 import { useProfileSync } from '../../hooks/useProfileSync';
 import { FloatingAssistant } from '../ai/FloatingAssistant';
 import { TutorialHost } from '../tutorial/TutorialHost';
@@ -16,8 +18,21 @@ import { isDemoMode } from '../../config/appMode';
 export function MainLayout() {
   const location = useLocation();
   const collapsed = useUIStore((s) => s.isSidebarCollapsed);
+  const dashboardView = usePreferences((s) => s.dashboardView);
   useProfileSync();
   useFrameGuard();
+
+  useEffect(() => {
+    const path = location.pathname;
+    const area = path.startsWith('/financas') || (path === '/dashboard' && dashboardView === 'financas') ? 'financas'
+      : /^\/(ai-analysis|analytics|simulations)/.test(path) ? 'inteligencia'
+      : path.startsWith('/integracoes') ? 'integracoes'
+      : 'investimentos';
+    document.documentElement.dataset.area = area;
+    return () => {
+      delete document.documentElement.dataset.area;
+    };
+  }, [location.pathname, dashboardView]);
 
   return (
     <div className="relative min-h-screen">

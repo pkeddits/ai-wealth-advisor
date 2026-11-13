@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { usePreferences } from '../store/preferencesStore';
 
 const full = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -6,7 +7,7 @@ const rounded = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'B
 
 /** Formatação de valores, datas e resultados de acordo com as preferências do usuário. */
 export function useDisplayFormat() {
-  const { valueDisplay, dateFormat, returnDisplay } = usePreferences();
+  const { valueDisplay, dateFormat, returnDisplay } = usePreferences(useShallow((s) => ({ valueDisplay: s.valueDisplay, dateFormat: s.dateFormat, returnDisplay: s.returnDisplay })));
 
   return useMemo(() => {
     const money = (v: number) => (valueDisplay === 'rounded' ? rounded : full).format(v);

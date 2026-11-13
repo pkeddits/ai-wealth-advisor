@@ -247,7 +247,7 @@ export function FinancePage() {
                 <span className={clsx('flex h-10 w-10 items-center justify-center rounded-xl', tone)}><Icon className="h-5 w-5" aria-hidden="true" /></span>
                 <div className="mt-6">
                   <p className="text-sm text-dark-500">{label}</p>
-                  <AnimatedNumber value={value} format={fmt.money} className="mt-1 block whitespace-nowrap text-2xl font-semibold tracking-tight text-dark-900" />
+                  <AnimatedNumber value={value} format={fmt.money} cue={label === 'Despesas' ? 'inverse' : 'normal'} className="mt-1 block whitespace-nowrap text-2xl font-semibold tracking-tight text-dark-900" />
                 </div>
               </motion.section>
             ))}

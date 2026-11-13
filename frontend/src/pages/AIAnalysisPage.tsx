@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { Eye, RefreshCw, Sparkles } from 'lucide-react';
 import { isSupabaseMode } from '../config/appMode';
+import { useShallow } from 'zustand/react/shallow';
 import { usePreferences } from '../store/preferencesStore';
 import { fetchSnapshot, streamChat } from '../services/assistant';
 import { Button, Modal } from '../components/common';
@@ -42,7 +43,7 @@ function SentSummary({ data }: { data: Record<string, any> }) {
 
 export function AIAnalysisPage() {
   const { insights, error } = useInsights();
-  const { aiEnabled, aiShareData } = usePreferences();
+  const { aiEnabled, aiShareData } = usePreferences(useShallow((s) => ({ aiEnabled: s.aiEnabled, aiShareData: s.aiShareData })));
   const [diagnosis, setDiagnosis] = useState('');
   const [state, setState] = useState<'idle' | 'streaming' | 'done' | 'error'>('idle');
   const [diagError, setDiagError] = useState('');

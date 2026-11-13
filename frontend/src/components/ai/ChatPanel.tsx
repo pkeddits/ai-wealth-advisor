@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp, Check, Copy, RotateCcw, Sparkles, Square } from 'lu
 import { conversationsApi, useConversations } from '../../services/conversations';
 import clsx from 'clsx';
 import { streamChat, useChatStore, type ChatTurn } from '../../services/assistant';
+import { useShallow } from 'zustand/react/shallow';
 import { usePreferences } from '../../store/preferencesStore';
 import { isSupabaseMode } from '../../config/appMode';
 import { Markdown } from './Markdown';
@@ -22,6 +23,21 @@ const SUGGESTIONS: Record<string, string[]> = {
 };
 
 const newId = () => Math.random().toString(36).slice(2);
+
+/** O primeiro trecho costuma levar de 1 a 3 s; o texto acompanha a espera sem inventar progresso. */
+function WaitingLabel() {
+  const [phase, setPhase] = useState(0);
+  useEffect(() => {
+    const timers = [setTimeout(() => setPhase(1), 2500), setTimeout(() => setPhase(2), 9000)];
+    return () => timers.forEach(clearTimeout);
+  }, []);
+  const label = ['Analisando', 'Preparando a resposta', 'Ainda trabalhando nisso'][phase];
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.span key={label} className="text-xs text-dark-500" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.2 }}>{label}</motion.span>
+    </AnimatePresence>
+  );
+}
 
 function Bubble({ turn, onRetry }: { turn: ChatTurn; onRetry: () => void }) {
   const [copied, setCopied] = useState(false);
@@ -56,7 +72,7 @@ function Bubble({ turn, onRetry }: { turn: ChatTurn; onRetry: () => void }) {
                 <motion.span key={i} className="h-1.5 w-1.5 rounded-full bg-primary-500" animate={{ y: [0, -4, 0], opacity: [0.4, 1, 0.4] }} transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.12, ease: 'easeInOut' }} />
               ))}
             </span>
-            <span className="text-xs text-dark-500">Analisando</span>
+            <WaitingLabel />
           </span>
         ) : null}
         {turn.status === 'error' && (
@@ -82,7 +98,7 @@ function Bubble({ turn, onRetry }: { turn: ChatTurn; onRetry: () => void }) {
 }
 
 export function AiConsent({ compact = false }: { compact?: boolean }) {
-  const { aiEnabled, aiShareData, set } = usePreferences();
+  const { aiEnabled, aiShareData, set } = usePreferences(useShallow((s) => ({ aiEnabled: s.aiEnabled, aiShareData: s.aiShareData, set: s.set })));
   if (!isSupabaseMode) return <p className="text-sm text-dark-500">O assistente de IA funciona com uma conta real. Na demonstração, ele não é usado.</p>;
   return (
     <div className={clsx('space-y-3 text-sm', compact ? '' : 'rounded-2xl border border-dark-200/70 bg-dark-50/40 p-4')}>
@@ -100,7 +116,7 @@ export function ChatPanel({ page, className, autoFocus }: { page: string; classN
   const { turns, set, conversationId, open } = useChatStore();
   const reloadConversations = useConversations((st) => st.load);
   const [showJump, setShowJump] = useState(false);
-  const { aiEnabled, aiShareData } = usePreferences();
+  const { aiEnabled, aiShareData } = usePreferences(useShallow((s) => ({ aiEnabled: s.aiEnabled, aiShareData: s.aiShareData })));
   const [input, setInput] = useState('');
   const controller = useRef<AbortController | null>(null);
   const list = useRef<HTMLDivElement>(null);
@@ -196,12 +212,14 @@ export function ChatPanel({ page, className, autoFocus }: { page: string; classN
         onScroll={(e) => { const el = e.currentTarget; stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60; if (stick.current) setShowJump(false); }}
         className="relative min-h-0 flex-1 overflow-y-auto px-4 py-4"
       >
+        <AnimatePresence mode="wait" initial={false}>
+        <motion.div key={conversationId ?? 'nova'} initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -14 }} transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}>
         {turns.length === 0 ? (
           <div className="space-y-3">
             <p className="text-sm text-dark-600">Pergunte sobre suas finanças ou sobre como usar o site.{aiShareData ? '' : ' Para perguntas sobre os seus números, ative "Incluir meu resumo financeiro".'}</p>
             <div className="flex flex-wrap gap-2">
               {suggestions.map((s) => (
-                <button key={s} type="button" onClick={() => send(s)} className="rounded-full border border-dark-200 bg-dark-50/50 px-3 py-1.5 text-left text-sm text-dark-700 transition-colors hover:border-primary-500/40 hover:bg-primary-500/10">{s}</button>
+                <button key={s} type="button" onClick={() => send(s)} className="press min-h-10 rounded-full border border-dark-200 bg-dark-50/50 px-3 py-1.5 text-left text-sm text-dark-700 transition-colors hover:border-primary-500/40 hover:bg-primary-500/10">{s}</button>
               ))}
             </div>
           </div>
@@ -212,6 +230,8 @@ export function ChatPanel({ page, className, autoFocus }: { page: string; classN
             </AnimatePresence>
           </ul>
         )}
+        </motion.div>
+        </AnimatePresence>
       </div>
       <AnimatePresence>
         {showJump && (

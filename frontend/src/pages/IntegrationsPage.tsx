@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { ArrowRight, ChevronDown, CreditCard, FlaskConical, Landmark, LineChart, ListChecks, Plug, ReceiptText, RefreshCw, ShieldCheck, Unlink } from 'lucide-react';
+import { ArrowRight, Check, ChevronDown, CreditCard, FlaskConical, Landmark, LineChart, ListChecks, Plug, ReceiptText, RefreshCw, ShieldCheck, Unlink } from 'lucide-react';
 import clsx from 'clsx';
 import type { BankConnection } from '../types';
 import { isSupabaseMode } from '../config/appMode';
@@ -15,6 +15,7 @@ import { ConnectBankButton } from '../components/openfinance/ConnectBankButton';
 import { useConnections } from '../components/openfinance/ConnectionsManager';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
+const formatCount = (v: number) => Math.round(v).toLocaleString('pt-BR');
 const PRODUCT_LABELS: Record<string, string> = { contas: 'Contas e saldos', transacoes: 'Movimentações', investimentos: 'Investimentos' };
 const NEEDS_RECONNECT = new Set(['LOGIN_ERROR', 'WAITING_USER_INPUT', 'WAITING_USER_ACTION', 'OUTDATED']);
 const count = (v: number) => Math.round(v).toLocaleString('pt-BR');
@@ -97,6 +98,12 @@ export function IntegrationsPage() {
   useEffect(() => { if (isSupabaseMode && connections.length) connectionStats(connections).then(setPerConnection).catch(() => undefined); }, [connections]);
   const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
   const [syncing, setSyncing] = useState<string | null>(null);
+  const [justSynced, setJustSynced] = useState<string | null>(null);
+  useEffect(() => {
+    if (!justSynced) return;
+    const t = setTimeout(() => setJustSynced(null), 2600);
+    return () => clearTimeout(t);
+  }, [justSynced]);
   const [confirm, setConfirm] = useState<BankConnection | null>(null);
   const [removing, setRemoving] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
@@ -110,6 +117,7 @@ export function IntegrationsPage() {
     setMessage(null);
     try {
       const r = await openFinance.sync(id);
+      setJustSynced(id);
       setMessage({ tone: 'ok', text: `${initial ? 'Conexão concluída' : 'Sincronização concluída'}: ${r.accounts} ${r.accounts === 1 ? 'conta' : 'contas'}, ${r.created} novas movimentações, ${r.updated} atualizadas, ${r.investments} investimentos.${r.review ? ` ${r.review} para revisar.` : ''}${r.status === 'UPDATING' ? ' A instituição ainda está enviando dados; sincronize de novo em alguns minutos.' : ''}` });
     } catch (err) {
       if (err instanceof OpenFinanceUnavailableError) setUnavailable(true);
@@ -158,7 +166,7 @@ export function IntegrationsPage() {
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
             {summary.map((s, i) => (
               <motion.div key={s.label} {...tilt} data-tilt="7" className="panel spotlight tilt p-4" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05, ease: EASE }}>
-                <AnimatedNumber value={s.value} format={count} className={clsx('block text-2xl font-semibold tracking-tight', s.tone ? 'text-yellow-700' : 'text-dark-900')} />
+                <AnimatedNumber value={s.value} format={count} cue={s.label === 'Para revisar' ? 'inverse' : 'normal'} className={clsx('block text-2xl font-semibold tracking-tight', s.tone ? 'text-yellow-700' : 'text-dark-900')} />
                 <p className="mt-1 text-xs text-dark-500">{s.label}</p>
               </motion.div>
             ))}
@@ -199,7 +207,8 @@ export function IntegrationsPage() {
                   { icon: ListChecks, label: 'Para revisar', value: st?.review, warn: (st?.review ?? 0) > 0 },
                 ];
                 return (
-                  <motion.li key={c.id} layout {...tilt} data-tilt="1.5" className="panel tilt flex flex-col p-5" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06, ease: EASE }}>
+                  <motion.li key={c.id} layout {...tilt} data-tilt="1.5" aria-busy={syncing === c.id} className="panel tilt relative flex flex-col overflow-hidden p-5" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06, ease: EASE }}>
+                    {syncing === c.id && <span className="sync-sweep" aria-hidden="true" />}
                     <div className="flex items-start gap-4">
                       <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-dark-200 bg-dark-100"><Logo src={c.institutionLogo} /></span>
                       <div className="min-w-0 flex-1">
@@ -208,14 +217,24 @@ export function IntegrationsPage() {
                           <span className={status.className}>{status.label}</span>
                           {isSandboxConnection(c.institutionName) && <span className="chip border-blue-500/30 bg-blue-500/10 text-blue-700">Sandbox · dados fictícios</span>}
                         </p>
-                        <p className="mt-0.5 text-xs text-dark-500">Última sincronização: {ago(c.lastSyncedAt)}</p>
+                        <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-dark-500">
+                          <span>{syncing === c.id ? 'Sincronizando com a instituição…' : `Última sincronização: ${ago(c.lastSyncedAt)}`}</span>
+                          <AnimatePresence>
+                            {justSynced === c.id && (
+                              <motion.span className="inline-flex items-center gap-1 rounded-full bg-green-500/15 px-2 py-0.5 font-medium text-green-600" initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ type: 'spring', stiffness: 520, damping: 26 }} role="status">
+                                <motion.span initial={{ rotate: -45, scale: 0 }} animate={{ rotate: 0, scale: 1 }} transition={{ delay: 0.08, type: 'spring', stiffness: 600, damping: 20 }}><Check className="h-3 w-3" /></motion.span>
+                                Atualizado agora
+                              </motion.span>
+                            )}
+                          </AnimatePresence>
+                        </p>
                       </div>
                     </div>
                     <dl className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
                       {metrics.map((m) => (
                         <div key={m.label} className="rounded-xl border border-dark-200/60 bg-dark-50/40 px-3 py-2.5">
                           <dt className="flex items-center gap-1.5 text-[11px] text-dark-500"><m.icon className="h-3.5 w-3.5" />{m.label}</dt>
-                          <dd className={clsx('mt-0.5 text-lg font-semibold tracking-tight', m.warn ? 'text-yellow-700' : 'text-dark-900')}>{m.value === undefined ? <span className="skeleton inline-block h-5 w-8 align-middle" /> : m.value.toLocaleString('pt-BR')}</dd>
+                          <dd className={clsx('mt-0.5 text-lg font-semibold tracking-tight', m.warn ? 'text-yellow-700' : 'text-dark-900')}>{m.value === undefined ? <span className="skeleton inline-block h-5 w-8 align-middle" /> : <AnimatedNumber value={m.value} format={formatCount} duration={0.6} cue={m.label === 'Para revisar' ? 'inverse' : 'normal'} />}</dd>
                           {m.hint && <dd className="text-[11px] text-dark-500">{m.hint}</dd>}
                         </div>
                       ))}
@@ -223,14 +242,14 @@ export function IntegrationsPage() {
                     {(c.statusMessage || c.lastSyncError) && <p className="mt-3 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-sm text-yellow-700">{c.lastSyncError ?? c.statusMessage}{stale ? ' Os dados exibidos podem estar desatualizados.' : ''}</p>}
                     {c.accounts.length > 0 && (
                       <ul className="mt-3 space-y-1.5">
-                        {(many ? c.accounts.slice(0, 3) : c.accounts).map((a) => (
-                          <li key={a.id} className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-dark-100/50">
+                        {c.accounts.map((a, index) => index >= 3 && many ? null : (
+                          <motion.li key={a.id} layout="position" initial={index >= 3 ? { opacity: 0, y: -6 } : false} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.24, delay: index >= 3 ? (index - 3) * 0.03 : 0, ease: EASE }} className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-dark-100/50">
                             {a.kind === 'CREDIT' ? <CreditCard className="h-4 w-4 text-dark-500" /> : <Landmark className="h-4 w-4 text-dark-500" />}
                             <span className="min-w-0 flex-1 truncate text-sm text-dark-900">{a.name}{a.numberLast4 && <span className="ml-1.5 text-xs text-dark-500">final {a.numberLast4}</span>}</span>
                             {a.balance !== null && <span className="sensitive whitespace-nowrap text-sm font-medium text-dark-900">{a.kind === 'CREDIT' ? `Fatura ${fmt.money(Math.abs(a.balance))}` : fmt.money(a.balance)}</span>}
-                          </li>
+                          </motion.li>
                         ))}
-                        {c.accounts.length > 3 && <li><button type="button" onClick={() => setExpanded({ ...expanded, [c.id]: !expanded[c.id] })} className="px-2 text-xs font-medium text-primary-700 hover:underline">{many ? `Ver todas as ${c.accounts.length} contas` : 'Mostrar menos'}</button></li>}
+                        {c.accounts.length > 3 && <motion.li layout="position"><button type="button" aria-expanded={!many} onClick={() => setExpanded({ ...expanded, [c.id]: !expanded[c.id] })} className="inline-flex min-h-9 items-center gap-1 px-2 text-xs font-medium text-primary-700 hover:underline">{many ? `Ver todas as ${c.accounts.length} contas` : 'Mostrar menos'}<ChevronDown className={clsx('h-3.5 w-3.5 transition-transform duration-300', !many && 'rotate-180')} /></button></motion.li>}
                       </ul>
                     )}
                     <div className="mt-auto flex flex-wrap gap-2 border-t border-dark-200/60 pt-4 [&]:mt-4">

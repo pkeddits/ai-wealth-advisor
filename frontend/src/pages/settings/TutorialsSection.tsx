@@ -3,13 +3,14 @@ import { motion } from 'motion/react';
 import { userSettings } from '../../services/userSettings';
 import { CheckCircle2, GraduationCap, PlayCircle } from 'lucide-react';
 import { SettingRow, SettingsSection, Switch } from '../../components/settings';
+import { useShallow } from 'zustand/react/shallow';
 import { usePreferences } from '../../store/preferencesStore';
 import { TUTORIALS } from '../../tutorials/content';
 import { useTutorial } from '../../components/tutorial/TutorialHost';
 import { accountSync } from '../../services/accountSync';
 
 export function TutorialsSection() {
-  const { tutorialsAuto, tutorialsSeen, set } = usePreferences();
+  const { tutorialsAuto, tutorialsSeen, set } = usePreferences(useShallow((s) => ({ tutorialsAuto: s.tutorialsAuto, tutorialsSeen: s.tutorialsSeen, set: s.set })));
   const restart = async () => {
     setError('');
     try { await accountSync.resetTutorials(); }

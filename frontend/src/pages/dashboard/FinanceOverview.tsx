@@ -53,7 +53,7 @@ export function FinanceOverview() {
         {stats.map((s, i) => (
           <motion.div key={s.label} {...tilt} data-tilt="6" className={clsx('panel spotlight tilt relative p-5', i === 2 && 'panel-feature')} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06, ease: EASE }}>
             <p className="flex items-center gap-2 text-sm text-dark-500"><s.icon className={clsx('h-4 w-4', s.tone)} />{s.label}</p>
-            <AnimatedNumber value={s.value} format={fmt.money} className={clsx('sensitive mt-2 block text-2xl font-semibold tracking-tight', s.tone)} />
+            <AnimatedNumber value={s.value} format={fmt.money} cue={s.label === 'Despesas' ? 'inverse' : 'normal'} className={clsx('sensitive mt-2 block text-2xl font-semibold tracking-tight', s.tone)} />
             {i === 2 && cur.s.income > 0 && (cur.s.net >= 0
               ? <FloatingNote className="-top-3 right-5" tone="ok" delay={0.9}>Sobrou {Math.round((cur.s.net / cur.s.income) * 100)}% da receita</FloatingNote>
               : <FloatingNote className="-top-3 right-5" tone="warn" delay={0.9}>Despesas acima das receitas</FloatingNote>)}
