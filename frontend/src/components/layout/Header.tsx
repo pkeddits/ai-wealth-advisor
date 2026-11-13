@@ -10,6 +10,7 @@ import { useUIStore } from '../../store/uiStore';
 import { pageTitle } from './navigation';
 import { Avatar } from '../common/Avatar';
 import { useSignOut } from '../../hooks/useSignOut';
+import { LogoMark } from '../brand';
 
 const todayRaw = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
 const today = todayRaw.charAt(0).toUpperCase() + todayRaw.slice(1);
@@ -39,17 +40,18 @@ export function Header() {
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-30 px-4 pt-3 sm:px-6 lg:px-8">
-      <div className="flex h-14 items-center justify-between gap-4 rounded-2xl border border-dark-200/50 bg-dark-50/70 px-3 backdrop-blur-xl sm:px-4">
+    <header className="sticky top-0 z-30 px-3 pt-[max(env(safe-area-inset-top),10px)] sm:px-6 sm:pt-3 lg:px-8">
+      <div className="flex h-14 items-center justify-between gap-2 rounded-2xl border border-dark-200/50 bg-dark-50/70 px-3 backdrop-blur-xl sm:gap-4 sm:px-4">
         <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
             onClick={openMobileNav}
-            className="-ml-1 rounded-lg p-2 text-dark-600 hover:bg-dark-100 hover:text-dark-900 lg:hidden"
+            className="-ml-1 hidden h-10 w-10 items-center justify-center rounded-xl text-dark-600 hover:bg-dark-100 hover:text-dark-900 sm:flex lg:hidden"
             aria-label="Abrir menu"
           >
             <Menu className="h-5 w-5" />
           </button>
+          <NavLink to="/dashboard" aria-label="Ir para o painel" className="shrink-0 sm:hidden"><LogoMark className="h-8 w-8" /></NavLink>
           <p className="truncate text-sm text-dark-500">
             <span className="hidden sm:inline">Wealth Advisor</span>
             <span className="mx-2 hidden text-dark-300 sm:inline">/</span>
@@ -59,14 +61,14 @@ export function Header() {
 
         <div className="flex items-center gap-2">
           {currentTutorial && (
-            <button type="button" onClick={() => openTutorial(currentTutorial.id)} className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-sm text-dark-500 transition-colors hover:bg-dark-100 hover:text-dark-900" aria-label={`Abrir guia de ${currentTutorial.title}`}>
+            <button type="button" onClick={() => openTutorial(currentTutorial.id)} className="inline-flex h-10 min-w-10 items-center justify-center gap-1.5 rounded-xl px-2.5 text-sm text-dark-500 transition-colors hover:bg-dark-100 hover:text-dark-900" aria-label={`Abrir guia de ${currentTutorial.title}`}>
               <GraduationCap className="h-4 w-4" /><span className="hidden md:inline">Guia</span>
             </button>
           )}
           <button
             type="button"
             onClick={() => setPreference('hideValues', !hideValues)}
-            className="rounded-xl p-2 text-dark-500 transition-colors hover:bg-dark-100 hover:text-dark-900"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-dark-500 transition-colors hover:bg-dark-100 hover:text-dark-900"
             aria-pressed={hideValues}
             aria-label={hideValues ? 'Mostrar valores' : 'Ocultar valores'}
             title={hideValues ? 'Mostrar valores' : 'Ocultar valores'}
@@ -82,13 +84,13 @@ export function Header() {
             <button
               type="button"
               onClick={() => setOpen((v) => !v)}
-              className="flex items-center gap-2 rounded-xl p-1 pr-2 transition-colors hover:bg-dark-100"
+              className="flex min-h-10 items-center gap-2 rounded-xl p-1 transition-colors hover:bg-dark-100 sm:pr-2"
               aria-expanded={open}
               aria-haspopup="menu"
             >
               <Avatar name={user?.name} size="sm" />
               <span className="hidden max-w-[140px] truncate text-sm font-medium text-dark-800 md:block">{user?.name}</span>
-              <ChevronDown className={`h-4 w-4 text-dark-500 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`hidden h-4 w-4 text-dark-500 transition-transform duration-200 sm:block ${open ? 'rotate-180' : ''}`} />
             </button>
 
             <AnimatePresence>
@@ -105,7 +107,7 @@ export function Header() {
                     <p className="truncate text-sm font-medium text-dark-900">{user?.name}</p>
                     <p className="truncate text-xs text-dark-500">{user?.email}</p>
                   </div>
-                  <NavLink to="/settings" role="menuitem" onClick={() => setOpen(false)} className="mt-1 flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-dark-700 hover:bg-dark-100">
+                  <NavLink to="/settings" role="menuitem" onClick={() => setOpen(false)} className="mt-1 flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm text-dark-700 hover:bg-dark-100 lg:min-h-9">
                     <User className="h-4 w-4" /> Configurações
                   </NavLink>
                   <button
@@ -115,7 +117,7 @@ export function Header() {
                       setOpen(false);
                       signOut();
                     }}
-                    className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-red-600 hover:bg-red-500/10"
+                    className="mt-1 flex min-h-11 w-full items-center gap-2 rounded-xl px-3 text-sm text-red-600 hover:bg-red-500/10 lg:min-h-9"
                   >
                     <LogOut className="h-4 w-4" /> Sair
                   </button>

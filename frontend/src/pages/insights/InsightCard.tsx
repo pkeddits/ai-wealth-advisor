@@ -21,8 +21,9 @@ export function InsightCard({ insight, index = 0, read, onRead }: { insight: Ins
         <p className="font-medium text-dark-900">{insight.title}</p>
         <p className="sensitive mt-0.5 text-sm text-dark-600">{insight.body}</p>
         <p className="mt-1 text-xs text-dark-500">Base: {insight.basis}</p>
+        {onRead && !read && <button type="button" onClick={onRead} className="-ml-2 mt-1 min-h-10 rounded-lg px-2 text-xs font-medium text-primary-700 hover:underline sm:hidden">Marcar como lido</button>}
       </div>
-      {onRead && !read && <button type="button" onClick={onRead} className="self-start text-xs font-medium text-primary-700 hover:underline">Marcar como lido</button>}
+      {onRead && !read && <button type="button" onClick={onRead} className="hidden self-start text-xs font-medium text-primary-700 hover:underline sm:block">Marcar como lido</button>}
     </motion.li>
   );
 }

@@ -59,9 +59,9 @@ export function SettingsPage() {
         <div className="mt-3"><SyncStatus /></div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <nav aria-label="Seções das configurações" className="lg:sticky lg:top-24 lg:self-start">
-          <ul className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
+        <nav aria-label="Seções das configurações" className="sticky top-[76px] z-20 -mx-4 min-w-0 bg-dark-50/80 px-4 py-2 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:top-24 lg:mx-0 lg:self-start lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
+          <ul className="scrollbar-none fade-x flex snap-x gap-1 overflow-x-auto lg:flex-col lg:overflow-visible lg:[mask-image:none]">
             {SECTIONS.map((s) => (
               <li key={s.id}>
                 <button

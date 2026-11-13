@@ -159,9 +159,9 @@ export function FinancePage() {
         {tab === 'mes' && <Button onClick={openNew} icon={<Plus className="h-4 w-4" />}>Nova movimentação</Button>}
       </div>
 
-      <div className="flex gap-1 overflow-x-auto rounded-2xl border border-dark-200/70 bg-dark-100/40 p-1 sm:inline-flex" role="tablist" aria-label="Seções de finanças pessoais">
+      <div className="scrollbar-none flex gap-1 overflow-x-auto rounded-2xl border border-dark-200/70 bg-dark-100/40 p-1 max-sm:fade-x sm:inline-flex" role="tablist" aria-label="Seções de finanças pessoais">
         {TABS.map((t) => (
-          <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)} className={clsx('relative whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-colors', tab === t.id ? 'text-dark-900' : 'text-dark-500 hover:text-dark-800')}>
+          <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} onClick={(e) => { setTab(t.id); e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' }); }} className={clsx('relative min-h-10 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-colors', tab === t.id ? 'text-dark-900' : 'text-dark-500 hover:text-dark-800')}>
             {tab === t.id && <motion.span layoutId="finance-tab" className="absolute inset-0 rounded-xl border border-primary-500/30 bg-primary-500/15" transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
             <span className="relative">{t.label}</span>
           </button>

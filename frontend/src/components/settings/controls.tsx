@@ -71,7 +71,7 @@ export function SettingsSection({ id, title, description, children, icon }: { id
   return (
     <motion.section
       id={id}
-      className="panel scroll-mt-28 p-6 sm:p-8"
+      className="panel scroll-mt-36 p-5 sm:p-8 lg:scroll-mt-28"
       initial={{ opacity: 0, y: 18 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '0px 0px -8% 0px' }}

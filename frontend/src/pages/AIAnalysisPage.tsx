@@ -82,7 +82,7 @@ export function AIAnalysisPage() {
         <div className="space-y-4">
           <section {...tilt} data-tilt="1.2" className="panel-feature tilt relative overflow-visible p-6" aria-labelledby="diag-titulo">
             {insights && insights.length > 0 && <FloatingNote className="-top-3 right-6" delay={0.8}><Sparkles className="h-3 w-3" />Baseado em {insights.length} {insights.length === 1 ? 'indicador' : 'indicadores'} calculados</FloatingNote>}
-            <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-primary-500/20 blur-[80px]" aria-hidden="true" />
+            <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]" aria-hidden="true"><div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-primary-500/20 blur-[80px]" /></div>
             <div className="relative flex flex-wrap items-center justify-between gap-3">
               <h2 id="diag-titulo" className="flex items-center gap-2 font-display text-lg font-semibold tracking-tight"><Sparkles className="h-5 w-5 text-primary-700" />Diagnóstico do período</h2>
               {canDiagnose && (state === 'streaming'

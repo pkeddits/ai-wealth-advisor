@@ -11,6 +11,7 @@ import { Logo, LogoMark } from '../brand';
 import { NAV_SECTIONS } from './navigation';
 import { Avatar } from '../common/Avatar';
 import { useSignOut } from '../../hooks/useSignOut';
+import { useScrollLock } from '../../hooks/useVisualViewport';
 
 function NavContent({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
   const location = useLocation();
@@ -54,7 +55,7 @@ function NavContent({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?
                       title={collapsed ? item.name : undefined}
                       aria-current={active ? 'page' : undefined}
                       className={clsx(
-                        'group relative flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors',
+                        'group relative flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors lg:h-10',
                         collapsed && 'justify-center px-0',
                         active ? 'text-dark-900' : 'text-dark-600 hover:text-dark-900',
                       )}
@@ -142,6 +143,13 @@ export function Sidebar() {
   useEffect(() => {
     closeMobileNav();
   }, [location.pathname, closeMobileNav]);
+  useScrollLock(isMobileNavOpen);
+  useEffect(() => {
+    if (!isMobileNavOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && closeMobileNav();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isMobileNavOpen, closeMobileNav]);
 
   return (
     <>
@@ -166,10 +174,16 @@ export function Sidebar() {
               aria-hidden="true"
             />
             <motion.aside
-              className="panel fixed inset-y-3 left-3 z-50 w-[272px] max-w-[calc(100vw-24px)] overflow-hidden !rounded-[28px] lg:hidden"
+              className="panel fixed bottom-[max(env(safe-area-inset-bottom),12px)] left-3 top-[max(env(safe-area-inset-top),12px)] z-50 w-[288px] max-w-[calc(100vw-24px)] overflow-hidden !rounded-[28px] lg:hidden"
+              role="dialog"
+              aria-modal="true"
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={{ left: 0.4, right: 0 }}
+              onDragEnd={(_, info) => (info.offset.x < -70 || info.velocity.x < -400) && closeMobileNav()}
               initial={{ x: '-110%' }}
               animate={{ x: 0 }}
-              exit={{ x: '-110%' }}
+              exit={{ x: '-110%', transition: { duration: 0.22, ease: [0.4, 0, 1, 1] } }}
               transition={{ type: 'spring', stiffness: 360, damping: 36 }}
               aria-label="Menu lateral"
             >

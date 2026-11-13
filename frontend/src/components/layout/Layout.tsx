@@ -8,6 +8,7 @@ import { TutorialHost } from '../tutorial/TutorialHost';
 import { useFrameGuard } from '../../hooks/useFrameGuard';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { MobileTabBar } from './MobileTabBar';
 import { DemoBanner } from '../common/DemoBanner';
 import { AuthPanel, AuthMobileHeader } from '../auth/AuthPanel';
 import { isDemoMode } from '../../config/appMode';
@@ -29,12 +30,12 @@ export function MainLayout() {
         <div className="absolute bottom-[-20%] right-[-10%] h-[520px] w-[620px] rounded-full bg-blue-500/[0.06] blur-[120px]" />
       </div>
       <Sidebar />
-      <div className={clsx('transition-[padding] duration-300 ease-out', collapsed ? 'lg:pl-[96px]' : 'lg:pl-[268px]')}>
+      <div className={clsx('min-w-0 transition-[padding] duration-300 ease-out', collapsed ? 'lg:pl-[96px]' : 'lg:pl-[268px]')}>
         {isDemoMode && <DemoBanner />}
         <Header />
         <motion.main
           key={location.pathname}
-          className="px-4 pb-12 pt-6 sm:px-6 lg:px-8"
+          className="min-w-0 px-4 pb-[calc(env(safe-area-inset-bottom)+112px)] pt-5 sm:px-6 sm:pt-6 lg:px-8 lg:pb-12"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
@@ -42,6 +43,7 @@ export function MainLayout() {
           <Outlet />
         </motion.main>
       </div>
+      <MobileTabBar />
       <FloatingAssistant />
       <TutorialHost />
     </div>
