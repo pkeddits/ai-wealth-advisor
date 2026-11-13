@@ -1,6 +1,7 @@
 import type { BankConnection, ImportedInvestment } from '../types';
 import { getSupabase } from '../lib/supabase';
 import { dbError } from './supabase/errors';
+import { readApiError } from './apiError';
 
 export class OpenFinanceUnavailableError extends Error {}
 
@@ -14,10 +15,12 @@ async function api<T>(path: string, body: unknown = {}): Promise<T> {
   } catch {
     throw new OpenFinanceUnavailableError('Serviço de conexão bancária indisponível no momento.');
   }
-  const payload = (await res.json().catch(() => ({}))) as T & { error?: string; kind?: string; title?: string };
-  if (res.status === 503) throw new OpenFinanceUnavailableError(payload.error ?? 'Conexão bancária não configurada.');
-  if (!res.ok) throw Object.assign(new Error(payload.error ?? 'Não foi possível concluir a operação.'), { kind: payload.kind, title: payload.title });
-  return payload;
+  if (!res.ok) {
+    const info = await readApiError(res, res.status === 503 ? 'Conexão bancária não configurada.' : 'Não foi possível concluir a operação.');
+    if (res.status === 503 || info.code === 'function_failed' || info.code === 'function_missing') throw new OpenFinanceUnavailableError(info.message);
+    throw Object.assign(new Error(info.message), { kind: info.kind, title: info.title });
+  }
+  return (await res.json()) as T;
 }
 
 export interface SyncResult {

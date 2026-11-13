@@ -1,8 +1,8 @@
-import { bearer, failure, HttpError, json, readJson } from '../http';
-import { requireUser, type SessionEnv } from '../auth';
-import { resolveProvider, type AiEnv, type ChatMessage } from './providers';
-import { buildSnapshot, currentMonth } from './snapshot';
-import { DIAGNOSIS_REQUEST, SYNTHETIC_SNAPSHOT, systemPrompt } from './prompt';
+import { bearer, failure, HttpError, json, readJson } from '../http.js';
+import { requireUser, type SessionEnv } from '../auth.js';
+import { resolveProvider, type AiEnv, type ChatMessage } from './providers.js';
+import { buildSnapshot, currentMonth } from './snapshot.js';
+import { DIAGNOSIS_REQUEST, SYNTHETIC_SNAPSHOT, systemPrompt } from './prompt.js';
 
 export type AssistantEnv = SessionEnv & AiEnv;
 
@@ -72,7 +72,7 @@ export async function handleChat(request: Request, env: AssistantEnv, fetcher: t
       provider = resolveProvider(env, fetcher, body.compare?.provider === 'gemini' ? 'gemini' : 'groq');
     } else {
       // Fora da comparação só a Groq recebe resumos reais; o Gemini gratuito pode usar o conteúdo para treino.
-      if ((env.aiProvider ?? 'groq') !== 'groq') throw new HttpError(503, 'O provedor configurado só pode ser usado no modo de comparação com dados sintéticos.');
+      if ((env.aiProvider ?? 'groq') !== 'groq') throw new HttpError(503, 'O provedor configurado só pode ser usado no modo de comparação com dados sintéticos. Use AI_PROVIDER=groq.', { code: 'not_configured' });
       provider = resolveProvider(env, fetcher, 'groq');
     }
     rateLimit(userId);
@@ -94,20 +94,31 @@ export async function handleChat(request: Request, env: AssistantEnv, fetcher: t
     const encoder = new TextEncoder();
     const send = (controller: ReadableStreamDefaultController, payload: unknown) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`));
     const iterator = provider.stream({ system, messages, maxTokens: body.intent === 'diagnosis' ? 900 : 1024, signal: upstream.signal });
+    const started = Date.now();
+
+    // O primeiro trecho é lido antes de responder: chave inválida, limite do provedor, modelo
+    // inexistente e tempo esgotado viram status HTTP próprios em vez de um 200 com erro no meio.
+    let head: IteratorResult<string>;
+    try {
+      head = await iterator.next();
+    } catch (error) {
+      clearTimeout(firstToken);
+      clearTimeout(total);
+      if (upstream.signal.aborted && !request.signal?.aborted) throw new HttpError(504, 'O assistente demorou demais para responder. Tente novamente.', { code: 'provider_timeout' });
+      if (error instanceof HttpError) throw error;
+      throw new HttpError(502, 'Não foi possível falar com o provedor de IA.', { code: 'provider_unreachable' });
+    }
+    const firstMs = Date.now() - started;
+    clearTimeout(firstToken);
 
     const stream = new ReadableStream({
       async start(controller) {
-        const started = Date.now();
-        let first: number | null = null;
         try {
-          for await (const text of iterator) {
-            if (first === null) {
-              first = Date.now() - started;
-              clearTimeout(firstToken);
-            }
-            send(controller, { type: 'delta', text });
+          if (!head.done) {
+            send(controller, { type: 'delta', text: head.value });
+            for await (const text of { [Symbol.asyncIterator]: () => iterator }) send(controller, { type: 'delta', text });
           }
-          send(controller, { type: 'done', provider: provider.name, model: provider.model, firstTokenMs: first, totalMs: Date.now() - started, synthetic: compare });
+          send(controller, { type: 'done', provider: provider.name, model: provider.model, firstTokenMs: firstMs, totalMs: Date.now() - started, synthetic: compare });
         } catch (error) {
           const message = upstream.signal.aborted
             ? request.signal?.aborted
@@ -118,7 +129,6 @@ export async function handleChat(request: Request, env: AssistantEnv, fetcher: t
               : 'O assistente encontrou um erro. Tente novamente.';
           send(controller, { type: 'error', message });
         } finally {
-          clearTimeout(firstToken);
           clearTimeout(total);
           controller.close();
         }

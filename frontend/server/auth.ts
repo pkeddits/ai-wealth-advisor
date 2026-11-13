@@ -1,4 +1,4 @@
-import { HttpError } from './http';
+import { HttpError } from './http.js';
 
 export interface SessionEnv {
   supabaseUrl?: string;
@@ -10,7 +10,7 @@ const verified = new Map<string, { userId: string; expiresAt: number }>();
 
 /** Resolve o usuário a partir do token do Supabase Auth. O id nunca vem do cliente. */
 export async function requireUser(token: string, env: SessionEnv, fetcher: typeof fetch): Promise<string> {
-  if (!env.supabaseUrl || !env.supabaseKey) throw new HttpError(503, 'Serviço não configurado.');
+  if (!env.supabaseUrl || !env.supabaseKey) throw new HttpError(503, 'Serviço não configurado: faltam SUPABASE_URL e a chave publicável no servidor.', { code: 'not_configured' });
   const cached = verified.get(token);
   if (cached && cached.expiresAt > Date.now()) return cached.userId;
   let res: Response;
@@ -19,9 +19,10 @@ export async function requireUser(token: string, env: SessionEnv, fetcher: typeo
   } catch {
     throw new HttpError(503, 'Não foi possível validar a sessão.');
   }
-  if (!res.ok) throw new HttpError(401, 'Sessão inválida ou expirada.');
+  if (!res.ok) throw new HttpError(401, 'Sessão inválida ou expirada.', { code: 'session' });
   const user = (await res.json().catch(() => null)) as { id?: string } | null;
-  if (!user?.id) throw new HttpError(401, 'Sessão inválida ou expirada.');
+  if (!user?.id) throw new HttpError(401, 'Sessão inválida ou expirada.', { code: 'session' });
+  if (verified.size > 500) verified.clear();
   verified.set(token, { userId: user.id, expiresAt: Date.now() + TTL });
   return user.id;
 }

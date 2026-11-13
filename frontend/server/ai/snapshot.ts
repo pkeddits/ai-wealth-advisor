@@ -1,9 +1,9 @@
-import { HttpError } from '../http';
-import { summarizeMonth, shiftMonth, monthRange } from '../../src/domain/finance';
-import { computeHoldings, computeRealized, type TradeInput } from '../../src/domain/positions';
-import { goalProgress, budgetUsage } from '../../src/domain/planning';
-import { computeInsights, type Insight } from '../../src/domain/insights';
-import { categoryLabel } from '../../src/domain/categories';
+import { HttpError } from '../http.js';
+import { summarizeMonth, shiftMonth, monthRange } from '../../src/domain/finance.js';
+import { computeHoldings, computeRealized, type TradeInput } from '../../src/domain/positions.js';
+import { goalProgress, budgetUsage } from '../../src/domain/planning.js';
+import { computeInsights, type Insight } from '../../src/domain/insights.js';
+import { categoryLabel } from '../../src/domain/categories.js';
 
 interface Ctx {
   supabaseUrl: string;

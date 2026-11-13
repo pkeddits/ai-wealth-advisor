@@ -1,5 +1,5 @@
-import { classifyOpenFinanceError, providerErrorSignals } from '../../src/domain/openFinanceErrors';
-import { HttpError } from '../http';
+import { classifyOpenFinanceError, providerErrorSignals } from '../../src/domain/openFinanceErrors.js';
+import { HttpError } from '../http.js';
 
 export interface PluggyEnv {
   pluggyClientId?: string;

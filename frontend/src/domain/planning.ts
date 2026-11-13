@@ -1,4 +1,4 @@
-import { monthsToTarget } from './simulation';
+import { monthsToTarget } from './simulation.js';
 
 export interface GoalMovementInput {
   kind: 'inicial' | 'aporte' | 'retirada';

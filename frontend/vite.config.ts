@@ -18,6 +18,7 @@ function localApi(env: Record<string, string>): Plugin {
     '/api/pluggy/disconnect': ['/server/pluggy/handlers.ts', 'handleDisconnect'],
     '/api/ai/chat': ['/server/ai/handler.ts', 'handleChat'],
     '/api/ai/snapshot': ['/server/ai/handler.ts', 'handleSnapshot'],
+    '/api/health': ['/server/health.ts', 'handleHealth'],
   };
   return {
     name: 'aiwa-local-api',
@@ -25,7 +26,7 @@ function localApi(env: Record<string, string>): Plugin {
       for (const [route, [file, handler]] of Object.entries(routes)) {
         server.middlewares.use(route, async (req, res) => {
           const mod = await server.ssrLoadModule(file);
-          const { serverEnv } = await server.ssrLoadModule('/server/env.ts');
+          const { serverEnv, quotesEnv } = await server.ssrLoadModule('/server/env.ts');
           const headers = new Headers();
           for (const [key, value] of Object.entries(req.headers)) if (typeof value === 'string') headers.set(key, value);
           const chunks: Buffer[] = [];
@@ -36,8 +37,10 @@ function localApi(env: Record<string, string>): Plugin {
           const request = new Request(`http://localhost${req.originalUrl}`, { method: req.method, headers, body, signal: abort.signal });
           const response: Response =
             route === '/api/quotes'
-              ? await mod[handler](request, { brapiKey: env.BRAPI_API_KEY, supabaseUrl: env.SUPABASE_URL || env.VITE_SUPABASE_URL, supabaseKey: env.SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_ANON_KEY })
-              : await mod[handler](request, serverEnv(env));
+              ? await mod[handler](request, quotesEnv(env))
+              : route === '/api/health'
+                ? await mod[handler](request, env)
+                : await mod[handler](request, serverEnv(env));
           res.statusCode = response.status;
           response.headers.forEach((value, key) => res.setHeader(key, value));
           if (!response.body) return res.end();

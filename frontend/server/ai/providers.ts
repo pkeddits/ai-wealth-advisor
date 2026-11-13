@@ -1,4 +1,4 @@
-import { HttpError } from '../http';
+import { HttpError } from '../http.js';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -54,10 +54,12 @@ async function* sseData(body: ReadableStream<Uint8Array>): AsyncGenerator<string
 }
 
 function upstreamError(status: number, provider: string): HttpError {
-  if (status === 429) return new HttpError(429, 'O assistente atingiu o limite de uso do provedor. Tente novamente em instantes.');
-  if (status === 401 || status === 403) return new HttpError(503, 'O assistente não está configurado corretamente.');
-  if (status === 404) return new HttpError(503, `Modelo de IA indisponível no provedor (${provider}).`);
-  return new HttpError(502, 'O provedor de IA não respondeu como esperado. Tente novamente.');
+  if (status === 429) return new HttpError(429, 'O assistente atingiu o limite de uso do provedor. Tente novamente em instantes.', { code: 'provider_rate_limit' });
+  if (status === 401 || status === 403) return new HttpError(503, 'A chave do provedor de IA foi recusada. Confira GROQ_API_KEY no servidor.', { code: 'provider_auth' });
+  if (status === 404) return new HttpError(503, `Modelo de IA indisponível no provedor (${provider}). Confira GROQ_MODEL.`, { code: 'provider_model' });
+  if (status === 400 || status === 413 || status === 422) return new HttpError(502, 'O provedor de IA recusou a requisição. Tente uma pergunta mais curta.', { code: 'provider_rejected' });
+  if (status >= 500) return new HttpError(502, 'O provedor de IA está instável no momento. Tente novamente em instantes.', { code: 'provider_unavailable' });
+  return new HttpError(502, 'O provedor de IA não respondeu como esperado. Tente novamente.', { code: 'provider_error' });
 }
 
 export function groqProvider(env: AiEnv, fetcher: typeof fetch): ChatProvider {
@@ -82,7 +84,12 @@ export function groqProvider(env: AiEnv, fetcher: typeof fetch): ChatProvider {
       if (!res.ok || !res.body) throw upstreamError(res.status, 'Groq');
       for await (const data of sseData(res.body)) {
         if (data === '[DONE]') return;
-        const chunk = JSON.parse(data) as { choices?: { delta?: { content?: string } }[]; error?: unknown };
+        let chunk: { choices?: { delta?: { content?: string } }[]; error?: unknown };
+        try {
+          chunk = JSON.parse(data);
+        } catch {
+          continue;
+        }
         if (chunk.error) throw new HttpError(502, 'O provedor de IA interrompeu a resposta.');
         const text = chunk.choices?.[0]?.delta?.content;
         if (text) yield text;
@@ -122,7 +129,7 @@ export function geminiProvider(env: AiEnv, fetcher: typeof fetch): ChatProvider 
 export function resolveProvider(env: AiEnv, fetcher: typeof fetch, requested?: string): ChatProvider {
   const name = requested ?? env.aiProvider ?? 'groq';
   if (name === 'groq') {
-    if (!env.groqApiKey) throw new HttpError(503, 'O assistente de IA ainda não foi configurado neste ambiente.');
+    if (!env.groqApiKey) throw new HttpError(503, 'O assistente de IA ainda não foi configurado neste ambiente.', { code: 'not_configured' });
     return groqProvider(env, fetcher);
   }
   if (name === 'gemini') {

@@ -28,5 +28,7 @@ export function bearer(request: Request): string {
 /** Converte qualquer falha em resposta sem detalhes internos, tokens ou dados pessoais. */
 export function failure(error: unknown) {
   if (error instanceof HttpError) return json({ error: error.message, ...error.detail }, error.status);
-  return json({ error: 'Não foi possível concluir a operação. Tente novamente.' }, 500);
+  // Só o tipo do erro vai para o log da função; a mensagem pode conter dados da requisição.
+  console.error('[api] falha interna', error instanceof Error ? error.name : typeof error);
+  return json({ error: 'Não foi possível concluir a operação. Tente novamente.', code: 'internal' }, 500);
 }

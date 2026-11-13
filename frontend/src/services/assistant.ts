@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { getSupabase } from '../lib/supabase';
 import type { Insight } from '../domain/insights';
+import { readApiError } from './apiError';
 
 export interface ChatTurn {
   id: string;
@@ -69,8 +70,8 @@ export async function streamChat({ messages, page, includeData, intent = 'chat',
     body: JSON.stringify({ messages, page, includeData, intent }),
   });
   if (!res.ok || !res.body) {
-    const body = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(body.error ?? 'O assistente não está disponível no momento.');
+    const info = await readApiError(res, 'O assistente não está disponível no momento.');
+    throw Object.assign(new Error(info.message), { code: info.code });
   }
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
@@ -84,7 +85,12 @@ export async function streamChat({ messages, page, includeData, intent = 'chat',
       const line = buffer.slice(0, index).trim();
       buffer = buffer.slice(index + 2);
       if (!line.startsWith('data:')) continue;
-      const event = JSON.parse(line.slice(5)) as { type: string; text?: string; message?: string };
+      let event: { type: string; text?: string; message?: string };
+      try {
+        event = JSON.parse(line.slice(5));
+      } catch {
+        continue;
+      }
       if (event.type === 'delta' && event.text) onDelta(event.text);
       if (event.type === 'error') throw new Error(event.message ?? 'O assistente encontrou um erro.');
     }
@@ -99,7 +105,6 @@ export interface SnapshotResponse {
 
 export async function fetchSnapshot(): Promise<SnapshotResponse> {
   const res = await fetch('/api/ai/snapshot', { method: 'POST', headers: { Authorization: `Bearer ${await token()}`, 'Content-Type': 'application/json' }, body: '{}' });
-  const body = (await res.json().catch(() => ({}))) as SnapshotResponse & { error?: string };
-  if (!res.ok) throw new Error(body.error ?? 'Não foi possível calcular o resumo.');
-  return body;
+  if (!res.ok) throw new Error((await readApiError(res, 'Não foi possível calcular o resumo.')).message);
+  return (await res.json()) as SnapshotResponse;
 }

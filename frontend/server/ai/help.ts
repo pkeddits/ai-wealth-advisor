@@ -1,4 +1,4 @@
-import { TUTORIALS } from '../../src/tutorials/content';
+import { TUTORIALS } from '../../src/tutorials/content.js';
 
 /** Base de ajuda: descreve apenas o que existe no site. Usada pelo assistente para explicar o uso. */
 export const SITE_HELP = `

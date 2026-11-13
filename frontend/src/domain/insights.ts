@@ -1,4 +1,4 @@
-import type { BudgetUsage, GoalProgress } from './planning';
+import type { BudgetUsage, GoalProgress } from './planning.js';
 
 export type Severity = 'info' | 'warning' | 'critical' | 'success';
 

@@ -1,4 +1,4 @@
-import highlights from './highlights.json';
+import { HIGHLIGHTS } from './highlights.js';
 
 export type TutorialId = 'dashboard' | 'carteiras' | 'financas' | 'analise' | 'analytics' | 'simulacoes' | 'integracoes' | 'alertas';
 
@@ -81,7 +81,7 @@ const RAW: { id: TutorialId; route: string; title: string; summary: string; step
   },
 ];
 
-const HL = highlights as Record<string, TutorialStep['highlight']>;
+const HL: Record<string, TutorialStep['highlight']> = HIGHLIGHTS;
 
 export const TUTORIALS: Tutorial[] = RAW.map((t) => ({
   ...t,

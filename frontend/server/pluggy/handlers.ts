@@ -1,7 +1,7 @@
-import { bearer, failure, HttpError, json, readJson } from '../http';
-import { requireUser, type SessionEnv } from '../auth';
-import { adminDb, type AdminDb, type AdminEnv } from '../supabaseAdmin';
-import { pluggyClient, type PluggyEnv } from './client';
+import { bearer, failure, HttpError, json, readJson } from '../http.js';
+import { requireUser, type SessionEnv } from '../auth.js';
+import { adminDb, type AdminDb, type AdminEnv } from '../supabaseAdmin.js';
+import { pluggyClient, type PluggyEnv } from './client.js';
 import {
   classifyTransaction,
   normalizeAccount,
@@ -11,7 +11,7 @@ import {
   type PluggyInvestment,
   type PluggyInvestmentTransaction,
   type PluggyTransaction,
-} from './normalize';
+} from './normalize.js';
 
 export type OpenFinanceEnv = SessionEnv & AdminEnv & PluggyEnv;
 
@@ -161,7 +161,7 @@ export async function syncConnection(db: AdminDb, pluggy: ReturnType<typeof plug
         existing.set(row.external_id, row);
       }
     }
-    const fresh = [];
+    const fresh: Record<string, unknown>[] = [];
     for (const e of entries) {
       if (e.needs_review) review++;
       const current = existing.get(e.external_id);

@@ -1,4 +1,4 @@
-import { PAGE_NAMES, SITE_HELP } from './help';
+import { PAGE_NAMES, SITE_HELP } from './help.js';
 
 export function systemPrompt(page: string | undefined, data: unknown | null, dataNote: string): string {
   return `Você é o assistente do Wealth Advisor AI, uma plataforma acadêmica de organização financeira e acompanhamento de investimentos.
