@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTutorial } from '../tutorial/TutorialHost';
+import { tutorialFor } from '../../tutorials/content';
 import { NavLink, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { CalendarDays, ChevronDown, Eye, EyeOff, LogOut, Menu, User } from 'lucide-react';
+import { CalendarDays, ChevronDown, Eye, EyeOff, GraduationCap, LogOut, Menu, User } from 'lucide-react';
 import { usePreferences } from '../../store/preferencesStore';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
@@ -17,6 +19,8 @@ export function Header() {
   const signOut = useSignOut();
   const openMobileNav = useUIStore((s) => s.openMobileNav);
   const location = useLocation();
+  const currentTutorial = tutorialFor(location.pathname);
+  const openTutorial = useTutorial((st) => st.open);
   const [open, setOpen] = useState(false);
   const hideValues = usePreferences((s) => s.hideValues);
   const setPreference = usePreferences((s) => s.set);
@@ -54,6 +58,11 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-2">
+          {currentTutorial && (
+            <button type="button" onClick={() => openTutorial(currentTutorial.id)} className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-sm text-dark-500 transition-colors hover:bg-dark-100 hover:text-dark-900" aria-label={`Abrir guia de ${currentTutorial.title}`}>
+              <GraduationCap className="h-4 w-4" /><span className="hidden md:inline">Guia</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setPreference('hideValues', !hideValues)}

@@ -5,6 +5,7 @@ import { ProfileSection } from './settings/ProfileSection';
 import { SecuritySection } from './settings/SecuritySection';
 import { AppearanceSection, FinanceSection, IntegrationsSection, NotificationsSection } from './settings/PreferenceSections';
 import { PrivacySection } from './settings/PrivacySection';
+import { TutorialsSection } from './settings/TutorialsSection';
 
 const SECTIONS = [
   { id: 'perfil', label: 'Perfil' },
@@ -13,6 +14,7 @@ const SECTIONS = [
   { id: 'financas', label: 'Preferências financeiras' },
   { id: 'notificacoes', label: 'Notificações' },
   { id: 'integracoes', label: 'Integrações' },
+  { id: 'tutoriais', label: 'Tutoriais e ajuda' },
   { id: 'privacidade', label: 'Privacidade e dados' },
 ];
 
@@ -86,6 +88,7 @@ export function SettingsPage() {
           <FinanceSection />
           <NotificationsSection />
           <IntegrationsSection />
+          <TutorialsSection />
           <PrivacySection />
         </div>
       </div>

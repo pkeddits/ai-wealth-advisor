@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import { useUIStore } from '../../store/uiStore';
 import { useProfileSync } from '../../hooks/useProfileSync';
 import { FloatingAssistant } from '../ai/FloatingAssistant';
+import { TutorialHost } from '../tutorial/TutorialHost';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { DemoBanner } from '../common/DemoBanner';
@@ -36,6 +37,7 @@ export function MainLayout() {
         </motion.main>
       </div>
       <FloatingAssistant />
+      <TutorialHost />
     </div>
   );
 }
