@@ -18,6 +18,7 @@ calculados pelo sistema.
 | Open Finance | Conexão pela Pluggy (widget oficial), importação de contas, movimentações e investimentos, sincronização sem duplicar, reclassificação de importados |
 | Inteligência | Análise IA e chatbot (Groq) com streaming, Analytics, Simulações com juros compostos, Alertas por regras |
 | Conta | Perfil, segurança, aparência (tema, densidade, animações), preferências, privacidade e consentimento da IA |
+| Guias | Tutorial com telas reais em cada área, abertos na primeira visita e reabertos pelo botão Guia ou em Configurações → Tutoriais e ajuda |
 | Demonstração | Modo com dados fictícios no navegador, sem serviços externos |
 
 | Dashboard | Finanças | Assistente |
@@ -65,6 +66,7 @@ Sem configuração nenhuma, o app roda no modo demonstração (`VITE_APP_MODE=de
 | `VITE_APP_MODE` | pública | `demo` ou `supabase` |
 | `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` | pública | Projeto Supabase (chave publicável `sb_publishable_...`) |
 | `VITE_PLUGGY_INCLUDE_SANDBOX` | pública | `true` exibe o conector de testes no widget |
+| `VITE_OPEN_FINANCE_ENV` | pública | `sandbox` (padrão) ou `production` |
 | `SUPABASE_SECRET_KEY` | **servidor** | Gravação dos dados importados pela Pluggy |
 | `PLUGGY_CLIENT_ID`, `PLUGGY_CLIENT_SECRET` | **servidor** | Open Finance |
 | `BRAPI_API_KEY` | **servidor** | Opcional; cotações além dos ativos de teste |

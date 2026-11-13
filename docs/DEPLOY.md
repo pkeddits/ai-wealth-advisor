@@ -38,6 +38,7 @@
 | `SUPABASE_SECRET_KEY` | `sb_secret_...` |
 | `PLUGGY_CLIENT_ID`, `PLUGGY_CLIENT_SECRET` | da aplicação Pluggy |
 | `VITE_PLUGGY_INCLUDE_SANDBOX` | `true` para a apresentação com Sandbox |
+| `VITE_OPEN_FINANCE_ENV` | `sandbox` enquanto a Pluggy não liberar produção; depois `production` |
 | `AI_PROVIDER` | `groq` |
 | `GROQ_API_KEY` | chave da Groq |
 | `BRAPI_API_KEY` | opcional |
