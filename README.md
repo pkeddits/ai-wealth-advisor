@@ -17,13 +17,18 @@ calculados pelo sistema.
 | Finanças pessoais | Receitas e despesas manuais e importadas, categorias (inclusive personalizadas), metas com aportes e retiradas, orçamentos mensais |
 | Open Finance | Conexão pela Pluggy (widget oficial), importação de contas, movimentações e investimentos, sincronização sem duplicar, reclassificação de importados |
 | Inteligência | Análise IA e chatbot (Groq) com streaming, Analytics, Simulações com juros compostos, Alertas por regras |
-| Conta | Perfil, segurança, aparência (tema, densidade, animações), preferências, privacidade e consentimento da IA |
+| Conta | Perfil com foto, segurança, aparência (tema, densidade, animações), preferências, privacidade e consentimento da IA, tudo salvo na conta e igual em qualquer dispositivo |
 | Guias | Tutorial com telas reais em cada área, abertos na primeira visita e reabertos pelo botão Guia ou em Configurações → Tutoriais e ajuda |
+| Celular | Navegação inferior, assistente em tela cheia que acompanha o teclado, formulários e guias adaptados ao toque |
 | Demonstração | Modo com dados fictícios no navegador, sem serviços externos |
 
 | Dashboard | Finanças | Assistente |
 |---|---|---|
 | ![Dashboard](docs/screenshots/dashboard.png) | ![Finanças](docs/screenshots/financas.png) | ![Assistente](docs/screenshots/assistente.png) |
+
+| Celular: dashboard | Celular: finanças | Celular: guia |
+|---|---|---|
+| ![Dashboard no celular](docs/screenshots/fase9/mobile-dashboard.jpg) | ![Finanças no celular](docs/screenshots/fase9/mobile-financas.jpg) | ![Guia no celular](docs/screenshots/fase9/mobile-guia.jpg) |
 
 ## Arquitetura
 
@@ -45,6 +50,8 @@ backend/               Backend Go original (não compila; mantido apenas como hi
 - **IA:** a IA recebe um resumo calculado pelo sistema (sem descrições de transações, contas ou
   documentos), somente com consentimento do usuário. Ela explica; não calcula nem executa ações.
 - **Investimentos manuais e importados** ficam separados: podem representar os mesmos ativos.
+- **Preferências e foto** ficam na conta (`user_settings` e bucket privado `avatars`, com RLS); o
+  navegador guarda só um cache por usuário.
 
 ## Executar localmente
 
@@ -89,10 +96,14 @@ npm run check:domain       # posições e finanças
 npm run check:quotes       # serviço de cotações (respostas simuladas da brapi)
 npm run check:openfinance  # classificação de transações importadas
 npm run check:planning     # simulações, metas, orçamentos e alertas
+npm run check:functions    # funções no mesmo formato de runtime da Vercel (Node ESM, sem bundle)
+npm run check:sync         # preferências, guias e foto entre dispositivos e contas
+npm run type-check         # tipos do app e do código de servidor
 ```
 
-Os testes de navegador e de integração com banco local usados no desenvolvimento estão descritos em
-`docs/FASE*.md`.
+Os testes de navegador estão em `frontend/scripts/browser/` (veja o README da pasta). O histórico de
+cada fase, com testes e checklists, está em `docs/FASE*.md`; a mais recente é
+[docs/FASE9.md](docs/FASE9.md).
 
 ## Publicação
 
@@ -105,6 +116,7 @@ Veja [docs/DEPLOY.md](docs/DEPLOY.md) (GitHub e Vercel, passo a passo).
 - Sem histórico de cotações: não há evolução do patrimônio a preço de mercado.
 - Alertas calculados ao abrir o app; não há monitoramento em segundo plano nem envio por e-mail.
 - O limite de uso da IA é contado por instância da função na Vercel.
+- Preferências sincronizam ao abrir o app, ao voltar para a aba e ao reconectar; não em tempo real entre abas abertas.
 - O backend Go original não compila e não é usado.
 
 ## Equipe
