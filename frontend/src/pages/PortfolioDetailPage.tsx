@@ -493,7 +493,7 @@ export function PortfolioDetailPage() {
           />
           {actionError && <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700" role="alert">{actionError}</div>}
           <div className="flex gap-3 pt-2">
-            <Button type="button" variant="secondary" className="flex-1" onClick={() => setEditOpen(false)}>Cancelar</Button>
+            <Button type="button" variant="secondary" className="shrink-0 sm:flex-1" onClick={() => setEditOpen(false)}>Cancelar</Button>
             <Button type="submit" className="flex-1" loading={busy}>Salvar alterações</Button>
           </div>
         </form>
@@ -505,7 +505,7 @@ export function PortfolioDetailPage() {
         </p>
         {actionError && <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700" role="alert">{actionError}</div>}
         <div className="mt-6 flex gap-3">
-          <Button type="button" variant="secondary" className="flex-1" onClick={() => setDeleteOpen(false)}>Cancelar</Button>
+          <Button type="button" variant="secondary" className="shrink-0 sm:flex-1" onClick={() => setDeleteOpen(false)}>Cancelar</Button>
           <Button type="button" variant="danger" className="flex-1" loading={busy} onClick={confirmDelete}>Excluir definitivamente</Button>
         </div>
       </Modal>

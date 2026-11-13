@@ -187,7 +187,7 @@ export function ConnectionsManager() {
           <p>Você pode conectar de novo depois; os dados serão importados outra vez.</p>
         </div>
         <div className="mt-6 flex gap-3">
-          <Button variant="secondary" className="flex-1" onClick={() => setConfirm(null)}>Cancelar</Button>
+          <Button variant="secondary" className="shrink-0 sm:flex-1" onClick={() => setConfirm(null)}>Cancelar</Button>
           <Button variant="danger" className="flex-1" loading={removing} onClick={disconnect}>Desvincular</Button>
         </div>
       </Modal>

@@ -28,7 +28,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     <button
       ref={ref}
       className={clsx(
-        'group/btn relative isolate inline-flex items-center justify-center overflow-hidden rounded-control font-semibold',
+        'group/btn relative isolate inline-flex items-center justify-center overflow-hidden whitespace-nowrap rounded-control font-semibold',
         'transition-[background-color,background-position,border-color,box-shadow,transform,color] duration-300 ease-out',
         'active:scale-[0.97] focus:outline-none focus-visible:shadow-focus disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100',
         VARIANTS[variant],

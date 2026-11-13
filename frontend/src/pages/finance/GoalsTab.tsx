@@ -160,7 +160,7 @@ export function GoalsTab() {
             <Input id="goal-planned" label="Aporte mensal planejado (opcional)" inputMode="decimal" value={form.planned} onChange={(e) => setForm({ ...form, planned: e.target.value })} helperText="Usado só para projetar o prazo." />
           </div>
           {formError && <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700" role="alert">{formError}</div>}
-          <div className="flex gap-3 pt-2"><Button type="button" variant="secondary" className="flex-1" onClick={() => setEditing(null)}>Cancelar</Button><Button type="submit" className="flex-1" loading={busy}>Salvar meta</Button></div>
+          <div className="flex gap-3 pt-2"><Button type="button" variant="secondary" className="shrink-0 sm:flex-1" onClick={() => setEditing(null)}>Cancelar</Button><Button type="submit" className="flex-1" loading={busy}>Salvar meta</Button></div>
         </form>
       </Modal>
 

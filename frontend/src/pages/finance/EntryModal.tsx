@@ -89,7 +89,7 @@ export function EntryModal({ isOpen, entry, defaultDate, onClose, onSubmit, onRe
           <Input id="entry-note" label="Anotação (opcional)" value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} placeholder="Ex.: aluguel de outubro" />
           {error && <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700" role="alert">{error}</div>}
           <div className="flex gap-3 pt-2">
-            <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>Cancelar</Button>
+            <Button type="button" variant="secondary" className="shrink-0 sm:flex-1" onClick={onClose}>Cancelar</Button>
             <Button type="submit" className="flex-1" loading={saving}>Salvar classificação</Button>
           </div>
         </form>
@@ -110,7 +110,7 @@ export function EntryModal({ isOpen, entry, defaultDate, onClose, onSubmit, onRe
         <Input id="entry-description" label="Descrição" placeholder={kind === 'despesa' ? 'Ex.: Mercado do mês' : 'Ex.: Salário'} value={description} maxLength={200} onChange={(e) => setDescription(e.target.value)} />
         {error && <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700" role="alert">{error}</div>}
         <div className="flex gap-3 pt-2">
-          <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>Cancelar</Button>
+          <Button type="button" variant="secondary" className="shrink-0 sm:flex-1" onClick={onClose}>Cancelar</Button>
           <Button type="submit" className="flex-1" loading={saving}>{entry ? 'Salvar alterações' : 'Salvar movimentação'}</Button>
         </div>
       </form>

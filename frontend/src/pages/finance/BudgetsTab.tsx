@@ -101,7 +101,7 @@ export function BudgetsTab({ month }: { month: string }) {
             <Input id="budget-threshold" label="Alertar a partir de (%)" type="number" min={10} max={100} value={form.threshold} onChange={(e) => setForm({ ...form, threshold: e.target.value })} />
           </div>
           {error && <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700" role="alert">{error}</div>}
-          <div className="flex gap-3 pt-2"><Button type="button" variant="secondary" className="flex-1" onClick={() => setOpen(false)}>Cancelar</Button><Button type="submit" className="flex-1" loading={busy}>Salvar</Button></div>
+          <div className="flex gap-3 pt-2"><Button type="button" variant="secondary" className="shrink-0 sm:flex-1" onClick={() => setOpen(false)}>Cancelar</Button><Button type="submit" className="flex-1" loading={busy}>Salvar</Button></div>
         </form>
       </Modal>
     </div>
