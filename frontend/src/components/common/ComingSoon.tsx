@@ -12,7 +12,7 @@ interface ComingSoonProps {
 
 const DEFAULT_MESSAGE = isDemoMode
   ? 'Este módulo ainda não está disponível nesta versão. Enquanto isso, você pode criar carteiras e registrar transações.'
-  : 'Este módulo será conectado ao banco de dados nas próximas etapas.';
+  : 'Este recurso não está disponível neste modo.';
 
 const DEFAULT_ACTION = isDemoMode ? { to: '/portfolios', label: 'Ir para carteiras' } : { to: '/dashboard', label: 'Voltar ao painel' };
 

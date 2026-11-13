@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { useEffect, type ReactNode } from 'react';
 import type { User } from '../types';
 import { session, type SignUpInput, type SignUpResult } from '../services/session';
+import { userSettings } from '../services/userSettings';
+import { usePreferences } from './preferencesStore';
+import { TUTORIALS } from '../tutorials/content';
 
 interface AuthState {
   user: User | null;
@@ -25,6 +28,11 @@ export const useAuthStore = create<AuthState>()((set) => ({
 
   login: async (email, password) => {
     const user = await session.signIn(email, password);
+    // Só um login explícito aplica a reapresentação dos guias; restaurar a sessão (F5) não.
+    if (await userSettings.consumeTutorialsOnNextLogin()) {
+      const prefs = usePreferences.getState();
+      prefs.set('tutorialsReplay', { ...prefs.tutorialsReplay, [user.id]: TUTORIALS.map((t) => t.id) });
+    }
     set({ user, isAuthenticated: true });
   },
 

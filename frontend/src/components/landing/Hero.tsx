@@ -89,8 +89,8 @@ export function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6, ease: EASE }}
         >
-          Carteiras, operações, rentabilidade e distribuição em uma leitura só. Contas, gastos e explicações com IA chegam
-          nas próximas versões.
+          Acompanhe investimentos, organize receitas e despesas e entenda seus resultados com inteligência artificial,
+          tudo em um só lugar.
         </motion.p>
 
         <motion.div

@@ -28,6 +28,8 @@ export interface Preferences {
   /** Guias por área: abrir na primeira visita e quais já foram vistos. */
   tutorialsAuto: boolean;
   tutorialsSeen: string[];
+  /** Guias pendentes por conta, preparados no login quando a conta pediu a reapresentação. */
+  tutorialsReplay: Record<string, string[]>;
   dashboardView: 'investimentos' | 'financas';
   aiShareData: boolean;
   dateFormat: DateFormatPreference;
@@ -48,6 +50,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   aiEnabled: false,
   tutorialsAuto: true,
   tutorialsSeen: [],
+  tutorialsReplay: {},
   dashboardView: 'investimentos',
   aiShareData: false,
   dateFormat: 'dd/mm/aaaa',
