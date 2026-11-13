@@ -4,6 +4,8 @@ import type { User } from '../types';
 import { session, type SignUpInput, type SignUpResult } from '../services/session';
 import { userSettings } from '../services/userSettings';
 import { usePreferences } from './preferencesStore';
+import { accountSync } from '../services/accountSync';
+import { appMode } from '../config/appMode';
 import { TUTORIALS } from '../tutorials/content';
 
 interface AuthState {
@@ -28,11 +30,11 @@ export const useAuthStore = create<AuthState>()((set) => ({
 
   login: async (email, password) => {
     const user = await session.signIn(email, password);
+    const ids = TUTORIALS.map((t) => t.id);
     // Só um login explícito aplica a reapresentação dos guias; restaurar a sessão (F5) não.
-    if (await userSettings.consumeTutorialsOnNextLogin()) {
-      const prefs = usePreferences.getState();
-      prefs.set('tutorialsReplay', { ...prefs.tutorialsReplay, [user.id]: TUTORIALS.map((t) => t.id) });
-    }
+    const replay = appMode === 'supabase' ? await accountSync.consumeReplay(ids) : await userSettings.consumeTutorialsOnNextLogin();
+    await accountSync.start(user.id);
+    if (replay) usePreferences.getState().apply({ tutorialsReplay: ids }, usePreferences.getState().syncStatus);
     set({ user, isAuthenticated: true });
   },
 
@@ -45,10 +47,12 @@ export const useAuthStore = create<AuthState>()((set) => ({
   },
 
   logout: async () => {
+    await accountSync.flush().catch(() => undefined);
     try {
       await session.signOut();
     } finally {
       set({ user: null, isAuthenticated: false });
+      await accountSync.start(null);
     }
   },
 
@@ -70,12 +74,20 @@ export const useAuthStore = create<AuthState>()((set) => ({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const checkAuth = useAuthStore((state) => state.checkAuth);
 
+  const userId = useAuthStore((state) => state.user?.id ?? null);
+  const isLoading = useAuthStore((state) => state.isLoading);
+
   useEffect(() => {
     checkAuth();
     return session.subscribe?.((user) => {
       useAuthStore.setState({ user, isAuthenticated: Boolean(user) });
     });
   }, [checkAuth]);
+
+  // As preferências seguem o usuário autenticado; outra conta nunca vê os valores da anterior.
+  useEffect(() => {
+    if (!isLoading) void accountSync.start(userId);
+  }, [userId, isLoading]);
 
   return <>{children}</>;
 }

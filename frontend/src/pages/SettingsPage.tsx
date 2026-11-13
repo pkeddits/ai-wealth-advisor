@@ -6,6 +6,7 @@ import { SecuritySection } from './settings/SecuritySection';
 import { AppearanceSection, FinanceSection, IntegrationsSection, NotificationsSection } from './settings/PreferenceSections';
 import { PrivacySection } from './settings/PrivacySection';
 import { TutorialsSection } from './settings/TutorialsSection';
+import { SyncStatus } from '../components/settings';
 
 const SECTIONS = [
   { id: 'perfil', label: 'Perfil' },
@@ -55,6 +56,7 @@ export function SettingsPage() {
       <div>
         <h1 className="text-display text-[2rem] leading-tight sm:text-[2.4rem]">Configurações</h1>
         <p className="mt-1 text-dark-600">Perfil, aparência, preferências e dados da sua conta.</p>
+        <div className="mt-3"><SyncStatus /></div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">

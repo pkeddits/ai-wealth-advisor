@@ -6,9 +6,15 @@ import { SettingRow, SettingsSection, Switch } from '../../components/settings';
 import { usePreferences } from '../../store/preferencesStore';
 import { TUTORIALS } from '../../tutorials/content';
 import { useTutorial } from '../../components/tutorial/TutorialHost';
+import { accountSync } from '../../services/accountSync';
 
 export function TutorialsSection() {
   const { tutorialsAuto, tutorialsSeen, set } = usePreferences();
+  const restart = async () => {
+    setError('');
+    try { await accountSync.resetTutorials(); }
+    catch (err) { setError(err instanceof Error ? err.message : 'Não foi possível recomeçar os guias.'); }
+  };
   const open = useTutorial((s) => s.open);
   const [nextLogin, setNextLogin] = useState<boolean | null>(null);
   const [error, setError] = useState('');
@@ -49,7 +55,7 @@ export function TutorialsSection() {
         })}
       </ul>
       <div className="pb-1">
-        <button type="button" onClick={() => set('tutorialsSeen', [])} className="text-sm font-medium text-primary-700 hover:underline">Recomeçar todos os guias</button>
+        <button type="button" onClick={restart} className="text-sm font-medium text-primary-700 hover:underline">Recomeçar todos os guias</button>
       </div>
     </SettingsSection>
   );

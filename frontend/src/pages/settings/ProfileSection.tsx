@@ -4,6 +4,8 @@ import clsx from 'clsx';
 import { useAuthStore } from '../../store/authStore';
 import { usePreferences } from '../../store/preferencesStore';
 import { updateProfile } from '../../services/account';
+import { accountSync } from '../../services/accountSync';
+import { appMode } from '../../config/appMode';
 import { Avatar, AVATAR_GRADIENTS, Button, Input } from '../../components/common';
 import { FormAlert } from '../../components/auth';
 import { Segmented, SettingRow, SettingsSection, SavedNote } from '../../components/settings';
@@ -15,32 +17,6 @@ const RISK_OPTIONS = [
   { value: 'arrojado', label: 'Arrojado', hint: 'Aceita oscilações por mais retorno' },
 ] as const;
 
-/** Reduz a imagem para 160 px e a converte em JPEG, para caber no armazenamento local. */
-function resizeImage(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error('Não foi possível ler a imagem.'));
-    reader.onload = () => {
-      const img = new Image();
-      img.onerror = () => reject(new Error('Arquivo de imagem inválido.'));
-      img.onload = () => {
-        const size = 160;
-        const canvas = document.createElement('canvas');
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext('2d')!;
-        const scale = Math.max(size / img.width, size / img.height);
-        const w = img.width * scale;
-        const h = img.height * scale;
-        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
-        resolve(canvas.toDataURL('image/jpeg', 0.85));
-      };
-      img.src = reader.result as string;
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
 export function ProfileSection() {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
@@ -50,6 +26,7 @@ export function ProfileSection() {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -77,11 +54,37 @@ export function ProfileSection() {
   const onFile = async (file?: File) => {
     if (!file) return;
     setError('');
-    if (file.size > 5 * 1024 * 1024) return setError('Use uma imagem de até 5 MB.');
+    setPhotoBusy(true);
     try {
-      set('avatar', { kind: 'image', dataUrl: await resizeImage(file) });
+      await accountSync.uploadAvatar(file);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível usar a imagem.');
+    } finally {
+      setPhotoBusy(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
+
+  const hasPhoto = avatar.kind !== 'gradient';
+  const chooseGradient = async (index: number) => {
+    setError('');
+    try {
+      if (hasPhoto) await accountSync.removeAvatar();
+      set('avatar', { kind: 'gradient', index });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível alterar o avatar.');
+    }
+  };
+
+  const removePhoto = async () => {
+    setError('');
+    setPhotoBusy(true);
+    try {
+      await accountSync.removeAvatar();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível remover a foto.');
+    } finally {
+      setPhotoBusy(false);
     }
   };
 
@@ -100,7 +103,7 @@ export function ProfileSection() {
                   role="radio"
                   aria-checked={active}
                   aria-label={`Cor ${index + 1}`}
-                  onClick={() => set('avatar', { kind: 'gradient', index })}
+                  onClick={() => chooseGradient(index)}
                   className={clsx('h-8 w-8 rounded-full transition-transform hover:scale-110', active && 'ring-2 ring-primary-500 ring-offset-2 ring-offset-surface')}
                   style={{ background: gradient }}
                 />
@@ -108,17 +111,17 @@ export function ProfileSection() {
             })}
           </div>
           <div className="flex flex-wrap gap-2">
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
-            <Button size="sm" variant="secondary" icon={<ImagePlus className="h-4 w-4" />} onClick={() => fileRef.current?.click()}>
+            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
+            <Button size="sm" variant="secondary" icon={<ImagePlus className="h-4 w-4" />} loading={photoBusy} onClick={() => fileRef.current?.click()}>
               Enviar foto
             </Button>
-            {avatar.kind === 'image' && (
-              <Button size="sm" variant="ghost" icon={<Trash2 className="h-4 w-4" />} onClick={() => set('avatar', { kind: 'gradient', index: 0 })}>
+            {hasPhoto && (
+              <Button size="sm" variant="ghost" icon={<Trash2 className="h-4 w-4" />} disabled={photoBusy} onClick={removePhoto}>
                 Remover foto
               </Button>
             )}
           </div>
-          <p className="text-xs text-dark-500">A foto fica salva apenas neste navegador.</p>
+          <p className="text-xs text-dark-500">{appMode === 'supabase' ? 'JPG, PNG ou WebP. A foto fica na sua conta e aparece em todos os seus dispositivos.' : 'Na demonstração, a foto fica salva apenas neste navegador.'}</p>
         </div>
       </div>
 

@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { usePreferences } from '../../store/preferencesStore';
+import { avatarUrl } from '../../services/accountSync';
 
 export const AVATAR_GRADIENTS = [
   'linear-gradient(135deg, rgb(var(--indigo)), rgb(var(--violet)) 55%, rgb(var(--azure)))',
@@ -17,14 +19,32 @@ export function initialsOf(name?: string) {
 
 const SIZES = { sm: 'h-8 w-8 text-xs rounded-lg', md: 'h-9 w-9 text-sm rounded-xl', lg: 'h-20 w-20 text-2xl rounded-3xl' };
 
+/** Resolve a foto da conta em URL assinada; enquanto carrega ou se falhar, as iniciais aparecem. */
+function usePhotoUrl(path: string | null) {
+  const [state, setState] = useState<{ path: string; url: string | null } | null>(null);
+  useEffect(() => {
+    if (!path) return;
+    let alive = true;
+    avatarUrl(path).then((url) => alive && setState({ path, url }));
+    return () => {
+      alive = false;
+    };
+  }, [path]);
+  return path && state?.path === path ? state.url : null;
+}
+
 export function Avatar({ name, size = 'md', className }: { name?: string; size?: keyof typeof SIZES; className?: string }) {
   const avatar = usePreferences((s) => s.avatar);
+  const photo = usePhotoUrl(avatar.kind === 'photo' ? avatar.path : null);
+  const [broken, setBroken] = useState<string | null>(null);
   const base = clsx('flex shrink-0 items-center justify-center overflow-hidden font-semibold text-on-brand', SIZES[size], className);
-  if (avatar.kind === 'image') {
-    return <img src={avatar.dataUrl} alt="" className={clsx(base, 'object-cover')} />;
+  const src = avatar.kind === 'image' ? avatar.dataUrl : photo;
+  if (src && broken !== src) {
+    return <img src={src} alt="" className={clsx(base, 'object-cover')} onError={() => setBroken(src)} />;
   }
+  const index = avatar.kind === 'gradient' ? avatar.index : 0;
   return (
-    <span className={base} style={{ background: AVATAR_GRADIENTS[avatar.index % AVATAR_GRADIENTS.length] }} aria-hidden="true">
+    <span className={base} style={{ background: AVATAR_GRADIENTS[index % AVATAR_GRADIENTS.length] }} aria-hidden="true">
       {initialsOf(name)}
     </span>
   );
