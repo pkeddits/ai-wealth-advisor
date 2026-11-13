@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { ArrowRight, CreditCard, Landmark, LineChart, Plug, RefreshCw, ShieldCheck, Unlink } from 'lucide-react';
+import { ArrowRight, ChevronDown, CreditCard, FlaskConical, Landmark, LineChart, ListChecks, Plug, ReceiptText, RefreshCw, ShieldCheck, Unlink } from 'lucide-react';
 import clsx from 'clsx';
 import type { BankConnection } from '../types';
 import { isSupabaseMode } from '../config/appMode';
-import { CONNECTION_STATUS, openFinance, openFinanceStats, OpenFinanceUnavailableError, type OpenFinanceStats } from '../services/openFinance';
+import { CONNECTION_STATUS, connectionStats, isSandboxConnection, OPEN_FINANCE_ENV, openFinance, openFinanceStats, OpenFinanceUnavailableError, type ConnectionStats, type OpenFinanceStats } from '../services/openFinance';
 import { errorMessage } from '../lib/errorMessage';
 import { useDisplayFormat } from '../lib/displayFormat';
 import { spotlightHandler } from '../hooks/useSpotlight';
@@ -33,6 +33,41 @@ function Logo({ src }: { src: string | null }) {
   return src && !failed ? <img src={src} alt="" className="h-8 w-8 object-contain" onError={() => setFailed(true)} /> : <Landmark className="h-6 w-6 text-primary-700" />;
 }
 
+const SANDBOX_SCENARIOS = [
+  { user: 'user-ok', password: 'password-ok', result: 'Conexão concluída (código de verificação 123456)' },
+  { user: 'user-ok-auth-pending', password: 'password-ok', result: 'Autorização pendente na instituição' },
+  { user: 'user-locked', password: 'password-ok', result: 'Conta bloqueada na instituição' },
+  { user: 'user-error', password: 'password-ok', result: 'Falha de acesso à instituição' },
+];
+
+function SandboxPanel() {
+  const [open, setOpen] = useState(false);
+  return (
+    <section className="panel overflow-hidden" aria-labelledby="sandbox-titulo">
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="flex w-full items-center gap-3 px-5 py-4 text-left">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-600"><FlaskConical className="h-4 w-4" /></span>
+        <span className="flex-1"><span id="sandbox-titulo" className="block text-sm font-medium text-dark-900">Cenários de teste do Sandbox</span><span className="block text-xs text-dark-500">Use no Pluggy Bank para demonstrar conexões. Todos os dados são fictícios.</span></span>
+        <ChevronDown className={clsx('h-4 w-4 text-dark-500 transition-transform', open && 'rotate-180')} />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: EASE }}>
+            <div className="overflow-x-auto border-t border-dark-200/60 px-5 py-4">
+              <table className="w-full min-w-[480px] text-sm">
+                <thead><tr className="text-left text-xs text-dark-500"><th className="pb-2 font-medium">Usuário</th><th className="pb-2 font-medium">Senha</th><th className="pb-2 font-medium">O que simula</th></tr></thead>
+                <tbody className="divide-y divide-dark-200/60">
+                  {SANDBOX_SCENARIOS.map((s) => <tr key={s.user}><td className="py-2 font-mono text-xs text-dark-900">{s.user}</td><td className="py-2 font-mono text-xs text-dark-700">{s.password}</td><td className="py-2 text-dark-600">{s.result}</td></tr>)}
+                </tbody>
+              </table>
+              <p className="mt-3 text-xs text-dark-500">Cenários definidos pela documentação da Pluggy; o resultado exato pode variar conforme atualizações do Sandbox.</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
+  );
+}
+
 function DemoIntegrations() {
   const items = [
     { icon: Landmark, title: 'Contas bancárias', text: 'Saldos, Pix e extratos importados com a sua autorização.' },
@@ -57,6 +92,9 @@ export function IntegrationsPage() {
   const fmt = useDisplayFormat();
   const { connections, loading, error, reload } = useConnections();
   const [stats, setStats] = useState<OpenFinanceStats | null>(null);
+  const [perConnection, setPerConnection] = useState<Record<string, ConnectionStats>>({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  useEffect(() => { if (isSupabaseMode && connections.length) connectionStats(connections).then(setPerConnection).catch(() => undefined); }, [connections]);
   const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
   const [syncing, setSyncing] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<BankConnection | null>(null);
@@ -101,6 +139,9 @@ export function IntegrationsPage() {
             <p className="flex items-center gap-2 text-sm text-dark-500"><Plug className="h-4 w-4" />Integrações</p>
             <h1 className="text-display mt-2 text-[2rem] leading-tight sm:text-[2.4rem]">Central de Integrações</h1>
             <p className="mt-2 text-dark-600">Conecte suas instituições pelo Open Finance para importar contas, movimentações e investimentos. A autorização acontece na própria instituição; o Wealth Advisor não pede nem guarda senhas bancárias.</p>
+            {isSupabaseMode && OPEN_FINANCE_ENV === 'sandbox' && (
+              <p className="mt-3 inline-flex items-start gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs text-blue-700"><FlaskConical className="mt-0.5 h-3.5 w-3.5 shrink-0" />Ambiente de testes: disponível o Pluggy Bank, com dados fictícios. A conexão com bancos reais será habilitada após a aprovação do acesso de produção pela Pluggy.</p>
+            )}
             <p className="mt-3 inline-flex items-center gap-2 text-xs text-dark-500"><ShieldCheck className="h-4 w-4 text-green-600" />Você pode sincronizar, reconectar ou desvincular a qualquer momento.</p>
           </div>
           {isSupabaseMode && <ConnectBankButton size="lg" onConnected={(id) => sync(id, true)} onError={onError} />}
@@ -122,6 +163,7 @@ export function IntegrationsPage() {
               </motion.div>
             ))}
           </div>
+          {OPEN_FINANCE_ENV === 'sandbox' && <SandboxPanel />}
           {stats && stats.investmentsWithdrawn > 0 && <p className="text-xs text-dark-500">{stats.investmentsWithdrawn} {stats.investmentsWithdrawn === 1 ? 'investimento recebido está totalmente resgatado' : 'investimentos recebidos estão totalmente resgatados'} e aparece{stats.investmentsWithdrawn === 1 ? '' : 'm'} separado{stats.investmentsWithdrawn === 1 ? '' : 's'} em Carteiras → Meus bancos.</p>}
           {(stats?.toReview ?? 0) > 0 && <Link to="/financas" className="inline-flex items-center gap-1 text-sm font-medium text-primary-700 hover:underline">Revisar movimentações em Finanças pessoais <ArrowRight className="h-4 w-4" /></Link>}
 
@@ -144,35 +186,54 @@ export function IntegrationsPage() {
               <p className="mx-auto mt-2 max-w-md text-dark-600">Use "Conectar banco" para escolher sua instituição. Você pode conectar mais de uma.</p>
             </motion.div>
           ) : (
-            <ul className="grid gap-4 lg:grid-cols-2">
+            <ul className="grid gap-4 xl:grid-cols-2">
               {connections.map((c, i) => {
                 const status = CONNECTION_STATUS[c.status] ?? { label: c.status, className: 'chip-planned' };
                 const stale = !!c.lastSyncError || NEEDS_RECONNECT.has(c.status);
+                const st = perConnection[c.id];
+                const many = c.accounts.length > 3 && !expanded[c.id];
+                const metrics = [
+                  { icon: Landmark, label: 'Contas', value: c.accounts.length },
+                  { icon: ReceiptText, label: 'Movimentações', value: st?.entries },
+                  { icon: LineChart, label: 'Investimentos', value: st?.investments, hint: st?.withdrawn ? `+${st.withdrawn} resgatado${st.withdrawn > 1 ? 's' : ''}` : undefined },
+                  { icon: ListChecks, label: 'Para revisar', value: st?.review, warn: (st?.review ?? 0) > 0 },
+                ];
                 return (
-                  <motion.li key={c.id} onPointerMove={spotlightHandler} className="panel spotlight flex flex-col p-5 sm:p-6" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06, ease: EASE }}>
+                  <motion.li key={c.id} layout onPointerMove={spotlightHandler} className="panel spotlight lift flex flex-col p-5" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06, ease: EASE }}>
                     <div className="flex items-start gap-4">
-                      <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-dark-200 bg-dark-100"><Logo src={c.institutionLogo} /></span>
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-dark-200 bg-dark-100"><Logo src={c.institutionLogo} /></span>
                       <div className="min-w-0 flex-1">
-                        <p className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold tracking-tight">{c.institutionName}<span className={status.className}>{status.label}</span></p>
-                        <p className="mt-1 text-sm text-dark-500">Última sincronização: {ago(c.lastSyncedAt)}</p>
+                        <p className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold tracking-tight">
+                          <span className="truncate">{c.institutionName}</span>
+                          <span className={status.className}>{status.label}</span>
+                          {isSandboxConnection(c.institutionName) && <span className="chip border-blue-500/30 bg-blue-500/10 text-blue-700">Sandbox · dados fictícios</span>}
+                        </p>
+                        <p className="mt-0.5 text-xs text-dark-500">Última sincronização: {ago(c.lastSyncedAt)}</p>
                       </div>
                     </div>
-                    {(c.statusMessage || c.lastSyncError) && <p className="mt-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-sm text-yellow-700">{c.lastSyncError ?? c.statusMessage}{stale ? ' Os dados exibidos podem estar desatualizados.' : ''}</p>}
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {(c.products.length ? c.products : ['nenhum dado ainda']).map((p) => <span key={p} className="chip-planned">{PRODUCT_LABELS[p] ?? p}</span>)}
-                    </div>
+                    <dl className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      {metrics.map((m) => (
+                        <div key={m.label} className="rounded-xl border border-dark-200/60 bg-dark-50/40 px-3 py-2.5">
+                          <dt className="flex items-center gap-1.5 text-[11px] text-dark-500"><m.icon className="h-3.5 w-3.5" />{m.label}</dt>
+                          <dd className={clsx('mt-0.5 text-lg font-semibold tracking-tight', m.warn ? 'text-yellow-700' : 'text-dark-900')}>{m.value === undefined ? <span className="skeleton inline-block h-5 w-8 align-middle" /> : m.value.toLocaleString('pt-BR')}</dd>
+                          {m.hint && <dd className="text-[11px] text-dark-500">{m.hint}</dd>}
+                        </div>
+                      ))}
+                    </dl>
+                    {(c.statusMessage || c.lastSyncError) && <p className="mt-3 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-sm text-yellow-700">{c.lastSyncError ?? c.statusMessage}{stale ? ' Os dados exibidos podem estar desatualizados.' : ''}</p>}
                     {c.accounts.length > 0 && (
-                      <ul className="mt-4 space-y-2">
-                        {c.accounts.map((a) => (
-                          <li key={a.id} className="flex items-center gap-3 rounded-xl border border-dark-200/60 bg-dark-50/40 px-3 py-2.5">
+                      <ul className="mt-3 space-y-1.5">
+                        {(many ? c.accounts.slice(0, 3) : c.accounts).map((a) => (
+                          <li key={a.id} className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-dark-100/50">
                             {a.kind === 'CREDIT' ? <CreditCard className="h-4 w-4 text-dark-500" /> : <Landmark className="h-4 w-4 text-dark-500" />}
-                            <span className="min-w-0 flex-1"><span className="block truncate text-sm text-dark-900">{a.name}</span>{a.numberLast4 && <span className="block text-xs text-dark-500">final {a.numberLast4}</span>}</span>
+                            <span className="min-w-0 flex-1 truncate text-sm text-dark-900">{a.name}{a.numberLast4 && <span className="ml-1.5 text-xs text-dark-500">final {a.numberLast4}</span>}</span>
                             {a.balance !== null && <span className="sensitive whitespace-nowrap text-sm font-medium text-dark-900">{a.kind === 'CREDIT' ? `Fatura ${fmt.money(Math.abs(a.balance))}` : fmt.money(a.balance)}</span>}
                           </li>
                         ))}
+                        {c.accounts.length > 3 && <li><button type="button" onClick={() => setExpanded({ ...expanded, [c.id]: !expanded[c.id] })} className="px-2 text-xs font-medium text-primary-700 hover:underline">{many ? `Ver todas as ${c.accounts.length} contas` : 'Mostrar menos'}</button></li>}
                       </ul>
                     )}
-                    <div className="mt-5 flex flex-wrap gap-2 border-t border-dark-200/60 pt-4">
+                    <div className="mt-auto flex flex-wrap gap-2 border-t border-dark-200/60 pt-4 [&]:mt-4">
                       <Button size="sm" variant="secondary" onClick={() => sync(c.id)} loading={syncing === c.id} icon={<RefreshCw className="h-4 w-4" />}>Sincronizar</Button>
                       <ConnectBankButton connectionId={c.id} size="sm" variant={NEEDS_RECONNECT.has(c.status) ? 'primary' : 'ghost'} label="Reconectar" icon={<RefreshCw className="h-4 w-4" />} onConnected={(id) => sync(id)} onError={onError} />
                       <Button size="sm" variant="ghost" onClick={() => setConfirm(c)} icon={<Unlink className="h-4 w-4" />}>Desvincular</Button>

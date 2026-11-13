@@ -14,9 +14,9 @@ async function api<T>(path: string, body: unknown = {}): Promise<T> {
   } catch {
     throw new OpenFinanceUnavailableError('Serviço de conexão bancária indisponível no momento.');
   }
-  const payload = (await res.json().catch(() => ({}))) as T & { error?: string };
+  const payload = (await res.json().catch(() => ({}))) as T & { error?: string; kind?: string; title?: string };
   if (res.status === 503) throw new OpenFinanceUnavailableError(payload.error ?? 'Conexão bancária não configurada.');
-  if (!res.ok) throw new Error(payload.error ?? 'Não foi possível concluir a operação.');
+  if (!res.ok) throw Object.assign(new Error(payload.error ?? 'Não foi possível concluir a operação.'), { kind: payload.kind, title: payload.title });
   return payload;
 }
 
@@ -109,6 +109,36 @@ export async function openFinanceStats(): Promise<OpenFinanceStats> {
   ]);
   return { importedEntries, toReview, investmentsActive, investmentsWithdrawn };
 }
+
+export interface ConnectionStats {
+  entries: number;
+  review: number;
+  investments: number;
+  withdrawn: number;
+}
+
+/** Indicadores por instituição: contagens filtradas pelas contas de cada conexão. */
+export async function connectionStats(connections: BankConnection[]): Promise<Record<string, ConnectionStats>> {
+  const sb = getSupabase();
+  const { data: positions } = await sb.from('investment_positions').select('connection_id, status');
+  const entries = await Promise.all(connections.map(async (c) => {
+    const ids = c.accounts.map((a) => a.id);
+    if (!ids.length) return [0, 0];
+    const [all, review] = await Promise.all([
+      sb.from('finance_entries').select('id', { count: 'exact', head: true }).in('account_id', ids),
+      sb.from('finance_entries').select('id', { count: 'exact', head: true }).in('account_id', ids).eq('needs_review', true),
+    ]);
+    return [all.count ?? 0, review.count ?? 0];
+  }));
+  return Object.fromEntries(connections.map((c, i) => {
+    const mine = (positions ?? []).filter((p: { connection_id: string }) => p.connection_id === c.id) as { status: string | null }[];
+    return [c.id, { entries: entries[i][0], review: entries[i][1], investments: mine.filter((p) => p.status !== 'TOTAL_WITHDRAWAL').length, withdrawn: mine.filter((p) => p.status === 'TOTAL_WITHDRAWAL').length }];
+  }));
+}
+
+/** Ambiente do Open Finance: em "sandbox" só o Pluggy Bank, com dados fictícios, pode ser conectado. */
+export const OPEN_FINANCE_ENV: 'sandbox' | 'production' = import.meta.env.VITE_OPEN_FINANCE_ENV === 'production' ? 'production' : 'sandbox';
+export const isSandboxConnection = (name: string) => /pluggy bank|sandbox|mockbank/i.test(name);
 
 export const INVESTMENT_TYPE_LABELS: Record<string, string> = {
   FIXED_INCOME: 'Renda fixa',

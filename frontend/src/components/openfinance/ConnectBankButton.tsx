@@ -3,6 +3,7 @@ import { Landmark } from 'lucide-react';
 import { Button } from '../common';
 import { openFinance } from '../../services/openFinance';
 import { errorMessage } from '../../lib/errorMessage';
+import { classifyOpenFinanceError, providerErrorSignals } from '../../domain/openFinanceErrors';
 
 const PluggyConnect = lazy(() => import('react-pluggy-connect').then((m) => ({ default: m.PluggyConnect })));
 
@@ -62,7 +63,8 @@ export function ConnectBankButton({ connectionId, label = 'Conectar banco', vari
             }}
             onError={(error) => {
               finish();
-              onError?.(error?.message ? `A instituição não concluiu a conexão: ${error.message}` : 'A instituição não concluiu a conexão.');
+              const info = classifyOpenFinanceError(...providerErrorSignals(error));
+              onError?.(`${info.title}. ${info.message}`);
             }}
             onClose={finish}
             onLoadError={() => {

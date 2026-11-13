@@ -1,5 +1,5 @@
 export class HttpError extends Error {
-  constructor(public status: number, message: string) {
+  constructor(public status: number, message: string, public detail?: Record<string, string>) {
     super(message);
   }
 }
@@ -27,6 +27,6 @@ export function bearer(request: Request): string {
 
 /** Converte qualquer falha em resposta sem detalhes internos, tokens ou dados pessoais. */
 export function failure(error: unknown) {
-  if (error instanceof HttpError) return json({ error: error.message }, error.status);
+  if (error instanceof HttpError) return json({ error: error.message, ...error.detail }, error.status);
   return json({ error: 'Não foi possível concluir a operação. Tente novamente.' }, 500);
 }

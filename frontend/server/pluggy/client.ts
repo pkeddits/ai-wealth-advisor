@@ -1,3 +1,4 @@
+import { classifyOpenFinanceError, providerErrorSignals } from '../../src/domain/openFinanceErrors';
 import { HttpError } from '../http';
 
 export interface PluggyEnv {
@@ -46,7 +47,11 @@ export function pluggyClient(env: PluggyEnv, fetcher: typeof fetch) {
     }
     if (res.status === 404) throw new HttpError(404, 'Conexão não encontrada no provedor.');
     if (res.status === 429) throw new HttpError(429, 'Limite de requisições do provedor atingido. Tente novamente em alguns minutos.');
-    if (!res.ok) throw new HttpError(502, `O provedor de Open Finance respondeu com erro (HTTP ${res.status}).`);
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      const info = classifyOpenFinanceError(...providerErrorSignals(body), res.status === 401 || res.status === 403 ? 'UNAUTHORIZED_CLIENT' : null);
+      throw new HttpError(info.kind === 'trial' || info.kind === 'config' ? 403 : 502, info.message, { kind: info.kind, title: info.title });
+    }
     const text = await res.text();
     return (text ? JSON.parse(text) : null) as T;
   }

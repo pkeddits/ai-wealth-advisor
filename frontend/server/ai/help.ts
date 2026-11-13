@@ -1,3 +1,5 @@
+import { TUTORIALS } from '../../src/tutorials/content';
+
 /** Base de ajuda: descreve apenas o que existe no site. Usada pelo assistente para explicar o uso. */
 export const SITE_HELP = `
 Dashboard: patrimônio das carteiras manuais (capital aplicado = custo das posições; valor de mercado = quantidade × cotação da brapi quando disponível), resultado realizado e não realizado, distribuição, principais posições, atividade recente, resumo de contas conectadas e investimentos importados (separados das carteiras).
@@ -12,7 +14,9 @@ Alertas: alertas por regras (orçamento, metas, concentração, cotação indisp
 Integrações (menu lateral, também acessível em Configurações): Central de Integrações com resumo (instituições, contas, movimentações importadas, investimentos, pendências), cards por instituição com status e última sincronização; "Conectar banco" abre a janela oficial do Open Finance (Pluggy); "Sincronizar", "Reconectar" e "Desvincular". O site não pede nem guarda senhas bancárias.
 Configurações: perfil, senha, aparência, preferências financeiras, notificações (preferências), privacidade e uso do assistente de IA.
 Não existem no site: execução de compras ou vendas na bolsa, Pix ou pagamentos, relatórios em PDF, notificações externas, dashboard alternável, conciliação automática entre carteiras manuais e investimentos importados.
-`.trim();
+`.trim() +
+  '\nGuias (botão Guia no topo de cada área; também em Configurações → Tutoriais e ajuda):\n' +
+  TUTORIALS.map((t) => `${t.title}: ${t.steps.map((st) => `${st.title} — ${st.body}`).join(' ')}`).join('\n');
 
 export const PAGE_NAMES: Record<string, string> = {
   dashboard: 'Dashboard',

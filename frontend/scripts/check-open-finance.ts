@@ -1,4 +1,5 @@
 // Classificação de transações importadas e totais do mês. Rodar: npm run check:openfinance
+import { classifyOpenFinanceError, providerErrorSignals } from '../src/domain/openFinanceErrors';
 import { classifyTransaction, brazilDate, normalizeInvestment, normalizeAccount, type PluggyTransaction } from '../server/pluggy/normalize';
 import { summarizeMonth } from '../src/domain/finance';
 
@@ -58,6 +59,17 @@ check('despesas: compra − estorno + streaming (sem fatura, aplicação, transf
 check('saldo do período', m.net === 8444.1, String(m.net));
 check('estorno zera a categoria', !m.expensesByCategory.some((x) => x.category === 'alimentacao'));
 check('contagens fora dos totais', m.pending === 1 && m.review === 1 && m.neutral === 3, JSON.stringify([m.pending, m.review, m.neutral]));
+
+
+const kindOf = (v: unknown) => classifyOpenFinanceError(...providerErrorSignals(v)).kind;
+check('erro de trial da Pluggy (corpo da API)', kindOf({ code: 403, codeDescription: 'TRIAL_CLIENT_ITEM_CREATE_NOT_ALLOWED', message: 'Trial clients cannot create items' }) === 'trial');
+check('erro de trial vindo do widget (data aninhado)', kindOf({ message: 'Error creating item', data: { codeDescription: 'TRIAL_CLIENT_ITEM_CREATE_NOT_ALLOWED' } }) === 'trial');
+check('trial com mensagem amigável, sem o código bruto', !classifyOpenFinanceError('TRIAL_CLIENT_ITEM_CREATE_NOT_ALLOWED').message.includes('TRIAL'));
+check('credenciais inválidas na instituição', kindOf({ data: { item: { status: 'LOGIN_ERROR', error: { code: 'INVALID_CREDENTIALS' } } } }) === 'credentials');
+check('instituição fora do ar', kindOf({ data: { item: { executionStatus: 'SITE_NOT_AVAILABLE' } } }) === 'institution');
+check('autorização negada no banco', kindOf({ message: 'USER_AUTHORIZATION_NOT_GRANTED' }) === 'authorization');
+check('credenciais da aplicação recusadas', classifyOpenFinanceError(null, 'UNAUTHORIZED_CLIENT').kind === 'config');
+check('erro desconhecido é genérico', kindOf({ message: 'Something odd' }) === 'generic' && kindOf(undefined) === 'generic');
 
 console.log(`${ok} verificações OK, ${fail} falhas`);
 if (fail > 0) process.exit(1);
