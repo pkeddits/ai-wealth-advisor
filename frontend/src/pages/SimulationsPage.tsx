@@ -6,6 +6,8 @@ import { planningService, type Goal } from '../services/planning';
 import { useDisplayFormat } from '../lib/displayFormat';
 import { Input, Select } from '../components/common';
 import { Segmented } from '../components/settings';
+import { FloatingNote, useRichMotion } from '../components/motion';
+import { tilt } from '../lib/tilt';
 
 const parse = (v: string) => (v.trim() === '' ? NaN : Number(v.replace(/\./g, '').replace(',', '.')));
 const today = () => new Date().toISOString().slice(0, 10);
@@ -32,6 +34,9 @@ export function SimulationsPage() {
   const [a, setA] = useState<Record<string, string>>({ initial: '1000', monthly: '300', months: '60', rate: '10', period: 'anual' });
   const [b, setB] = useState<Record<string, string>>({ initial: '1000', monthly: '500', months: '60', rate: '10', period: 'anual' });
   const [goals, setGoals] = useState<Goal[]>([]);
+  const rich = useRichMotion();
+  const [firstDraw, setFirstDraw] = useState(true);
+  useEffect(() => { const t = setTimeout(() => setFirstDraw(false), 1400); return () => clearTimeout(t); }, []);
   const [goalId, setGoalId] = useState('');
   const [extra, setExtra] = useState('100');
   useEffect(() => { planningService.goals().then((g) => { setGoals(g); setGoalId(g[0]?.id ?? ''); }).catch(() => undefined); }, []);
@@ -65,7 +70,7 @@ export function SimulationsPage() {
       <section className="panel p-5 sm:p-6" aria-label="Resultado das simulações">
         <div className="grid gap-4 sm:grid-cols-2">
           {[{ name: 'Cenário A', r: ra, err: errA }, { name: 'Cenário B', r: rb, err: errB }].map(({ name, r, err }) => (
-            <div key={name} className="rounded-2xl border border-dark-200/70 bg-dark-50/40 p-4">
+            <div key={name} {...tilt} data-tilt="4" className="spotlight tilt relative rounded-2xl border border-dark-200/70 bg-dark-50/40 p-4">
               <p className="text-sm text-dark-500">{name}</p>
               {err || !r ? <p className="mt-2 text-sm text-red-600" role="alert">{err}</p> : (
                 <dl className="mt-2 grid grid-cols-3 gap-2 text-sm">
@@ -78,7 +83,8 @@ export function SimulationsPage() {
             </div>
           ))}
         </div>
-        <div className="mt-6 h-72">
+        <div className="relative mt-6 h-72">
+          {ra && rb && Math.abs(rb.finalValue - ra.finalValue) >= 1 && <FloatingNote className="right-2 top-0" delay={0.5}>Diferença entre cenários: {fmt.money(Math.abs(rb.finalValue - ra.finalValue))}</FloatingNote>}
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chart} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
               <CartesianGrid vertical={false} stroke="rgb(var(--dark-200))" strokeDasharray="3 6" />
@@ -86,9 +92,9 @@ export function SimulationsPage() {
               <YAxis hide />
               <Tooltip formatter={(v: number) => fmt.money(v)} labelFormatter={(m: number) => `Mês ${m}`} contentStyle={{ background: 'rgb(var(--surface-raised))', border: '1px solid rgb(var(--dark-200))', borderRadius: 12 }} />
               <Legend />
-              <Line type="monotone" dataKey="a" name="Cenário A" stroke="rgb(var(--violet))" strokeWidth={2.5} dot={false} isAnimationActive={false} />
-              <Line type="monotone" dataKey="b" name="Cenário B" stroke="rgb(var(--azure))" strokeWidth={2.5} dot={false} isAnimationActive={false} />
-              <Line type="monotone" dataKey="aportado" name="Aportado (A)" stroke="rgb(var(--dark-400))" strokeDasharray="4 4" dot={false} isAnimationActive={false} />
+              <Line type="monotone" dataKey="a" name="Cenário A" stroke="rgb(var(--violet))" strokeWidth={2.5} dot={false} isAnimationActive={rich && firstDraw} animationDuration={1100} />
+              <Line type="monotone" dataKey="b" name="Cenário B" stroke="rgb(var(--azure))" strokeWidth={2.5} dot={false} isAnimationActive={rich && firstDraw} animationDuration={1100} />
+              <Line type="monotone" dataKey="aportado" name="Aportado (A)" stroke="rgb(var(--dark-400))" strokeDasharray="4 4" dot={false} isAnimationActive={rich && firstDraw} animationDuration={1100} />
             </LineChart>
           </ResponsiveContainer>
         </div>

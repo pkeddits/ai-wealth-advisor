@@ -8,7 +8,7 @@ import { isSupabaseMode } from '../config/appMode';
 import { CONNECTION_STATUS, connectionStats, isSandboxConnection, OPEN_FINANCE_ENV, openFinance, openFinanceStats, OpenFinanceUnavailableError, type ConnectionStats, type OpenFinanceStats } from '../services/openFinance';
 import { errorMessage } from '../lib/errorMessage';
 import { useDisplayFormat } from '../lib/displayFormat';
-import { spotlightHandler } from '../hooks/useSpotlight';
+import { tilt } from '../lib/tilt';
 import { Button, Modal } from '../components/common';
 import { AnimatedNumber } from '../components/motion';
 import { ConnectBankButton } from '../components/openfinance/ConnectBankButton';
@@ -157,7 +157,7 @@ export function IntegrationsPage() {
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
             {summary.map((s, i) => (
-              <motion.div key={s.label} onPointerMove={spotlightHandler} className="panel spotlight p-4" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05, ease: EASE }}>
+              <motion.div key={s.label} {...tilt} data-tilt="7" className="panel spotlight tilt p-4" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05, ease: EASE }}>
                 <AnimatedNumber value={s.value} format={count} className={clsx('block text-2xl font-semibold tracking-tight', s.tone ? 'text-yellow-700' : 'text-dark-900')} />
                 <p className="mt-1 text-xs text-dark-500">{s.label}</p>
               </motion.div>
@@ -199,7 +199,7 @@ export function IntegrationsPage() {
                   { icon: ListChecks, label: 'Para revisar', value: st?.review, warn: (st?.review ?? 0) > 0 },
                 ];
                 return (
-                  <motion.li key={c.id} layout onPointerMove={spotlightHandler} className="panel spotlight lift flex flex-col p-5" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06, ease: EASE }}>
+                  <motion.li key={c.id} layout {...tilt} data-tilt="1.5" className="panel tilt flex flex-col p-5" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06, ease: EASE }}>
                     <div className="flex items-start gap-4">
                       <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-dark-200 bg-dark-100"><Logo src={c.institutionLogo} /></span>
                       <div className="min-w-0 flex-1">

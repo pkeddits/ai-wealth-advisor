@@ -11,6 +11,7 @@ import { summarizeMonth, shiftMonth, type MonthSummary } from '../domain/finance
 import { budgetUsage } from '../domain/planning';
 import { useDisplayFormat } from '../lib/displayFormat';
 import { AllocationDonut, SERIES_COLORS, INCOME_COLOR, EXPENSE_COLOR } from '../components/charts';
+import { FloatingNote, useRichMotion } from '../components/motion';
 import type { FinanceEntry, ImportedInvestment, Portfolio } from '../types';
 
 const currentMonth = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
@@ -18,7 +19,7 @@ const short = (m: string) => new Date(`${m}-15T12:00:00`).toLocaleDateString('pt
 
 function Panel({ title, note, children, className }: { title: string; note?: string; children: React.ReactNode; className?: string }) {
   return (
-    <motion.section className={clsx('panel lift p-5 sm:p-6', className)} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
+    <motion.section className={clsx('panel lift relative p-5 sm:p-6', className)} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2"><h2 className="text-[15px] font-semibold">{title}</h2>{note && <p className="text-xs text-dark-500">{note}</p>}</div>
       {children}
     </motion.section>
@@ -29,6 +30,7 @@ const tooltipStyle = { background: 'rgb(var(--surface-raised))', border: '1px so
 
 export function AnalyticsPage() {
   const fmt = useDisplayFormat();
+  const rich = useRichMotion();
   const loadCategories = useCustomCategories((s) => s.load);
   const [data, setData] = useState<{ months: { month: string; s: MonthSummary; entries: FinanceEntry[] }[]; goals: Goal[]; budgets: Budget[]; portfolios: Portfolio[]; imported: ImportedInvestment[] } | null>(null);
 
@@ -85,7 +87,8 @@ export function AnalyticsPage() {
       <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
         <Panel title="Receitas e despesas por mês" note="Sem transferências, aplicações, faturas, pendentes e itens a revisar">
           {hasEntries ? (
-            <div className="h-72">
+            <div className="relative h-72">
+              {(() => { const best = monthly.filter((m) => m.receitas || m.despesas).sort((a, b) => b.saldo - a.saldo)[0]; return best && best.saldo > 0 ? <FloatingNote className="right-2 top-0" delay={1}>Melhor saldo: {best.mes} ({fmt.money(best.saldo)})</FloatingNote> : null; })()}
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthly} margin={{ top: 8, right: 4, left: 4, bottom: 0 }}>
                   <CartesianGrid vertical={false} stroke="rgb(var(--dark-200))" strokeDasharray="3 6" />
@@ -93,8 +96,8 @@ export function AnalyticsPage() {
                   <YAxis hide />
                   <Tooltip formatter={(v: number) => fmt.money(v)} contentStyle={tooltipStyle} cursor={{ fill: 'rgb(var(--dark-100) / 0.5)' }} />
                   <Legend />
-                  <Bar dataKey="receitas" name="Receitas" fill={INCOME_COLOR} radius={[6, 6, 2, 2]} maxBarSize={22} />
-                  <Bar dataKey="despesas" name="Despesas" fill={EXPENSE_COLOR} radius={[6, 6, 2, 2]} maxBarSize={22} />
+                  <Bar dataKey="receitas" name="Receitas" fill={INCOME_COLOR} radius={[6, 6, 2, 2]} maxBarSize={22} isAnimationActive={rich} animationDuration={900} animationEasing="ease-out" />
+                  <Bar dataKey="despesas" name="Despesas" fill={EXPENSE_COLOR} radius={[6, 6, 2, 2]} maxBarSize={22} isAnimationActive={rich} animationBegin={180} animationDuration={900} animationEasing="ease-out" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -132,7 +135,7 @@ export function AnalyticsPage() {
                   <XAxis dataKey="mes" tick={{ fill: 'rgb(var(--dark-500))', fontSize: 12 }} axisLine={false} tickLine={false} />
                   <YAxis hide />
                   <Tooltip formatter={(v: number) => fmt.money(v)} contentStyle={tooltipStyle} cursor={{ fill: 'rgb(var(--dark-100) / 0.5)' }} />
-                  <Bar dataKey="aportes" name="Aportes" fill="rgb(var(--violet))" radius={[6, 6, 2, 2]} maxBarSize={26} />
+                  <Bar dataKey="aportes" name="Aportes" fill="rgb(var(--violet))" radius={[6, 6, 2, 2]} maxBarSize={26} isAnimationActive={rich} animationDuration={900} animationEasing="ease-out" />
                 </BarChart>
               </ResponsiveContainer>
             </div>

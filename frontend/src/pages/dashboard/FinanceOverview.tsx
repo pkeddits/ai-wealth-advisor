@@ -10,7 +10,8 @@ import { summarizeMonth, shiftMonth, type MonthSummary } from '../../domain/fina
 import { budgetUsage, goalProgress } from '../../domain/planning';
 import { useDisplayFormat } from '../../lib/displayFormat';
 import { AllocationDonut, SERIES_COLORS, INCOME_COLOR, EXPENSE_COLOR } from '../../components/charts';
-import { AnimatedNumber } from '../../components/motion';
+import { AnimatedNumber, FloatingNote, useRichMotion } from '../../components/motion';
+import { tilt } from '../../lib/tilt';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const nowMonth = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
@@ -20,6 +21,7 @@ const monthName = (m: string) => new Date(`${m}-15T12:00:00`).toLocaleDateString
 
 export function FinanceOverview() {
   const fmt = useDisplayFormat();
+  const rich = useRichMotion();
   const loadCategories = useCustomCategories((s) => s.load);
   const [data, setData] = useState<{ months: { month: string; s: MonthSummary; count: number }[]; goals: Goal[]; budgets: Budget[] } | null>(null);
 
@@ -49,9 +51,12 @@ export function FinanceOverview() {
       <p className="text-sm text-dark-500">Resumo de {monthName(cur.month)}. O saldo do período é receitas menos despesas, não o saldo bancário.</p>
       <div className="grid gap-4 sm:grid-cols-3">
         {stats.map((s, i) => (
-          <motion.div key={s.label} className={clsx('panel lift p-5', i === 2 && 'panel-feature')} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06, ease: EASE }}>
+          <motion.div key={s.label} {...tilt} data-tilt="6" className={clsx('panel spotlight tilt relative p-5', i === 2 && 'panel-feature')} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06, ease: EASE }}>
             <p className="flex items-center gap-2 text-sm text-dark-500"><s.icon className={clsx('h-4 w-4', s.tone)} />{s.label}</p>
             <AnimatedNumber value={s.value} format={fmt.money} className={clsx('sensitive mt-2 block text-2xl font-semibold tracking-tight', s.tone)} />
+            {i === 2 && cur.s.income > 0 && (cur.s.net >= 0
+              ? <FloatingNote className="-top-3 right-5" tone="ok" delay={0.9}>Sobrou {Math.round((cur.s.net / cur.s.income) * 100)}% da receita</FloatingNote>
+              : <FloatingNote className="-top-3 right-5" tone="warn" delay={0.9}>Despesas acima das receitas</FloatingNote>)}
           </motion.div>
         ))}
       </div>
@@ -64,15 +69,16 @@ export function FinanceOverview() {
                 <BarChart data={trend}>
                   <XAxis dataKey="mes" tick={{ fill: 'rgb(var(--dark-500))', fontSize: 12 }} axisLine={false} tickLine={false} />
                   <Tooltip formatter={(v: number) => fmt.money(v)} contentStyle={{ background: 'rgb(var(--surface-raised))', border: '1px solid rgb(var(--dark-200))', borderRadius: 12 }} cursor={{ fill: 'rgb(var(--dark-100) / 0.5)' }} />
-                  <Bar dataKey="receitas" name="Receitas" fill={INCOME_COLOR} radius={[6, 6, 2, 2]} maxBarSize={18} />
-                  <Bar dataKey="despesas" name="Despesas" fill={EXPENSE_COLOR} radius={[6, 6, 2, 2]} maxBarSize={18} />
+                  <Bar dataKey="receitas" name="Receitas" fill={INCOME_COLOR} radius={[6, 6, 2, 2]} maxBarSize={18} isAnimationActive={rich} animationDuration={900} animationEasing="ease-out" />
+                  <Bar dataKey="despesas" name="Despesas" fill={EXPENSE_COLOR} radius={[6, 6, 2, 2]} maxBarSize={18} isAnimationActive={rich} animationBegin={180} animationDuration={900} animationEasing="ease-out" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           ) : <p className="py-12 text-center text-sm text-dark-500">Sem movimentações nos últimos 6 meses.</p>}
         </motion.section>
-        <motion.section className="panel lift p-5" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, ease: EASE }}>
+        <motion.section className="panel lift relative p-5" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, ease: EASE }}>
           <h2 className="mb-3 text-[15px] font-semibold">Distribuição dos gastos</h2>
+          {slices[0] && cur.s.expenses > 0 && <FloatingNote className="-top-3 right-5" delay={1.1}>Maior gasto: {slices[0].label} ({Math.round((slices[0].value / cur.s.expenses) * 100)}%)</FloatingNote>}
           {slices.length ? <AllocationDonut slices={slices} formatValue={fmt.money} size={150} stacked /> : <p className="py-12 text-center text-sm text-dark-500">Sem despesas neste mês.</p>}
         </motion.section>
       </div>

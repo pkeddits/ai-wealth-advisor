@@ -54,6 +54,30 @@
 }
 
 @layer components {
+  /* Inclinação 3D com o ponteiro (variáveis escritas por lib/tilt.ts). Só transform. */
+  /* Aplicada só no hover, com precedência sobre o transform deixado pelas animações de entrada. */
+  .tilt {
+    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.5s ease;
+  }
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    html:not([data-motion='reduced']):not([data-motion='off']):not([data-perf='low']) .tilt:hover {
+      transform: perspective(1100px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-4px) !important;
+      transition: transform 0.2s ease-out, box-shadow 0.5s ease;
+      box-shadow: 0 28px 60px -32px rgb(var(--indigo) / 0.8), 0 0 0 1px rgb(var(--violet) / 0.2);
+    }
+  }
+
+  /* Flutuação ambiente dos balões contextuais. */
+  @media (prefers-reduced-motion: no-preference) {
+    html:not([data-motion='reduced']):not([data-motion='off']):not([data-perf='low']) .float-note {
+      animation: note-float 6.5s ease-in-out infinite;
+    }
+  }
+  @keyframes note-float {
+    0%, 100% { translate: 0 0; }
+    50% { translate: 0 -4px; }
+  }
+
   /* Elevação suave no hover, só com ponteiro fino e sem movimento reduzido. */
   .lift {
     transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease, border-color 0.35s ease;
@@ -73,7 +97,7 @@
     will-change: transform;
   }
   @media (prefers-reduced-motion: no-preference) {
-    html:not([data-motion='reduced']):not([data-effects='off']) .ambient-orb {
+    html:not([data-motion='reduced']):not([data-motion='off']):not([data-effects='off']):not([data-perf='low']) .ambient-orb {
       animation: ambient-drift 26s ease-in-out infinite alternate;
     }
   }

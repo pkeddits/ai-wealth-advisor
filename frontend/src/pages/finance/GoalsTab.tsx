@@ -9,7 +9,7 @@ import { useDisplayFormat } from '../../lib/displayFormat';
 import { errorMessage } from '../../lib/errorMessage';
 import { Button, Input, Modal, Select } from '../../components/common';
 import { Segmented } from '../../components/settings';
-import { spotlightHandler } from '../../hooks/useSpotlight';
+import { tilt } from '../../lib/tilt';
 
 const today = () => {
   const d = new Date();
@@ -110,7 +110,7 @@ export function GoalsTab() {
           {goals.map((g, i) => {
             const p = goalProgress(g.targetAmount, g.movements, today(), g.targetDate);
             return (
-              <motion.article key={g.id} onPointerMove={spotlightHandler} className="panel spotlight lift flex flex-col p-5" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+              <motion.article key={g.id} {...tilt} data-tilt="4" className="panel spotlight tilt flex flex-col p-5" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
                 <div className="flex items-start gap-4">
                   <div className="relative">
                     <Ring pct={p.pct} />

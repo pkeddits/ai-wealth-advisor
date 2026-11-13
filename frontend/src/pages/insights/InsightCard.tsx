@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 import { AlertTriangle, CheckCircle2, Info, OctagonAlert } from 'lucide-react';
 import clsx from 'clsx';
 import type { Insight } from '../../domain/insights';
+import { tilt } from '../../lib/tilt';
 
 const ICON = { info: Info, warning: AlertTriangle, critical: OctagonAlert, success: CheckCircle2 };
 const TONE = {
@@ -14,7 +15,7 @@ const TONE = {
 export function InsightCard({ insight, index = 0, read, onRead }: { insight: Insight; index?: number; read?: boolean; onRead?: () => void }) {
   const Icon = ICON[insight.severity];
   return (
-    <motion.li className={clsx('panel lift flex gap-3 p-4', read && 'opacity-60')} initial={{ opacity: 0, y: 10 }} animate={{ opacity: read ? 0.6 : 1, y: 0 }} transition={{ delay: index * 0.04 }}>
+    <motion.li {...tilt} data-tilt="2.5" className={clsx('panel spotlight tilt flex gap-3 p-4', read && 'opacity-60')} initial={{ opacity: 0, y: 10 }} animate={{ opacity: read ? 0.6 : 1, y: 0 }} transition={{ delay: index * 0.04 }}>
       <span className={clsx('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border', TONE[insight.severity])}><Icon className="h-4 w-4" aria-hidden="true" /></span>
       <div className="min-w-0 flex-1">
         <p className="font-medium text-dark-900">{insight.title}</p>

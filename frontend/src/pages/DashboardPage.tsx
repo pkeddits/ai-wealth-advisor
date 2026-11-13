@@ -9,6 +9,7 @@ import { loadDemoSample } from '../services/demo';
 import { isApiMode, isDemoMode, isSupabaseMode } from '../config/appMode';
 import { OpenFinanceSummary } from '../components/openfinance/OpenFinanceSummary';
 import { FinanceOverview } from './dashboard/FinanceOverview';
+import { FloatingNote } from '../components/motion';
 import { ViewSwitch } from '../components/common/ViewSwitch';
 import { AnimatePresence, motion as m } from 'motion/react';
 import { usePreferences } from '../store/preferencesStore';
@@ -130,11 +131,11 @@ export function DashboardPage() {
 
       <AnimatePresence mode="wait" initial={false}>
       {view === 'financas' ? (
-        <m.div key="financas" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}>
+        <m.div key="financas" initial={{ opacity: 0, x: 36, scale: 0.985 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: -28, scale: 0.985 }} transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}>
           <FinanceOverview />
         </m.div>
       ) : (
-      <m.div key="investimentos" className="space-y-6" initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 24 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}>
+      <m.div key="investimentos" className="space-y-6" initial={{ opacity: 0, x: -36, scale: 0.985 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: 28, scale: 0.985 }} transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}>
       {error && (
         <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700" role="alert">
           Não foi possível carregar as carteiras: {error}
@@ -151,7 +152,10 @@ export function DashboardPage() {
       ) : (
         <>
           <div className="grid gap-4 xl:grid-cols-12">
-            <div className="xl:col-span-8">
+            <div className="relative xl:col-span-8">
+              <FloatingNote className="-top-3 right-8" tone={totals.marketAvailable ? 'ok' : 'brand'} delay={1}>
+                {totals.marketAvailable ? `Valor de mercado atualizado às ${updatedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : 'Aguardando cotações para o valor de mercado'}
+              </FloatingNote>
               <PatrimonyPanel {...totals} timeline={timeline} onRefresh={handleRefresh} />
             </div>
             <div className="flex flex-col gap-4 xl:col-span-4">
