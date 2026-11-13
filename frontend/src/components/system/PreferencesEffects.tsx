@@ -21,14 +21,18 @@ export function PreferencesEffects({ children }: { children: ReactNode }) {
   const resolvedTheme = theme === 'system' ? (systemDark ? 'dark' : 'light') : theme;
 
   useEffect(() => {
+    // Remove o modo leve persistido por versões anteriores.
+    sessionStorage.removeItem('aiwa.perf');
+    delete document.documentElement.dataset.perf;
+  }, []);
+
+  useEffect(() => {
     const root = document.documentElement;
     root.dataset.theme = resolvedTheme;
     root.dataset.motion = motion;
     root.dataset.density = density;
     root.dataset.effects = effects ? 'on' : 'off';
     root.dataset.hideValues = hideValues ? 'on' : 'off';
-    const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
-    if (sessionStorage.getItem('aiwa.perf') === 'low' || (memory !== undefined ? memory <= 2 : (navigator.hardwareConcurrency ?? 8) <= 2)) root.dataset.perf = 'low';
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', resolvedTheme === 'light' ? '#f6f7fb' : '#07080e');
   }, [resolvedTheme, motion, density, effects, hideValues]);
 

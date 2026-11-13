@@ -83,7 +83,7 @@
     transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.5s ease;
   }
   @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-    html:not([data-motion='reduced']):not([data-motion='off']):not([data-perf='low']) .tilt:hover {
+    html:not([data-motion='reduced']):not([data-motion='off']) .tilt:hover {
       transform: perspective(1100px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-4px) !important;
       transition: transform 0.2s ease-out, box-shadow 0.5s ease;
       box-shadow: 0 28px 60px -32px rgb(var(--indigo) / 0.8), 0 0 0 1px rgb(var(--violet) / 0.2);
@@ -92,7 +92,7 @@
 
   /* Flutuação ambiente dos balões contextuais. */
   @media (prefers-reduced-motion: no-preference) {
-    html:not([data-motion='reduced']):not([data-motion='off']):not([data-perf='low']) .float-note {
+    html:not([data-motion='reduced']):not([data-motion='off']) .float-note {
       animation: note-float 6.5s ease-in-out infinite;
     }
   }
@@ -120,7 +120,7 @@
     will-change: transform;
   }
   @media (prefers-reduced-motion: no-preference) {
-    html:not([data-motion='reduced']):not([data-motion='off']):not([data-effects='off']):not([data-perf='low']) .ambient-orb {
+    html:not([data-motion='reduced']):not([data-motion='off']):not([data-effects='off']) .ambient-orb {
       animation: ambient-drift 26s ease-in-out infinite alternate;
     }
   }
@@ -278,8 +278,7 @@ html[data-density='compact'] {
 }
 
 [data-effects='off'] .fx-decor,
-[data-effects='off'] .spotlight::after,
-[data-perf='low'] .fx-decor {
+[data-effects='off'] .spotlight::after {
   display: none;
 }
 
@@ -342,7 +341,7 @@ html[data-density='compact'] {
     box-shadow: 0 0 0 0 rgb(var(--violet) / 0.45);
   }
 
-  html:not([data-motion='reduced']):not([data-motion='off']):not([data-perf='low']) .assistant-halo {
+  html:not([data-motion='reduced']):not([data-motion='off']) .assistant-halo {
     animation: assistant-halo 3.2s ease-out infinite;
   }
 
