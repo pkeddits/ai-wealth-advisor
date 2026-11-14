@@ -26,7 +26,12 @@ export function InvestmentsShowcase() {
             Registre compras e vendas e veja posições, preço médio e distribuição recalculados por cálculos determinísticos e verificáveis.
           </SectionHeading>
           <Reveal delay={0.1}>
-            <span className="chip-live mt-7">Experimente na demonstração</span>
+            <a
+  href="https://ai-wealth-advisor-u2yu.vercel.app"
+  className="chip-live mt-7 cursor-pointer transition-opacity hover:opacity-80"
+>
+  Experimente na demonstração
+</a>
           </Reveal>
           <ul className="mt-8 space-y-3.5">
             {POINTS.map((point, i) => (
