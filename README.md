@@ -1,124 +1,180 @@
+<div align="center">
+
 # AI Wealth Advisor
 
-Plataforma acadêmica de organização financeira e acompanhamento de investimentos, desenvolvida para a
-disciplina **Análise e Desenvolvimento de Sistemas II** (2026). Reúne carteiras de investimento,
-finanças pessoais, conexão bancária pelo Open Finance e um assistente de IA que explica os números
-calculados pelo sistema.
+**Organize seu dinheiro, acompanhe seus investimentos e planeje suas metas com mais clareza.**
 
-> Projeto acadêmico. Não é instituição financeira, não executa ordens e não oferece recomendação de investimento.
+Plataforma acadêmica de gestão financeira pessoal, acompanhamento de investimentos e apoio à compreensão dos dados com inteligência artificial.
 
-![Landing](docs/screenshots/landing.png)
+[**Acessar o sistema**](https://ai-wealth-advisor-sable.vercel.app) · [**Ver a documentação técnica da Fase 9**](docs/FASE9.md) · [**Quadro do Trello**](https://trello.com/b/3cQiM4V2/meu-quadro-do-trello)
 
-## Funcionalidades
+</div>
 
-| Área | O que faz |
+![Tela inicial do AI Wealth Advisor](docs/screenshots/landing.png)
+
+> **Projeto acadêmico.** O AI Wealth Advisor não é banco nem corretora, não movimenta dinheiro, não executa ordens de compra/venda e não oferece recomendações profissionais individualizadas. As simulações são hipotéticas.
+
+## Sobre o projeto
+
+O AI Wealth Advisor reúne recursos para acompanhar **receitas, despesas, orçamentos, metas e investimentos**. O usuário pode registrar movimentações manualmente, conectar instituições financeiras compatíveis por meio da Pluggy e consultar indicadores e explicações com IA.
+
+O projeto foi desenvolvido para a disciplina **Análise e Projeto de Sistemas II**, da **Universidade Cruzeiro do Sul**, em 2026. A versão atual evoluiu da arquitetura inicial em Go para uma aplicação React/TypeScript com backend serverless, Supabase PostgreSQL e integrações externas.
+
+## Funcionalidades implementadas
+
+| Módulo | O que oferece |
 |---|---|
-| Carteiras | Compras e vendas registradas pelo usuário, preço médio pelo custo médio, capital aplicado, valor de mercado (cotações brapi.dev), resultado realizado e não realizado |
-| Finanças pessoais | Receitas e despesas manuais e importadas, categorias (inclusive personalizadas), metas com aportes e retiradas, orçamentos mensais |
-| Open Finance | Conexão pela Pluggy (widget oficial), importação de contas, movimentações e investimentos, sincronização sem duplicar, reclassificação de importados |
-| Inteligência | Análise IA e chatbot (Groq) com streaming, Analytics, Simulações com juros compostos, Alertas por regras |
-| Conta | Perfil com foto, segurança, aparência (tema, densidade, animações), preferências, privacidade e consentimento da IA, tudo salvo na conta e igual em qualquer dispositivo |
-| Guias | Tutorial com telas reais em cada área, abertos na primeira visita e reabertos pelo botão Guia ou em Configurações → Tutoriais e ajuda |
-| Celular | Navegação inferior, assistente em tela cheia que acompanha o teclado, formulários e guias adaptados ao toque |
-| Demonstração | Modo com dados fictícios no navegador, sem serviços externos |
+| **Finanças pessoais** | Registro de receitas e despesas, categorias, orçamentos mensais e visão do saldo do período. |
+| **Metas financeiras** | Metas com valor-alvo, prazo, aportes, retiradas e acompanhamento do progresso. |
+| **Carteiras manuais** | Cadastro de carteiras e ativos, registro informativo de compras e vendas, posições, quantidade, preço médio e capital aplicado. |
+| **Open Finance** | Conexão via Pluggy, importação de contas, movimentações e investimentos disponibilizados pelas instituições, sincronização e desvinculação. |
+| **Dashboard e Analytics** | Indicadores, gráficos de receitas e despesas, gastos por categoria e informações de investimentos. |
+| **Simulações** | Cenários hipotéticos com valor inicial, aportes, prazo e taxa de rendimento. |
+| **Análise por IA** | Diagnóstico e chat financeiro com Groq, com base nos dados que o sistema disponibiliza e nas permissões do usuário. |
+| **Cotações e alertas** | Consulta de preços disponíveis via brapi e alertas ligados a condições financeiras verificadas pelo sistema. |
+| **Conta e interface** | Login, perfil, preferências, tutoriais, tema e experiência adaptada a desktop e dispositivos móveis. |
 
-| Dashboard | Finanças | Assistente |
+**Importante:** carteiras cadastradas manualmente e investimentos importados dos bancos são exibidos de forma separada. Isso evita somar posições que podem representar os mesmos investimentos. Cotações indisponíveis são informadas, sem inventar preços.
+
+## Capturas de tela
+
+| Dashboard | Finanças pessoais | Análise por IA |
 |---|---|---|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Finanças](docs/screenshots/financas.png) | ![Assistente](docs/screenshots/assistente.png) |
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Finanças](docs/screenshots/financas.png) | ![Assistente de IA](docs/screenshots/assistente.png) |
 
-| Celular: dashboard | Celular: finanças | Celular: guia |
-|---|---|---|
-| ![Dashboard no celular](docs/screenshots/fase9/mobile-dashboard.jpg) | ![Finanças no celular](docs/screenshots/fase9/mobile-financas.jpg) | ![Guia no celular](docs/screenshots/fase9/mobile-guia.jpg) |
+| Integrações | Experiência mobile |
+|---|---|
+| ![Integrações](docs/screenshots/integracoes.png) | ![Dashboard no celular](docs/screenshots/fase9/mobile-dashboard.jpg) |
 
-## Arquitetura
+*As imagens são ilustrativas da interface e podem representar cenários de demonstração. Não representam retornos financeiros garantidos.*
 
+## Tecnologias
+
+| Camada | Tecnologias |
+|---|---|
+| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, Motion e Recharts |
+| **Backend atual** | Funções serverless em TypeScript na Vercel (`frontend/api` e `frontend/server`) |
+| **Persistência e identidade** | Supabase PostgreSQL, Supabase Auth, políticas de segurança RLS |
+| **Serviços financeiros** | Pluggy (Open Finance), brapi (cotações) |
+| **Inteligência artificial** | Groq API |
+| **Versionamento e hospedagem** | Git, GitHub, Vercel |
+
+O diretório `backend/` contém uma implementação anterior em **Go**, mantida como histórico e **não utilizada no deploy atual**. Arquivos de infraestrutura Docker também refletem a arquitetura anterior. Python não faz parte do backend de produção.
+
+## Arquitetura atual
+
+```text
+Navegador (React + TypeScript)
+  ├── Supabase Auth ──────────────── autenticação
+  ├── Supabase PostgreSQL ────────── dados do usuário com RLS
+  └── Vercel Serverless Functions
+        ├── Pluggy ──────────────── conexão e importação bancária
+        ├── brapi ───────────────── cotações disponíveis
+        └── Groq ───────────────── assistente de IA
 ```
-frontend/              React 18 + Vite + TypeScript + Tailwind (SPA)
-  src/domain/          Cálculos determinísticos (posições, finanças, metas, simulações, alertas)
-  src/services/        Acesso a dados por modo: demo (localStorage) | supabase | api (legado)
-  server/              Lógica das funções de servidor (cotações, Pluggy, IA), testável sem rede
-  api/                 Vercel Functions que chamam server/ (mesmo código no npm run dev)
-supabase/migrations/   Esquema PostgreSQL com Row Level Security
-supabase/tests/        Testes SQL de isolamento entre usuários
-backend/               Backend Go original (não compila; mantido apenas como histórico)
-```
 
-- **Dados e autenticação:** Supabase (PostgreSQL + Auth). Cada tabela privada tem RLS; o navegador usa
-  apenas a chave publicável.
-- **Servidor:** Vercel Functions em TypeScript para o que exige segredo (brapi, Pluggy, Groq). Toda
-  função valida a sessão do Supabase e deriva o usuário do token, nunca do corpo da requisição.
-- **IA:** a IA recebe um resumo calculado pelo sistema (sem descrições de transações, contas ou
-  documentos), somente com consentimento do usuário. Ela explica; não calcula nem executa ações.
-- **Investimentos manuais e importados** ficam separados: podem representar os mesmos ativos.
-- **Preferências e foto** ficam na conta (`user_settings` e bucket privado `avatars`, com RLS); o
-  navegador guarda só um cache por usuário.
+As funções serverless tratam operações que dependem de credenciais privadas. O frontend não deve receber chaves secretas. As regras de acesso a dados pessoais são aplicadas pelo Supabase, com RLS no banco de dados.
+
+## Estrutura do repositório
+
+```text
+ai-wealth-advisor/
+├── frontend/
+│   ├── src/                 # páginas, componentes, domínio e serviços
+│   ├── api/                 # entrada das funções Vercel
+│   ├── server/              # implementação do backend serverless
+│   ├── public/              # recursos estáticos
+│   ├── package.json
+│   └── vercel.json
+├── supabase/
+│   ├── migrations/          # evolução do esquema PostgreSQL
+│   └── tests/               # testes SQL de isolamento
+├── docs/                   # diagramas, documentação e capturas
+├── backend/                # implementação Go legada (histórico)
+├── infrastructure/         # configuração de infraestrutura legada
+└── README.md
+```
 
 ## Executar localmente
 
-Requisitos: Node.js 20 ou superior.
+**Pré-requisito:** Node.js 20 ou superior, com npm.
 
 ```bash
-cd frontend
-cp .env.example .env.local   # ajuste as variáveis (veja abaixo)
+git clone https://github.com/pkeddits/ai-wealth-advisor.git
+cd ai-wealth-advisor/frontend
 npm ci
-npm run dev                  # http://localhost:5173
+npm run dev
 ```
 
-Sem configuração nenhuma, o app roda no modo demonstração (`VITE_APP_MODE=demo`).
+Por padrão, o aplicativo pode ser executado no modo de demonstração com dados fictícios. Acesse `http://localhost:5173`.
 
-### Variáveis de ambiente
+Para configurar autenticação real, integrações externas ou serviços de IA, crie **`frontend/.env.local`** a partir de **`frontend/.env.example`** e configure somente as credenciais necessárias. O arquivo `.env.local` é privado e não deve ser enviado ao GitHub.
 
-| Variável | Onde | Uso |
-|---|---|---|
-| `VITE_APP_MODE` | pública | `demo` ou `supabase` |
-| `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` | pública | Projeto Supabase (chave publicável `sb_publishable_...`) |
-| `VITE_PLUGGY_INCLUDE_SANDBOX` | pública | `true` exibe o conector de testes no widget |
-| `VITE_OPEN_FINANCE_ENV` | pública | `sandbox` (padrão) ou `production` |
-| `SUPABASE_SECRET_KEY` | **servidor** | Gravação dos dados importados pela Pluggy |
-| `PLUGGY_CLIENT_ID`, `PLUGGY_CLIENT_SECRET` | **servidor** | Open Finance |
-| `BRAPI_API_KEY` | **servidor** | Opcional; cotações além dos ativos de teste |
-| `AI_PROVIDER`, `GROQ_API_KEY`, `GROQ_MODEL` | **servidor** | Assistente de IA |
-| `AI_COMPARE_ENABLED`, `GEMINI_API_KEY`, `GEMINI_MODEL` | **servidor** | Comparação de provedores com dados sintéticos |
+### Modos de funcionamento
 
-Variáveis de servidor **nunca** levam o prefixo `VITE_`, que as exporia no navegador.
+- `VITE_APP_MODE=demo`: demonstração local com dados fictícios.
+- `VITE_APP_MODE=supabase`: usuários autenticados e dados persistidos no Supabase.
+- O modo `api` pertence à arquitetura legada e não é utilizado na versão publicada.
 
-### Banco de dados
+### Segurança das variáveis de ambiente
 
-No SQL Editor do Supabase, execute em ordem os arquivos de `supabase/migrations/` e depois os testes de
-`supabase/tests/` (cada um termina com "todos os testes passaram" e desfaz os dados de teste).
+Variáveis cujo nome começa com `VITE_` são incorporadas ao JavaScript do navegador e devem conter **apenas valores publicáveis**. Chaves privadas (`SUPABASE_SECRET_KEY`, `PLUGGY_CLIENT_SECRET`, `GROQ_API_KEY`, `BRAPI_API_KEY` e similares) devem permanecer nas configurações privadas do servidor.
 
-## Testes
+Consulte `frontend/.env.example` para a lista de variáveis esperadas. **Nunca copie seus valores reais para o README, commits ou capturas.**
+
+## Verificações disponíveis
+
+Na pasta `frontend/`:
 
 ```bash
-cd frontend
+npm run type-check
 npm run build
-npm run check:domain       # posições e finanças
-npm run check:quotes       # serviço de cotações (respostas simuladas da brapi)
-npm run check:openfinance  # classificação de transações importadas
-npm run check:planning     # simulações, metas, orçamentos e alertas
-npm run check:functions    # funções no mesmo formato de runtime da Vercel (Node ESM, sem bundle)
-npm run check:sync         # preferências, guias e foto entre dispositivos e contas
-npm run type-check         # tipos do app e do código de servidor
+npm run check:domain
+npm run check:quotes
+npm run check:openfinance
+npm run check:planning
+npm run check:functions
+npm run check:sync
 ```
 
-Os testes de navegador estão em `frontend/scripts/browser/` (veja o README da pasta). O histórico de
-cada fase, com testes e checklists, está em `docs/FASE*.md`; a mais recente é
-[docs/FASE9.md](docs/FASE9.md).
+Os scripts acima verificam aspectos específicos do projeto. Os testes SQL de políticas de acesso estão em `supabase/tests/` e devem ser executados em ambiente de teste, conforme sua finalidade. A existência dos scripts não equivale a afirmar que todos passaram na execução mais recente.
 
-## Publicação
+## Implantação
 
-Veja [docs/DEPLOY.md](docs/DEPLOY.md) (GitHub e Vercel, passo a passo).
+A aplicação pública está em **https://ai-wealth-advisor-sable.vercel.app**.
 
-## Limitações conhecidas
+Na Vercel, o projeto utiliza **Root Directory = `frontend`**, framework Vite, comando de build `npm run build` e diretório de saída `dist`. As funções em `frontend/api/` utilizam as variáveis privadas configuradas no ambiente do projeto.
 
-- Open Finance validado no Sandbox da Pluggy; não com bancos pessoais reais nem com duas instituições ao mesmo tempo.
-- Sem conciliação automática entre investimentos manuais e importados.
-- Sem histórico de cotações: não há evolução do patrimônio a preço de mercado.
-- Alertas calculados ao abrir o app; não há monitoramento em segundo plano nem envio por e-mail.
-- O limite de uso da IA é contado por instância da função na Vercel.
-- Preferências sincronizam ao abrir o app, ao voltar para a aba e ao reconectar; não em tempo real entre abas abertas.
-- O backend Go original não compila e não é usado.
+## Limitações conhecidas e próximos passos
+
+- Não realiza ordens reais de compra e venda nem transferências bancárias.
+- Investimentos manuais e importados não possuem conciliação automática.
+- A cobertura de instituições, produtos e movimentações depende da integração bancária.
+- Algumas cotações podem não estar disponíveis, impedindo um cálculo completo de valor de mercado.
+- A renda fixa não possui, nesta versão, tratamento contratual completo para todas as modalidades e indexadores.
+- Projeções são cenários hipotéticos, não garantias de rentabilidade.
+- A IA pode ficar temporariamente indisponível por limites ou falhas do provedor.
+- O produto ainda pode melhorar a clareza dos formulários de investimento, conforme avaliação qualitativa de usabilidade.
+
+## Documentação e evolução
+
+- [Histórico técnico da Fase 9](docs/FASE9.md)
+- **Documentação acadêmica final e apresentação:** serão adicionadas à pasta `docs/entrega-final/` após finalizadas e conferidas.
+- O histórico das fases anteriores está preservado em `docs/`.
 
 ## Equipe
 
-Projeto da disciplina ADS II, Cruzeiro do Sul, 2026.
+- Caio Rocha Amorim
+- Felipe Pereira Lima
+- Gabriel Augusto
+- Kauã Steter
+- Victor Hugo dos Santos
+
+**Professor:** Silvio Rogerio de Lucia
+**Disciplina:** Análise e Projeto de Sistemas II
+**Instituição:** Universidade Cruzeiro do Sul
+**Ano:** 2026
+
+---
+
+<div align="center">AI Wealth Advisor · Projeto acadêmico · 2026</div>
