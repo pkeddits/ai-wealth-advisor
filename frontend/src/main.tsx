@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PreferencesEffects } from './components/system/PreferencesEffects';
 import { SessionBoundary } from './components/system/SessionBoundary';
 import App from './App';
+import { initializeDemoData } from './services/demo/bootstrap';
 import { AuthProvider } from './store/authStore';
 import './index.css';
 
@@ -17,6 +18,8 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+if (import.meta.env.VITE_APP_MODE === 'demo') initializeDemoData();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

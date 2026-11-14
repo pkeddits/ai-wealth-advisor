@@ -37,6 +37,8 @@ export function saveState(state: DemoState): void {
 
 export function clearDemoData(): void {
   localStorage.removeItem(KEY);
+  // Impede que a inicialização automática recrie dados apagados de propósito.
+  localStorage.setItem('aiwa.demo.seed.v1', 'cleared');
 }
 
 export function newId(): string {
