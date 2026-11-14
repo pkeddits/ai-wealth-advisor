@@ -28,9 +28,10 @@ export function InvestmentsShowcase() {
           <Reveal delay={0.1}>
             <a
   href="https://ai-wealth-advisor-u2yu.vercel.app"
-  className="chip-live mt-7 cursor-pointer transition-opacity hover:opacity-80"
+  className="mt-7 inline-flex items-center justify-center gap-3 rounded-xl bg-primary-500 px-8 py-4 text-base font-bold text-white shadow-lg shadow-primary-500/30 transition-all duration-300 hover:scale-105 hover:bg-primary-400 hover:shadow-xl hover:shadow-primary-500/40 sm:text-lg"
 >
-  Experimente na demonstração
+  <span>🚀 Explorar demonstração gratuita</span>
+  <span aria-hidden="true">→</span>
 </a>
           </Reveal>
           <ul className="mt-8 space-y-3.5">
